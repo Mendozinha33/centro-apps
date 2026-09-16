@@ -11,15 +11,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --tinta:#1B2A33;
-    --tinta-honda:#122029;
-    --papel:#F1F4F3;
+    --tinta:#1B2A4A;
+    --tinta-honda:#131E36;
+    --papel:#F4F5F8;
     --superficie:#FFFFFF;
-    --linea:#D6DEDC;
-    --linea-fuerte:#B9C5C2;
-    --acento:#3E8C76;
-    --acento-hondo:#2F6F5E;
-    --apagado:#657678;
+    --linea:#DDE1E9;
+    --linea-fuerte:#C3C9D5;
+    --acento:#B08D57;
+    --acento-hondo:#8A6B3D;
+    --en-uso:#3F7D5E;
+    --apagado:#5F6878;
     --aviso:#A0651F;
     --parada:#8C9797;
     --sans:"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -39,7 +40,7 @@
     -webkit-font-smoothing:antialiased;
   }
   a{color:inherit;}
-  :focus-visible{outline:2px solid var(--acento);outline-offset:3px;border-radius:2px;}
+  :focus-visible{outline:2px solid var(--acento-hondo);outline-offset:3px;border-radius:2px;}
 
   .contenedor{max-width:940px;margin:0 auto;padding:0 24px;}
 
@@ -97,24 +98,16 @@
   .portada{
     position:relative;
     overflow:hidden;
-    background:
-      linear-gradient(160deg,#20323C 0%, var(--tinta) 42%, var(--tinta-honda) 100%);
-    color:var(--papel);
+    background:linear-gradient(180deg,var(--tinta) 0%, var(--tinta-honda) 100%);
+    color:#FFFFFF;
     padding-bottom:62px;
-  }
-  .portada::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    background-image:repeating-linear-gradient(90deg,rgba(241,244,243,.05) 0 1px,transparent 1px 74px);
-    pointer-events:none;
   }
 
   /* cinta rotativa del nombre */
   .cinta{
     position:relative;
     overflow:hidden;
-    border-bottom:1px solid rgba(241,244,243,.16);
+    border-bottom:1px solid rgba(176,141,87,.35);
     padding:22px 0 20px;
     -webkit-mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent);
     mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent);
@@ -122,7 +115,7 @@
   .cinta__pista{
     display:flex;
     width:max-content;
-    animation:desfile 26s linear infinite;
+    animation:desfile 40s linear infinite;
   }
   .cinta__bloque{display:flex;flex:none;}
   .cinta__item{
@@ -136,7 +129,7 @@
     height:clamp(56px,10vw,92px);
     width:auto;
   }
-  .cinta__item:nth-child(even) img{opacity:.38;}
+  .cinta__item:nth-child(even) img{opacity:.28;}
   @keyframes desfile{
     from{transform:translate3d(0,0,0);}
     to{transform:translate3d(-50%,0,0);}
@@ -171,12 +164,13 @@
     font-size:15px;
     font-weight:600;
     text-decoration:none;
-    background:var(--papel);
+    background:#FFFFFF;
     color:var(--tinta);
+    border:1px solid #FFFFFF;
     border-radius:6px;
-    padding:13px 26px;
+    padding:13px 28px;
   }
-  .portada__cta:hover{background:#fff;}
+  .portada__cta:hover{background:var(--acento);border-color:var(--acento);color:#FFFFFF;}
   .contador{
     display:inline-flex;
     align-items:center;
@@ -189,7 +183,7 @@
     content:"";
     width:7px;height:7px;border-radius:50%;
     background:var(--acento);
-    box-shadow:0 0 0 4px rgba(62,140,118,.22);
+    box-shadow:0 0 0 4px rgba(176,141,87,.25);
   }
 
   /* ---------- Controles ---------- */
@@ -250,11 +244,12 @@
   .registro__fila:first-child{border-top:0;}
 
   .ficha{padding:26px;}
-  .ficha:hover{background:#FAFCFB;}
+  .ficha{transition:box-shadow .15s ease;}
+  .ficha:hover{background:#FAFBFD;box-shadow:inset 3px 0 0 var(--acento);}
   .ficha__alto{display:flex;gap:26px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;}
   .ficha__texto{flex:1 1 380px;min-width:0;}
   .estado{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--apagado);margin:0 0 7px;}
-  .estado__punto{width:7px;height:7px;border-radius:50%;background:var(--acento-hondo);flex:none;}
+  .estado__punto{width:7px;height:7px;border-radius:50%;background:var(--en-uso);flex:none;}
   .estado--pruebas .estado__punto{background:var(--aviso);}
   .estado--parada .estado__punto{background:var(--parada);}
   .ficha__nombre{font-family:var(--serif);font-size:25px;font-weight:500;letter-spacing:-0.015em;line-height:1.2;margin:0 0 7px;}
@@ -284,12 +279,12 @@
   .ficha__panel ul{margin:0 0 16px;padding-left:19px;max-width:62ch;}
   .ficha__panel li{margin-bottom:5px;font-size:15px;}
   .direccion{margin:0;font-size:13.5px;color:var(--apagado);word-break:break-all;}
-  .direccion a{color:var(--acento-hondo);text-decoration:none;border-bottom:1px solid rgba(47,111,94,.35);}
+  .direccion a{color:var(--acento-hondo);text-decoration:none;border-bottom:1px solid rgba(138,107,61,.35);}
   .direccion a:hover{border-bottom-color:var(--acento-hondo);}
 
   .reserva{
     padding:24px 26px;
-    background:repeating-linear-gradient(135deg,#FBFCFC,#FBFCFC 9px,#F5F8F7 9px,#F5F8F7 18px);
+    background:#F9FAFC;
   }
   .reserva h2{font-family:var(--serif);font-weight:500;font-size:19px;margin:0 0 5px;}
   .reserva p{margin:0;font-size:14.5px;color:var(--apagado);max-width:60ch;}
