@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Mis gastos · Apps Mendoza</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%231B2A33'/%3E%3Ctext x='32' y='45' font-family='Georgia,serif' font-size='38' fill='%23F4F6F5' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --tinta:#1B2A33; --tinta-honda:#122029; --papel:#F1F4F3; --superficie:#FFFFFF;
+    --linea:#D6DEDC; --linea-fuerte:#B9C5C2; --acento:#3E8C76; --acento-hondo:#2F6F5E;
+    --apagado:#657678; --rojo:#A33B34;
+    --sans:"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --serif:"Newsreader", Georgia, "Times New Roman", serif;
+    --alto-cabecera:62px;
+    --c-casa:#3B6E9C; --c-comida:#A0651F; --c-coche:#5C6B70; --c-ocio:#6B5E9C;
+    --c-salud:#2F6F5E; --c-compras:#9C5A86; --c-recibos:#84603C; --c-otros:#7D8B8E;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;background:var(--papel);color:var(--tinta);font-family:var(--sans);
+    font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  :focus-visible{outline:2px solid var(--acento);outline-offset:2px;border-radius:3px;}
+  .contenedor{max-width:1040px;margin:0 auto;padding:0 24px;}
+  [hidden]{display:none !important;}
+
+  .cabecera{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.94);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--linea-fuerte);}
+  .cabecera .contenedor{height:var(--alto-cabecera);display:flex;align-items:center;
+    justify-content:space-between;gap:12px;}
+  .marca{display:flex;align-items:center;gap:11px;text-decoration:none;min-width:0;color:inherit;}
+  .marca__m{flex:none;width:29px;height:29px;display:grid;place-items:center;background:var(--tinta);
+    color:var(--papel);border-radius:6px;font-family:var(--serif);font-size:16px;}
+  .marca__t{font-family:var(--serif);font-size:20px;font-weight:500;letter-spacing:-.015em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .acciones-cab{display:flex;align-items:center;gap:8px;}
+  .quien{font-size:13.5px;color:var(--apagado);white-space:nowrap;}
+
+  .btn{font:inherit;font-size:14.5px;background:var(--superficie);border:1px solid var(--linea-fuerte);
+    border-radius:6px;padding:9px 15px;color:var(--tinta);cursor:pointer;white-space:nowrap;
+    display:inline-flex;align-items:center;gap:7px;text-decoration:none;}
+  .btn:hover{border-color:var(--tinta);}
+  .btn:disabled{opacity:.55;cursor:default;}
+  .btn--solido{background:var(--tinta);border-color:var(--tinta);color:var(--papel);font-weight:500;}
+  .btn--solido:hover{background:var(--tinta-honda);}
+  .btn--icono{padding:9px 12px;}
+  .btn--mini{font-size:13px;padding:7px 12px;}
+
+  .entrada{max-width:430px;margin:8vh auto 40px;padding:0 20px;}
+  .entrada .tarjeta{padding:28px 26px 30px;}
+  .entrada h1{font-family:var(--serif);font-size:30px;font-weight:500;margin:0 0 6px;letter-spacing:-.02em;}
+  .entrada .intro{margin:0 0 22px;font-size:14.5px;color:var(--apagado);}
+  .entrada .campo{margin-bottom:14px;}
+  .entrada .btn{width:100%;justify-content:center;padding:12px;}
+  .error{background:#FCF3F2;border:1px solid #E7CBC8;color:#8C3A33;border-radius:6px;
+    padding:11px 13px;font-size:14px;margin-bottom:16px;}
+  .ok{background:#F1F8F5;border:1px solid #BEDCCF;color:#2A6B54;border-radius:6px;
+    padding:11px 13px;font-size:14px;margin-bottom:16px;}
+  .cargando{padding:40px 0;text-align:center;color:var(--apagado);font-size:15px;}
+
+  .barra{padding:26px 0 18px;display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;justify-content:space-between;}
+  .mes-titulo{font-family:var(--serif);font-size:clamp(26px,3.6vw,36px);font-weight:500;
+    letter-spacing:-.02em;margin:0;text-transform:capitalize;}
+  .mes-sub{margin:2px 0 0;font-size:14px;color:var(--apagado);}
+  .mandos{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+
+  .tarjeta{background:var(--superficie);border:1px solid var(--linea);border-radius:8px;overflow:hidden;}
+  .tarjeta__cab{padding:16px 20px;border-bottom:1px solid var(--linea);display:flex;
+    justify-content:space-between;align-items:baseline;gap:12px;}
+  .tarjeta__cab h2{font-family:var(--serif);font-size:19px;font-weight:500;margin:0;letter-spacing:-.01em;}
+  .tarjeta__cab .cuenta{font-size:13px;color:var(--apagado);}
+
+  /* resumen */
+  .resumen{display:grid;grid-template-columns:repeat(3,1fr);margin-bottom:22px;}
+  .resumen .celda{padding:18px 20px;border-right:1px solid var(--linea);}
+  .resumen .celda:last-child{border-right:0;}
+  .resumen .etiqueta{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--apagado);margin:0 0 6px;}
+  .resumen .cifra{font-family:var(--serif);font-size:clamp(22px,3vw,29px);font-weight:500;margin:0;
+    letter-spacing:-.01em;font-variant-numeric:tabular-nums;}
+  .cifra--gasto{color:var(--rojo);}
+  .cifra--ingreso{color:var(--acento-hondo);}
+
+  .tope{padding:18px 20px;border-top:1px solid var(--linea);}
+  .tope__alto{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:9px;}
+  .tope__texto{font-size:14px;color:var(--apagado);margin:0;}
+  .tope__texto b{color:var(--tinta);font-variant-numeric:tabular-nums;}
+  .carril{height:9px;background:#EDF1F0;border-radius:99px;overflow:hidden;}
+  .carril span{display:block;height:100%;background:var(--acento);border-radius:99px;}
+  .carril--alto span{background:#C99A3A;}
+  .carril--pasado span{background:var(--rojo);}
+  .tope__aviso{margin:10px 0 0;font-size:13.5px;color:var(--rojo);font-weight:500;}
+
+  .lienzo{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px;align-items:start;padding-bottom:60px;}
+
+  .lista{list-style:none;margin:0;padding:0;}
+  .lista li{border-top:1px solid var(--linea);padding:12px 20px;display:flex;gap:12px;align-items:center;}
+  .lista li:first-child{border-top:0;}
+  .lista .marcador{width:3px;align-self:stretch;border-radius:2px;background:var(--color);flex:none;min-height:32px;}
+  .lista .cuerpo{min-width:0;flex:1;background:none;border:0;padding:0;font:inherit;text-align:left;
+    color:inherit;cursor:pointer;}
+  .lista .cuando{font-size:12px;color:var(--apagado);margin:0 0 1px;font-variant-numeric:tabular-nums;}
+  .lista .que{font-size:14.5px;margin:0;font-weight:500;}
+  .lista .nota{font-size:13px;color:var(--apagado);margin:2px 0 0;}
+  .lista .importe{flex:none;font-variant-numeric:tabular-nums;font-weight:600;font-size:15px;white-space:nowrap;}
+  .lista .importe--gasto{color:var(--rojo);}
+  .lista .importe--ingreso{color:var(--acento-hondo);}
+  .lista .borrar{flex:none;background:none;border:0;cursor:pointer;color:var(--apagado);
+    font:inherit;font-size:12.5px;padding:2px 4px;}
+  .lista .borrar:hover{color:var(--rojo);text-decoration:underline;}
+  .vacio{padding:24px 20px;color:var(--apagado);font-size:14px;margin:0;}
+
+  .desglose{padding:6px 20px 18px;}
+  .desglose .fila{padding:11px 0;border-bottom:1px solid var(--linea);}
+  .desglose .fila:last-child{border-bottom:0;}
+  .desglose .alto{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;margin-bottom:6px;}
+  .desglose .alto b{font-variant-numeric:tabular-nums;font-weight:600;}
+  .desglose .carril{height:6px;}
+  .desglose .carril span{background:var(--color);}
+
+  .velo{position:fixed;inset:0;background:rgba(18,32,41,.45);z-index:80;
+    display:flex;align-items:flex-start;justify-content:center;padding:6vh 18px;overflow:auto;}
+  .ventana{background:var(--superficie);border-radius:10px;width:100%;max-width:470px;overflow:hidden;}
+  .ventana__cab{padding:18px 22px;border-bottom:1px solid var(--linea);display:flex;
+    justify-content:space-between;align-items:center;}
+  .ventana__cab h2{font-family:var(--serif);font-size:21px;font-weight:500;margin:0;}
+  .cerrar{background:none;border:0;font-size:22px;line-height:1;cursor:pointer;color:var(--apagado);padding:2px 6px;}
+  .ventana__cuerpo{padding:20px 22px 24px;display:grid;gap:15px;}
+  .campo{display:grid;gap:5px;}
+  .campo label{font-size:13px;font-weight:600;color:var(--apagado);}
+  .campo input,.campo select,.campo textarea{font:inherit;font-size:15px;padding:9px 11px;
+    border:1px solid var(--linea-fuerte);border-radius:6px;background:#fff;color:inherit;width:100%;}
+  .campo textarea{resize:vertical;min-height:58px;}
+  .fila-doble{display:grid;grid-template-columns:1fr 1fr;gap:15px;}
+  .ventana__pie{display:flex;justify-content:flex-end;gap:10px;padding-top:4px;}
+  .elige{display:flex;gap:8px;}
+  .elige button{flex:1;justify-content:center;}
+  .elige button[aria-pressed="true"]{background:var(--tinta);border-color:var(--tinta);color:var(--papel);font-weight:500;}
+
+  @media (max-width:900px){
+    .lienzo{grid-template-columns:minmax(0,1fr);}
+    .quien{display:none;}
+  }
+  @media (max-width:560px){
+    .contenedor{padding:0 14px;}
+    .resumen{grid-template-columns:1fr;}
+    .resumen .celda{border-right:0;border-bottom:1px solid var(--linea);}
+    .resumen .celda:last-child{border-bottom:0;}
+    .fila-doble{grid-template-columns:1fr;}
+    .marca__t{font-size:17px;}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+</style>
+</head>
+<body>
+
+<header class="cabecera">
+  <div class="contenedor">
+    <a class="marca" href="/"><span class="marca__m">M</span><span class="marca__t">Mis gastos</span></a>
+    <div class="acciones-cab">
+      <span class="quien" id="quien"></span>
+      <button class="btn btn--mini" id="btnSalir" hidden>Salir</button>
+      <a class="btn btn--mini" href="/" title="Volver al centro de aplicaciones">Apps Mendoza</a>
+    </div>
+  </div>
+</header>
+
+<section class="entrada" id="pantallaEntrada" hidden>
+  <div class="tarjeta">
+    <h1>Mis gastos</h1>
+    <p class="intro">Entra con el mismo correo y la misma contraseña que usas en el calendario.</p>
+    <div class="error" id="entradaError" hidden></div>
+    <div class="campo"><label for="eCorreo">Correo</label><input id="eCorreo" type="email" autocomplete="username"></div>
+    <div class="campo"><label for="eClave">Contraseña</label><input id="eClave" type="password" autocomplete="current-password"></div>
+    <button class="btn btn--solido" id="btnEntrar">Entrar</button>
+  </div>
+</section>
+
+<p class="cargando" id="cargando">Abriendo tus cuentas…</p>
+
+<div class="contenedor" id="pantallaApp" hidden>
+
+  <div class="barra">
+    <div>
+      <h1 class="mes-titulo" id="mesTitulo">—</h1>
+      <p class="mes-sub" id="mesSub"></p>
+    </div>
+    <div class="mandos">
+      <button class="btn btn--icono" id="antes" aria-label="Mes anterior">&lsaquo;</button>
+      <button class="btn" id="mesActual">Este mes</button>
+      <button class="btn btn--icono" id="despues" aria-label="Mes siguiente">&rsaquo;</button>
+      <button class="btn btn--solido" id="nuevo">+ Nuevo apunte</button>
+    </div>
+  </div>
+
+  <div class="tarjeta" style="margin-bottom:22px">
+    <div class="resumen">
+      <div class="celda"><p class="etiqueta">Ingresos</p><p class="cifra cifra--ingreso" id="totalIngresos">—</p></div>
+      <div class="celda"><p class="etiqueta">Gastos</p><p class="cifra cifra--gasto" id="totalGastos">—</p></div>
+      <div class="celda"><p class="etiqueta">Diferencia</p><p class="cifra" id="totalDiferencia">—</p></div>
+    </div>
+    <div class="tope">
+      <div class="tope__alto">
+        <p class="tope__texto" id="topeTexto">Sin tope puesto</p>
+        <button class="btn btn--mini" id="btnTope">Cambiar tope</button>
+      </div>
+      <div class="carril" id="carril"><span id="carrilRelleno" style="width:0%"></span></div>
+      <p class="tope__aviso" id="topeAviso" hidden></p>
+    </div>
+  </div>
+
+  <div class="lienzo">
+    <section class="tarjeta">
+      <div class="tarjeta__cab"><h2>Apuntes del mes</h2><span class="cuenta" id="cuentaApuntes"></span></div>
+      <ul class="lista" id="listaMovimientos"></ul>
+    </section>
+
+    <aside>
+      <div class="tarjeta">
+        <div class="tarjeta__cab"><h2>En qué se va</h2><span class="cuenta">Gastos</span></div>
+        <div class="desglose" id="desglose"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="velo" id="velo" hidden>
+  <div class="ventana" role="dialog" aria-modal="true" aria-labelledby="tituloVentana">
+    <div class="ventana__cab">
+      <h2 id="tituloVentana">Nuevo apunte</h2>
+      <button class="cerrar" id="cerrar" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="ventana__cuerpo">
+      <div class="error" id="errorApunte" hidden></div>
+      <div class="campo">
+        <label>¿Qué es?</label>
+        <div class="elige">
+          <button class="btn" type="button" id="esGasto" aria-pressed="true">Un gasto</button>
+          <button class="btn" type="button" id="esIngreso" aria-pressed="false">Un ingreso</button>
+        </div>
+      </div>
+      <div class="fila-doble">
+        <div class="campo"><label for="fImporte">Importe (€)</label>
+          <input id="fImporte" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0,00"></div>
+        <div class="campo"><label for="fFecha">Día</label><input id="fFecha" type="date"></div>
+      </div>
+      <div class="campo"><label for="fConcepto">Concepto</label>
+        <input id="fConcepto" type="text" placeholder="Compra del súper, gasolina, nómina..."></div>
+      <div class="campo"><label for="fCategoria">Categoría</label><select id="fCategoria"></select></div>
+      <div class="campo"><label for="fNota">Nota (opcional)</label><textarea id="fNota"></textarea></div>
+      <div class="ventana__pie">
+        <button class="btn" id="cancelar">Cancelar</button>
+        <button class="btn btn--solido" id="guardar">Guardar apunte</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="velo" id="veloTope" hidden>
+  <div class="ventana" role="dialog" aria-modal="true" aria-labelledby="tituloTope">
+    <div class="ventana__cab">
+      <h2 id="tituloTope">Tope de gasto al mes</h2>
+      <button class="cerrar" id="cerrarTope" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="ventana__cuerpo">
+      <div class="error" id="errorTope" hidden></div>
+      <div class="campo"><label for="fTope">Cuánto quieres gastar como mucho cada mes (€)</label>
+        <input id="fTope" type="number" step="1" min="0" inputmode="decimal" placeholder="0"></div>
+      <p style="margin:0;font-size:13.5px;color:var(--apagado)">Si pones 0 se quita el tope y no te avisará de nada.</p>
+      <div class="ventana__pie">
+        <button class="btn" id="cancelarTope">Cancelar</button>
+        <button class="btn btn--solido" id="guardarTope">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==================================================================
+   MIS GASTOS — dentro de Apps Mendoza
+   Misma cuenta que el calendario. Todo se guarda en el servidor.
+================================================================== */
+
+const CATEGORIAS = {
+  casa:    { nombre:'Casa',                  color:'var(--c-casa)'    },
+  comida:  { nombre:'Comida',                color:'var(--c-comida)'  },
+  coche:   { nombre:'Coche y transporte',    color:'var(--c-coche)'   },
+  ocio:    { nombre:'Ocio',                  color:'var(--c-ocio)'    },
+  salud:   { nombre:'Salud',                 color:'var(--c-salud)'   },
+  compras: { nombre:'Ropa y compras',        color:'var(--c-compras)' },
+  recibos: { nombre:'Recibos y suscripciones', color:'var(--c-recibos)' },
+  otros:   { nombre:'Otros',                 color:'var(--c-otros)'   }
+};
+const CATEGORIAS_INGRESO = {
+  nomina: { nombre:'Nómina',        color:'var(--c-salud)' },
+  extra:  { nombre:'Ingreso extra', color:'var(--c-ocio)'  },
+  otros:  { nombre:'Otros',         color:'var(--c-otros)' }
+};
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto',
+               'septiembre','octubre','noviembre','diciembre'];
+const DIAS_LARGO = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+
+const EUROS = new Intl.NumberFormat('es-ES', { style:'currency', currency:'EUR' });
+const hoy = new Date(); hoy.setHours(0,0,0,0);
+let mesVisible = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+let MOVIMIENTOS = [];
+let TOPE = 0;
+let editando = null;
+let tipoElegido = 'gasto';
+
+function clave(d){
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function claveMes(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+function desdeClave(k){ const p = k.split('-').map(Number); return new Date(p[0], p[1]-1, p[2]); }
+function escapar(t){
+  return String(t).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function ver(id, mostrar){ document.getElementById(id).hidden = !mostrar; }
+function mostrarError(id, texto){
+  const caja = document.getElementById(id); caja.textContent = texto; caja.hidden = !texto;
+}
+function guardarPase(p){ try{ p ? localStorage.setItem('apps_pase', p) : (localStorage.removeItem('apps_pase'), localStorage.removeItem('calendario_pase')); }catch(e){} }
+function leerPase(){
+  try{ return localStorage.getItem('apps_pase') || localStorage.getItem('calendario_pase') || ''; }catch(e){ return ''; }
+}
+function catDe(m){
+  const tabla = m.tipo === 'ingreso' ? CATEGORIAS_INGRESO : CATEGORIAS;
+  return tabla[m.categoria] || { nombre:'Otros', color:'var(--c-otros)' };
+}
+
+async function api(ruta, metodo, cuerpo){
+  const cabeceras = { 'Content-Type':'application/json' };
+  const pase = leerPase();
+  if (pase) cabeceras['Authorization'] = 'Bearer ' + pase;
+  let r;
+  try{
+    r = await fetch(ruta, { method: metodo || 'GET', headers: cabeceras,
+                            body: cuerpo ? JSON.stringify(cuerpo) : undefined });
+  }catch(e){ throw new Error('No hay conexión con el servidor.'); }
+  let datos = {};
+  try{ datos = await r.json(); }catch(e){}
+  if (r.status === 401){ cerrarSesion(); throw new Error(datos.error || 'Hay que volver a entrar.'); }
+  if (!r.ok) throw new Error(datos.error || 'Algo ha fallado en el servidor.');
+  return datos;
+}
+
+/* ---------- entrada ---------- */
+function cerrarSesion(){
+  guardarPase(''); MOVIMIENTOS = [];
+  ver('pantallaApp', false); ver('cargando', false); ver('pantallaEntrada', true); ver('btnSalir', false);
+  document.getElementById('quien').textContent = '';
+}
+async function arrancar(){
+  ver('cargando', true);
+  if (leerPase()){
+    try{
+      const pase = leerPase().split('.')[0];
+      const info = JSON.parse(atob(pase.replace(/-/g,'+').replace(/_/g,'/')));
+      document.getElementById('quien').textContent = info.nombre || '';
+    }catch(e){}
+    try{ await cargarMes(); ver('btnSalir', true); return; }catch(e){}
+  }
+  ver('cargando', false); ver('pantallaEntrada', true);
+}
+document.getElementById('btnEntrar').addEventListener('click', async function(){
+  const boton = this; mostrarError('entradaError','');
+  const correo = document.getElementById('eCorreo').value.trim();
+  const clave2 = document.getElementById('eClave').value;
+  if (!correo || !clave2){ mostrarError('entradaError','Pon tu correo y tu contraseña.'); return; }
+  boton.disabled = true;
+  try{
+    const datos = await api('/api/acceso', 'POST', { accion:'entrar', correo: correo, clave: clave2 });
+    guardarPase(datos.pase);
+    document.getElementById('quien').textContent = datos.usuario.nombre;
+    ver('pantallaEntrada', false); ver('btnSalir', true);
+    await cargarMes();
+  }catch(e){ mostrarError('entradaError', e.message); }
+  boton.disabled = false;
+});
+['eCorreo','eClave'].forEach(function(id){
+  document.getElementById(id).addEventListener('keydown', function(e){
+    if (e.key === 'Enter') document.getElementById('btnEntrar').click();
+  });
+});
+document.getElementById('btnSalir').addEventListener('click', function(){ cerrarSesion(); });
+
+/* ---------- carga del mes ---------- */
+async function cargarMes(){
+  const datos = await api('/api/movimientos?mes=' + claveMes(mesVisible));
+  MOVIMIENTOS = datos.movimientos || [];
+  TOPE = Number(datos.tope) || 0;
+  ver('cargando', false); ver('pantallaEntrada', false); ver('pantallaApp', true);
+  pintarTodo();
+}
+
+/* ---------- pintado ---------- */
+function sumaPorTipo(tipo){
+  return MOVIMIENTOS.filter(function(m){ return m.tipo === tipo; })
+                    .reduce(function(t,m){ return t + Number(m.importe); }, 0);
+}
+
+function pintarResumen(){
+  const ingresos = sumaPorTipo('ingreso'), gastos = sumaPorTipo('gasto');
+  const dif = ingresos - gastos;
+  document.getElementById('totalIngresos').textContent = EUROS.format(ingresos);
+  document.getElementById('totalGastos').textContent = EUROS.format(gastos);
+  const celdaDif = document.getElementById('totalDiferencia');
+  celdaDif.textContent = EUROS.format(dif);
+  celdaDif.className = 'cifra ' + (dif < 0 ? 'cifra--gasto' : 'cifra--ingreso');
+
+  const carril = document.getElementById('carril');
+  const relleno = document.getElementById('carrilRelleno');
+  const aviso = document.getElementById('topeAviso');
+  if (TOPE > 0){
+    const parte = gastos / TOPE;
+    relleno.style.width = Math.min(100, parte * 100).toFixed(1) + '%';
+    carril.className = 'carril' + (parte > 1 ? ' carril--pasado' : (parte >= 0.8 ? ' carril--alto' : ''));
+    document.getElementById('topeTexto').innerHTML =
+      'Llevas <b>' + EUROS.format(gastos) + '</b> de un tope de <b>' + EUROS.format(TOPE) + '</b>';
+    if (parte > 1){
+      aviso.textContent = 'Te has pasado del tope en ' + EUROS.format(gastos - TOPE) + '.';
+      aviso.hidden = false;
+    } else if (parte >= 0.8){
+      aviso.textContent = 'Ojo, te quedan ' + EUROS.format(TOPE - gastos) + ' hasta el tope.';
+      aviso.hidden = false; aviso.style.color = '#8A6520';
+    } else {
+      aviso.hidden = true; aviso.style.color = '';
+    }
+  } else {
+    relleno.style.width = '0%';
+    carril.className = 'carril';
+    document.getElementById('topeTexto').textContent = 'Sin tope puesto';
+    aviso.hidden = true;
+  }
+}
+
+function filaMovimiento(m){
+  const f = desdeClave(m.fecha);
+  const cat = catDe(m);
+  const signo = m.tipo === 'ingreso' ? '+' : '−';
+  return '<li>' +
+    '<span class="marcador" style="--color:' + cat.color + '"></span>' +
+    '<button class="cuerpo" data-editar="' + m.id + '" title="Pulsa para modificarlo">' +
+      '<p class="cuando">' + DIAS_LARGO[f.getDay()] + ' ' + f.getDate() + ' · ' + cat.nombre + '</p>' +
+      '<p class="que">' + escapar(m.concepto) + '</p>' +
+      (m.nota ? '<p class="nota">' + escapar(m.nota) + '</p>' : '') +
+    '</button>' +
+    '<span class="importe importe--' + m.tipo + '">' + signo + ' ' + EUROS.format(Number(m.importe)) + '</span>' +
+    '<button class="borrar" data-id="' + m.id + '">Borrar</button>' +
+  '</li>';
+}
+
+function pintarLista(){
+  document.getElementById('cuentaApuntes').textContent =
+    MOVIMIENTOS.length === 1 ? '1 apunte' : MOVIMIENTOS.length + ' apuntes';
+  document.getElementById('listaMovimientos').innerHTML = MOVIMIENTOS.length
+    ? MOVIMIENTOS.map(filaMovimiento).join('')
+    : '<p class="vacio">Todavía no has apuntado nada este mes.</p>';
+
+  document.querySelectorAll('.borrar').forEach(function(b){
+    b.addEventListener('click', async function(){
+      const id = Number(b.dataset.id);
+      const m = MOVIMIENTOS.filter(function(x){ return x.id === id; })[0];
+      if (!confirm('¿Borrar "' + (m ? m.concepto : 'este apunte') + '"? No se puede deshacer.')) return;
+      b.disabled = true;
+      try{
+        await api('/api/movimientos?id=' + id, 'DELETE');
+        MOVIMIENTOS = MOVIMIENTOS.filter(function(x){ return x.id !== id; });
+        pintarTodo();
+      }catch(e){ alert(e.message); b.disabled = false; }
+    });
+  });
+  document.querySelectorAll('[data-editar]').forEach(function(b){
+    b.addEventListener('click', function(){
+      const m = MOVIMIENTOS.filter(function(x){ return x.id === Number(b.dataset.editar); })[0];
+      if (m) abrirVentana(m);
+    });
+  });
+}
+
+function pintarDesglose(){
+  const gastos = MOVIMIENTOS.filter(function(m){ return m.tipo === 'gasto'; });
+  const total = gastos.reduce(function(t,m){ return t + Number(m.importe); }, 0);
+  const porCat = {};
+  gastos.forEach(function(m){ porCat[m.categoria] = (porCat[m.categoria] || 0) + Number(m.importe); });
+  const orden = Object.keys(porCat).sort(function(a,b){ return porCat[b] - porCat[a]; });
+  document.getElementById('desglose').innerHTML = orden.length
+    ? orden.map(function(id){
+        const cat = CATEGORIAS[id] || CATEGORIAS.otros;
+        const parte = total ? (porCat[id] / total) * 100 : 0;
+        return '<div class="fila">' +
+          '<div class="alto"><span>' + cat.nombre + '</span><b>' + EUROS.format(porCat[id]) + '</b></div>' +
+          '<div class="carril"><span style="width:' + parte.toFixed(1) + '%;--color:' + cat.color +
+          ';background:' + cat.color + '"></span></div>' +
+        '</div>';
+      }).join('')
+    : '<p class="vacio" style="padding:16px 0">Sin gastos este mes.</p>';
+}
+
+function pintarTodo(){
+  document.getElementById('mesTitulo').textContent = MESES[mesVisible.getMonth()] + ' ' + mesVisible.getFullYear();
+  const dif = sumaPorTipo('ingreso') - sumaPorTipo('gasto');
+  document.getElementById('mesSub').textContent = dif >= 0
+    ? 'Este mes te sobran ' + EUROS.format(dif)
+    : 'Este mes te faltan ' + EUROS.format(Math.abs(dif));
+  pintarResumen(); pintarLista(); pintarDesglose();
+}
+
+/* ---------- mandos ---------- */
+async function irAMes(nuevo){
+  mesVisible = nuevo;
+  ver('pantallaApp', false); ver('cargando', true);
+  try{ await cargarMes(); }catch(e){ ver('cargando', false); alert(e.message); }
+}
+document.getElementById('antes').addEventListener('click', function(){
+  irAMes(new Date(mesVisible.getFullYear(), mesVisible.getMonth()-1, 1));
+});
+document.getElementById('despues').addEventListener('click', function(){
+  irAMes(new Date(mesVisible.getFullYear(), mesVisible.getMonth()+1, 1));
+});
+document.getElementById('mesActual').addEventListener('click', function(){
+  irAMes(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+});
+
+/* ---------- ventana de apunte ---------- */
+const velo = document.getElementById('velo');
+function pintarCategorias(){
+  const tabla = tipoElegido === 'ingreso' ? CATEGORIAS_INGRESO : CATEGORIAS;
+  document.getElementById('fCategoria').innerHTML = Object.keys(tabla).map(function(id){
+    return '<option value="' + id + '">' + tabla[id].nombre + '</option>';
+  }).join('');
+}
+function elegirTipo(tipo){
+  tipoElegido = tipo;
+  document.getElementById('esGasto').setAttribute('aria-pressed', tipo === 'gasto');
+  document.getElementById('esIngreso').setAttribute('aria-pressed', tipo === 'ingreso');
+  pintarCategorias();
+}
+document.getElementById('esGasto').addEventListener('click', function(){ elegirTipo('gasto'); });
+document.getElementById('esIngreso').addEventListener('click', function(){ elegirTipo('ingreso'); });
+
+function abrirVentana(m){
+  editando = m || null;
+  document.getElementById('tituloVentana').textContent = m ? 'Modificar el apunte' : 'Nuevo apunte';
+  elegirTipo(m ? m.tipo : 'gasto');
+  document.getElementById('fImporte').value = m ? Number(m.importe) : '';
+  document.getElementById('fFecha').value = m ? m.fecha
+    : (claveMes(mesVisible) === claveMes(hoy) ? clave(hoy) : claveMes(mesVisible) + '-01');
+  document.getElementById('fConcepto').value = m ? m.concepto : '';
+  document.getElementById('fCategoria').value = m ? m.categoria : 'comida';
+  document.getElementById('fNota').value = m ? (m.nota || '') : '';
+  mostrarError('errorApunte','');
+  velo.hidden = false;
+  document.getElementById('fImporte').focus();
+}
+function cerrarVentana(){ velo.hidden = true; editando = null; }
+document.getElementById('nuevo').addEventListener('click', function(){ abrirVentana(null); });
+document.getElementById('cerrar').addEventListener('click', cerrarVentana);
+document.getElementById('cancelar').addEventListener('click', cerrarVentana);
+velo.addEventListener('click', function(e){ if (e.target === velo) cerrarVentana(); });
+
+document.getElementById('guardar').addEventListener('click', async function(){
+  const boton = this;
+  const datos = {
+    tipo: tipoElegido,
+    importe: document.getElementById('fImporte').value,
+    fecha: document.getElementById('fFecha').value,
+    concepto: document.getElementById('fConcepto').value.trim(),
+    categoria: document.getElementById('fCategoria').value,
+    nota: document.getElementById('fNota').value.trim()
+  };
+  if (!datos.concepto || !datos.fecha || !(Number(datos.importe) > 0)){
+    mostrarError('errorApunte', 'Hace falta el concepto, el día y un importe mayor que cero.'); return;
+  }
+  boton.disabled = true;
+  try{
+    if (editando){
+      datos.id = editando.id;
+      await api('/api/movimientos', 'PUT', datos);
+    } else {
+      await api('/api/movimientos', 'POST', datos);
+    }
+    const f = desdeClave(datos.fecha);
+    cerrarVentana();
+    if (claveMes(f) !== claveMes(mesVisible)) await irAMes(new Date(f.getFullYear(), f.getMonth(), 1));
+    else await cargarMes();
+  }catch(e){ mostrarError('errorApunte', e.message); }
+  boton.disabled = false;
+});
+
+/* ---------- ventana del tope ---------- */
+const veloTope = document.getElementById('veloTope');
+document.getElementById('btnTope').addEventListener('click', function(){
+  document.getElementById('fTope').value = TOPE || '';
+  mostrarError('errorTope','');
+  veloTope.hidden = false;
+  document.getElementById('fTope').focus();
+});
+document.getElementById('cerrarTope').addEventListener('click', function(){ veloTope.hidden = true; });
+document.getElementById('cancelarTope').addEventListener('click', function(){ veloTope.hidden = true; });
+veloTope.addEventListener('click', function(e){ if (e.target === veloTope) veloTope.hidden = true; });
+document.getElementById('guardarTope').addEventListener('click', async function(){
+  const boton = this; boton.disabled = true; mostrarError('errorTope','');
+  try{
+    const r = await api('/api/movimientos', 'PUT', { accion:'tope', tope: document.getElementById('fTope').value || 0 });
+    TOPE = Number(r.tope) || 0;
+    veloTope.hidden = true;
+    pintarTodo();
+  }catch(e){ mostrarError('errorTope', e.message); }
+  boton.disabled = false;
+});
+
+document.addEventListener('keydown', function(e){
+  if (e.key !== 'Escape') return;
+  if (!velo.hidden) cerrarVentana();
+  if (!veloTope.hidden) veloTope.hidden = true;
+});
+
+/* ---------- arranque ---------- */
+pintarCategorias();
+arrancar();
+</script>
+
+</body>
+</html>

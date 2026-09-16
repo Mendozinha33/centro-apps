@@ -348,8 +348,15 @@ function escapar(t){
   });
 }
 function ver(id, mostrar){ document.getElementById(id).hidden = !mostrar; }
-function guardarPase(p){ try{ p ? localStorage.setItem('calendario_pase', p) : localStorage.removeItem('calendario_pase'); }catch(e){} }
-function leerPase(){ try{ return localStorage.getItem('calendario_pase') || ''; }catch(e){ return ''; } }
+function guardarPase(p){
+  try{
+    if (p) localStorage.setItem('apps_pase', p);
+    else { localStorage.removeItem('apps_pase'); localStorage.removeItem('calendario_pase'); }
+  }catch(e){}
+}
+function leerPase(){
+  try{ return localStorage.getItem('apps_pase') || localStorage.getItem('calendario_pase') || ''; }catch(e){ return ''; }
+}
 
 /* ---------- hablar con el servidor ---------- */
 async function api(ruta, metodo, cuerpo){
