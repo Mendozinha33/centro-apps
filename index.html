@@ -24,7 +24,7 @@
     --parada:#8C9797;
     --sans:"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
     --serif:"Newsreader", Georgia, "Times New Roman", serif;
-    --alto-cabecera:62px;
+    --alto-cabecera:70px;
   }
 
   *{box-sizing:border-box;}
@@ -62,25 +62,17 @@
   .marca{
     display:flex;
     align-items:center;
-    gap:11px;
-    font-family:var(--serif);
-    font-size:20px;
-    font-weight:500;
-    letter-spacing:-0.015em;
+    flex:none;
     margin:0;
     text-decoration:none;
-    min-width:0;
-  }
-  .marca__m{
-    flex:none;
-    width:29px;height:29px;
-    display:grid;place-items:center;
-    background:var(--tinta);
-    color:var(--papel);
     border-radius:6px;
-    font-size:16px;
   }
-  .marca__texto{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .marca__logo{
+    display:block;
+    height:52px;
+    width:auto;
+    border-radius:6px;
+  }
 
   .inicio{
     flex:none;
@@ -343,6 +335,7 @@
     .ficha__acciones{width:100%;}
     .abrir,.detalles{flex:1;text-align:center;}
     .inicio{padding:8px 13px;}
+    .marca__logo{height:46px;}
   }
   @media (prefers-reduced-motion:reduce){
     html{scroll-behavior:auto;}
@@ -355,7 +348,7 @@
 
 <header class="cabecera">
   <div class="contenedor">
-    <a class="marca" href="#arriba"><span class="marca__m">M</span><span class="marca__texto">Apps Mendoza</span></a>
+    <a class="marca" href="#arriba"><img class="marca__logo" src="/logo-app-mendoza.png" width="119" height="52" alt="App Mendoza"></a>
     <a class="inicio" href="#arriba">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg>
       Inicio
