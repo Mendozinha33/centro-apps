@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Apps Mendoza · Centro de aplicaciones</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%231B2A33'/%3E%3Ctext x='32' y='45' font-family='Georgia,serif' font-size='38' fill='%23F4F6F5' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%231B2A4A'/%3E%3Ctext x='32' y='42' font-family='Georgia,serif' font-size='36' fill='%23FFFFFF' text-anchor='middle'%3EM%3C/text%3E%3Crect x='20' y='50' width='24' height='3' fill='%23B08D57'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -126,32 +126,17 @@
   }
   .cinta__bloque{display:flex;flex:none;}
   .cinta__item{
-    display:inline-flex;
+    display:flex;
     align-items:center;
-    gap:14px;
-    padding-right:46px;
-    font-family:var(--serif);
-    font-weight:500;
-    font-size:clamp(34px,7vw,62px);
-    line-height:1.1;
-    letter-spacing:-0.02em;
-    white-space:nowrap;
-    color:rgba(241,244,243,.92);
-  }
-  .cinta__item:nth-child(even){
-    color:transparent;
-    -webkit-text-stroke:1px rgba(241,244,243,.45);
-  }
-  .cinta__m{
-    display:grid;place-items:center;
-    width:.92em;height:.92em;
     flex:none;
-    border-radius:.16em;
-    background:var(--acento);
-    color:#10231E;
-    font-size:.62em;
-    -webkit-text-stroke:0;
+    padding-right:72px;
   }
+  .cinta__item img{
+    display:block;
+    height:clamp(56px,10vw,92px);
+    width:auto;
+  }
+  .cinta__item:nth-child(even) img{opacity:.38;}
   @keyframes desfile{
     from{transform:translate3d(0,0,0);}
     to{transform:translate3d(-50%,0,0);}
@@ -449,10 +434,10 @@ function escapar(t){
   return String(t).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
 }
 
-/* Cinta rotativa: el nombre repetido, en marcha continua de derecha a izquierda.
+/* Cinta rotativa: el logo repetido, en marcha continua de derecha a izquierda.
    Se pinta dos veces el mismo bloque para que el giro no tenga costuras. */
 function pintarCinta(){
-  const item = '<span class="cinta__item"><span class="cinta__m">M</span>Apps Mendoza</span>';
+  const item = '<span class="cinta__item"><img src="/logo-app-mendoza-claro.png" width="444" height="180" alt=""></span>';
   const bloque = '<span class="cinta__bloque">' + item.repeat(4) + '</span>';
   document.getElementById("cinta").innerHTML = bloque + bloque;
 }
