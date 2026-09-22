@@ -186,7 +186,50 @@
   .campo select{font:inherit;font-size:15px;padding:9px 11px;border:1px solid var(--linea-fuerte);border-radius:6px;background:#fff;width:100%;}
   .resumen-plazo{margin:0;font-size:14px;background:#F1F8F5;border:1px solid #BEDCCF;color:#2A6B54;border-radius:6px;padding:10px 12px;}
 
+  /* gráficas de progreso */
+  .progresos{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px;}
+  .graf{position:relative;background:var(--superficie);border:1px solid var(--linea);border-radius:12px;overflow:hidden;}
+  .graf::before{content:"";position:absolute;inset:0 0 auto 0;height:5px;background:var(--graf-color);}
+  .graf__cab{padding:20px 22px 4px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;}
+  .graf__tit{margin:0;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--apagado);font-weight:600;
+    display:flex;align-items:center;gap:8px;}
+  .graf__tit i{width:10px;height:10px;border-radius:50%;background:var(--graf-color);display:inline-block;}
+  .graf__num{margin:4px 0 0;font-family:var(--serif);font-size:clamp(38px,5vw,52px);font-weight:600;line-height:1.05;
+    letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--tinta);}
+  .graf__num small{font-size:.4em;font-weight:500;color:var(--apagado);margin-left:5px;letter-spacing:0;}
+  .graf__sub{margin:4px 0 0;font-size:13.5px;color:var(--apagado);}
+  .graf__sub b{color:var(--tinta);font-variant-numeric:tabular-nums;}
+  .chapa{font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:99px;background:var(--graf-suave);color:var(--tinta);
+    white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .graf__lienzo{position:relative;padding:6px 10px 10px;}
+  .graf__lienzo svg{display:block;width:100%;height:auto;overflow:visible;}
+  .graf__vacio{margin:0;padding:34px 22px 40px;color:var(--apagado);font-size:14px;text-align:center;}
+  .graf .linea-dib{stroke-dasharray:1;stroke-dashoffset:1;animation:dibujar 1.3s ease-out forwards;}
+  .graf .relleno-dib{opacity:0;animation:aparecer .9s .5s ease-out forwards;}
+  .graf .punto-fin{transform-box:fill-box;transform-origin:center;animation:latido 2s 1.3s ease-in-out infinite;}
+  @keyframes dibujar{to{stroke-dashoffset:0;}}
+  @keyframes aparecer{to{opacity:1;}}
+  @keyframes latido{0%,100%{transform:scale(1);}50%{transform:scale(1.35);}}
+  .globo{position:absolute;pointer-events:none;background:var(--tinta);color:#fff;font-size:12.5px;padding:6px 9px;
+    border-radius:6px;white-space:nowrap;transform:translate(-50%,-115%);box-shadow:0 2px 8px rgba(18,32,41,.25);}
+  .globo b{font-variant-numeric:tabular-nums;}
+
+  /* deporte */
+  .deporte{padding:16px 20px 18px;display:grid;gap:14px;}
+  .deporte__dias{display:flex;gap:8px;flex-wrap:wrap;}
+  .deporte__dias button{font:inherit;width:46px;height:46px;border-radius:50%;border:1.5px solid var(--linea-fuerte);
+    background:#fff;color:var(--tinta);cursor:pointer;font-weight:600;font-size:14px;}
+  .deporte__dias button[aria-pressed="true"]{background:#E8672F;border-color:#E8672F;color:#fff;}
+  .deporte__fila{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;}
+  .deporte__fila .campo{min-width:180px;flex:1;}
+  .deporte__fila select,.deporte__fila input{font:inherit;font-size:15px;padding:9px 11px;border:1px solid var(--linea-fuerte);
+    border-radius:6px;background:#fff;width:100%;}
+  .deporte__nota{margin:0;font-size:13.5px;color:var(--apagado);}
+  .marca-deporte{display:inline-block;font-family:var(--sans);font-size:11.5px;font-weight:600;letter-spacing:.04em;
+    background:#FCE9DF;color:#9A3E14;border-radius:99px;padding:2px 9px;margin-left:8px;vertical-align:middle;text-transform:none;}
+
   @media (max-width:900px){
+    .progresos{grid-template-columns:1fr;}
     .plan-comidas{grid-template-columns:1fr 1fr;}
     .lienzo{grid-template-columns:minmax(0,1fr);}
     .hoy{grid-template-columns:1fr 1fr;}
@@ -248,7 +291,7 @@
     <div class="mandos">
       <button class="btn" id="btnSubir">Subir la dieta (PDF)</button>
       <button class="btn" id="btnPlazo" hidden>Dieta para un tiempo</button>
-      <button class="btn btn--solido" id="btnPeso">+ Apuntar peso</button>
+      <button class="btn btn--solido" id="btnPeso">+ Apuntar peso y abdomen</button>
       <input type="file" id="archivoPdf" accept="application/pdf,.pdf" hidden>
     </div>
   </div>
@@ -271,10 +314,32 @@
     </div>
   </div>
 
+  <!-- Gráficas de progreso -->
+  <div class="progresos">
+    <section class="graf" id="grafKg" style="--graf-color:#1F9D74;--graf-suave:#DDF3EA"></section>
+    <section class="graf" id="grafCm" style="--graf-color:#E8672F;--graf-suave:#FCE6DA"></section>
+  </div>
+
   <!-- Hoy toca -->
   <section class="tarjeta hueco">
     <div class="tarjeta__cab"><h2>Hoy toca</h2><span class="cuenta" id="hoyDia"></span></div>
     <div class="hoy" id="hoyToca"></div>
+  </section>
+
+  <!-- Días de deporte -->
+  <section class="tarjeta hueco">
+    <div class="tarjeta__cab"><h2>Tus días de deporte</h2><span class="cuenta" id="deporteCuenta"></span></div>
+    <div class="deporte">
+      <div class="deporte__dias" id="deporteDias" role="group" aria-label="Días que haces deporte"></div>
+      <div class="deporte__fila">
+        <div class="campo"><label for="dMomento">Sueles entrenar por la</label>
+          <select id="dMomento"><option value="manana">Mañana</option><option value="tarde">Tarde</option><option value="noche">Noche</option></select></div>
+        <div class="campo"><label for="dActividad">Qué deporte (opcional)</label>
+          <input id="dActividad" type="text" maxlength="80" placeholder="Pádel, gimnasio, correr..."></div>
+        <button class="btn btn--solido" id="guardarDeporte">Guardar y adaptar la dieta</button>
+      </div>
+      <p class="deporte__nota" id="deporteNota">Los días de deporte llevan un tentempié con fruta para tener energía antes del entreno, un tentempié de recuperación después, y la cena con carne, pescado o huevos en vez de fiambre. Todo dentro de las normas de tu dieta.</p>
+    </div>
   </section>
 
   <!-- La dieta día a día -->
@@ -321,9 +386,11 @@
 
     <!-- Control de peso -->
     <aside class="tarjeta">
-      <div class="tarjeta__cab"><h2>Control de peso</h2><span class="cuenta" id="cuentaPesos"></span></div>
-      <div class="grafica" id="grafica"></div>
-      <ul class="pesos" id="listaPesos"></ul>
+      <div class="tarjeta__cab"><h2>Tus medidas</h2><span class="cuenta" id="cuentaPesos"></span></div>
+      <p class="etiqueta" style="padding:12px 20px 0;margin:0">Peso</p>
+      <ul class="pesos" id="listaPesos" style="border-top:0"></ul>
+      <p class="etiqueta" style="padding:12px 20px 0;margin:0;border-top:1px solid var(--linea)">Abdomen</p>
+      <ul class="pesos" id="listaAbdomen" style="border-top:0"></ul>
     </aside>
   </div>
 </div>
@@ -332,16 +399,19 @@
 <div class="velo" id="veloPeso" hidden>
   <div class="ventana" role="dialog" aria-modal="true" aria-labelledby="tituloPeso">
     <div class="ventana__cab">
-      <h2 id="tituloPeso">Apuntar peso</h2>
+      <h2 id="tituloPeso">Apuntar peso y abdomen</h2>
       <button class="cerrar" data-cerrar="veloPeso" aria-label="Cerrar">&times;</button>
     </div>
     <div class="ventana__cuerpo">
       <div class="error" id="errorPeso" hidden></div>
+      <div class="campo"><label for="fFecha">Día</label><input id="fFecha" type="date"></div>
       <div class="fila-doble">
         <div class="campo"><label for="fKg">Peso (kg)</label>
           <input id="fKg" type="number" step="0.1" min="20" max="400" inputmode="decimal" placeholder="75,4"></div>
-        <div class="campo"><label for="fFecha">Día</label><input id="fFecha" type="date"></div>
+        <div class="campo"><label for="fCm">Abdomen (cm)</label>
+          <input id="fCm" type="number" step="0.5" min="40" max="250" inputmode="decimal" placeholder="98"></div>
       </div>
+      <p class="nota-peq">Rellena los dos o solo uno. El abdomen, a la altura del ombligo y sin apretar la cinta.</p>
       <div class="campo"><label for="fNota">Nota (opcional)</label>
         <input id="fNota" type="text" placeholder="En ayunas, después del fin de semana..."></div>
       <p class="nota-peq">Si ese día ya tenías un peso apuntado, se cambia por este.</p>
@@ -431,7 +501,8 @@ const MAX_PDF = 3 * 1024 * 1024;
 
 const hoy = new Date(); hoy.setHours(0,0,0,0);
 const diaHoy = ((hoy.getDay() + 6) % 7) + 1;      // 1 = lunes … 7 = domingo
-let DATOS = { menus:[], pesos:[], pdf:null, objetivo:null, inicio:null, plan:null };
+let DATOS = { menus:[], pesos:[], pdf:null, objetivo:null, inicio:null, plan:null,
+              abdomen:[], deporte:{ dias:[], momento:'tarde', actividad:'' } };
 let diaVisible = diaHoy;
 let editandoMenus = false;
 let borrador = {};
@@ -518,12 +589,18 @@ document.getElementById('btnEntrar').addEventListener('click', async function(){
 });
 document.getElementById('btnSalir').addEventListener('click', function(){ cerrarSesion(); });
 
+function normalizar(d){
+  d.abdomen = d.abdomen || [];
+  d.deporte = d.deporte || { dias:[], momento:'tarde', actividad:'' };
+  d.deporte.dias = (d.deporte.dias || []).map(Number);
+  return d;
+}
 async function cargar(){
-  DATOS = await api('/api/dieta');
+  DATOS = normalizar(await api('/api/dieta'));
   ver('cargando', false); ver('pantallaEntrada', false); ver('pantallaApp', true);
   pintarTodo();
 }
-function recibir(datos){ DATOS = datos; pintarTodo(); }
+function recibir(datos){ DATOS = normalizar(datos); pintarTodo(); }
 
 /* ---------- menús ---------- */
 function textoMenu(dia, comida){
@@ -532,7 +609,9 @@ function textoMenu(dia, comida){
 }
 
 function pintarHoy(){
-  document.getElementById('hoyDia').textContent = DIAS[diaHoy - 1];
+  const entreno = DATOS.deporte.dias.indexOf(diaHoy) >= 0;
+  document.getElementById('hoyDia').innerHTML = DIAS[diaHoy - 1] +
+    (entreno ? '<span class="marca-deporte">Día de deporte' + (DATOS.deporte.actividad ? ': ' + escapar(DATOS.deporte.actividad) : '') + '</span>' : '');
   const delPlan = planDeHoy();
   document.getElementById('hoyToca').innerHTML = COMIDAS.map(function(c){
     const t = delPlan ? (delPlan[c.id] || '') : textoMenu(diaHoy, c.id);
@@ -793,16 +872,31 @@ function bolsa(lista, r){
 }
 function sumarDias(d, n){ const x = new Date(d); x.setDate(x.getDate() + n); return x; }
 
-function cenasDeLaSemana(r){
-  /* 2 días huevos, 3 días fiambre y 2 días carne o pescado, sin huevos dos días seguidos */
-  let mejor = null;
-  for (let i = 0; i < 60; i++){
+function cenasDeLaSemana(r, sinFiambre){
+  /* 2 días huevos, 3 días fiambre y 2 días carne o pescado, sin huevos dos días seguidos.
+     sinFiambre[k] = true cuando ese día se entrena por la tarde o la noche: la cena de
+     después del entreno lleva carne, pescado o huevos (más proteína para recuperar). */
+  sinFiambre = sinFiambre || [];
+  const huevosSeguidos = function(s){
+    for (let k = 1; k < 7; k++) if (s[k] === 'huevos' && s[k-1] === 'huevos') return true;
+    return false;
+  };
+  let valida = null;
+  for (let i = 0; i < 300; i++){
     const s = barajar(['huevos','huevos','fiambre','fiambre','fiambre','plato','plato'], r);
-    let ok = true;
-    for (let k = 1; k < 7; k++) if (s[k] === 'huevos' && s[k-1] === 'huevos') ok = false;
-    if (ok){ mejor = s; break; }
+    if (huevosSeguidos(s)) continue;
+    if (!valida) valida = s;
+    if (!s.some(function(t, k){ return t === 'fiambre' && sinFiambre[k]; })) return s;
   }
-  return mejor || ['plato','huevos','fiambre','plato','fiambre','huevos','fiambre'];
+  // entrena tantos días que no caben: esos días, carne o pescado en lugar del fiambre
+  const s = (valida || ['plato','huevos','fiambre','plato','fiambre','huevos','fiambre']).slice();
+  for (let k = 0; k < 7; k++) if (s[k] === 'fiambre' && sinFiambre[k]) s[k] = 'plato';
+  return s;
+}
+
+function esDiaDeDeporte(fecha){
+  const dep = DATOS.deporte || { dias:[] };
+  return dep.dias.indexOf(((fecha.getDay() + 6) % 7) + 1) >= 0;
 }
 
 function prepararDieta(desde, numDias, semilla){
@@ -814,9 +908,15 @@ function prepararDieta(desde, numDias, semilla){
   const parejas = [['fruta','Un yogur desnatado'], ['fruta','Un biscote con queso de untar light'],
                    ['Un biscote con queso de untar light','Un yogur desnatado']];
   const dias = [];
+  const momento = (DATOS.deporte && DATOS.deporte.momento) || 'tarde';
   let cenas = [], segundoAyer = r() < 0.5 ? 'carne' : 'pescado';
   for (let n = 0; n < numDias; n++){
-    if (n % 7 === 0) cenas = cenasDeLaSemana(r);
+    if (n % 7 === 0){
+      const sinFiambre = [];
+      for (let k = 0; k < 7; k++) sinFiambre.push(momento !== 'manana' && esDiaDeDeporte(sumarDias(desde, n + k)));
+      cenas = cenasDeLaSemana(r, sinFiambre);
+    }
+    const deporte = esDiaDeDeporte(sumarDias(desde, n));
     const hoyUsadas = [];
     const unaFruta = function(){ const f = fruta(hoyUsadas); hoyUsadas.push(f); return f; };
 
@@ -827,7 +927,18 @@ function prepararDieta(desde, numDias, semilla){
       return par.map(function(x){ return x === 'fruta' ? '1 pieza de fruta: ' + unaFruta() : x; })
                 .concat('Café, infusión o bebida light (opcional)');
     };
-    const media = tentempie(pm[0]), merienda = tentempie(pm[1]);
+    let media, merienda;
+    if (deporte && momento === 'manana'){
+      // entrena por la mañana: a media mañana, recuperar (fruta y proteína del yogur)
+      media = ['Después de entrenar:'].concat(tentempie(['fruta','Un yogur desnatado']), 'Medio litro de agua de más');
+      merienda = tentempie(pm[0]);
+    } else if (deporte){
+      // entrena por la tarde o la noche: merienda con energía para el entreno
+      media = tentempie(pm[0]);
+      merienda = ['Antes de entrenar:'].concat(tentempie(['fruta','Un biscote con queso de untar light']), 'Medio litro de agua de más');
+    } else {
+      media = tentempie(pm[0]); merienda = tentempie(pm[1]);
+    }
 
     const comidaVerdura = r() < 0.5;
     const segundo = segundoAyer === 'carne' ? 'pescado' : 'carne'; segundoAyer = segundo;
@@ -844,8 +955,11 @@ function prepararDieta(desde, numDias, semilla){
         : (segundo === 'carne' ? pescado() : carne()),
       'Postre: un yogur desnatado'
     ];
-    dias.push({ fecha: clave(sumarDias(desde, n)), desayuno: desayuno.join('\n'), media: media.join('\n'),
-                comida: comida.join('\n'), merienda: merienda.join('\n'), cena: cena.join('\n') });
+    if (deporte && momento !== 'manana') cena.unshift('Para recuperar del entreno:');
+    const dia = { fecha: clave(sumarDias(desde, n)), desayuno: desayuno.join('\n'), media: media.join('\n'),
+                  comida: comida.join('\n'), merienda: merienda.join('\n'), cena: cena.join('\n') };
+    if (deporte) dia.deporte = true;
+    dias.push(dia);
   }
   return dias;
 }
@@ -926,6 +1040,58 @@ document.getElementById('btnOtraPropuesta').addEventListener('click', async func
   catch(e){ alert(e.message); }
 });
 
+/* ---------- días de deporte ---------- */
+const INICIALES = ['L','M','X','J','V','S','D'];
+let deporteElegidos = null;   // lo que está marcado en pantalla antes de guardar
+function pintarDeporte(){
+  const dep = DATOS.deporte;
+  if (deporteElegidos === null){
+    deporteElegidos = dep.dias.slice();
+    document.getElementById('dMomento').value = dep.momento || 'tarde';
+    document.getElementById('dActividad').value = dep.actividad || '';
+  }
+  document.getElementById('deporteDias').innerHTML = INICIALES.map(function(l, i){
+    const n = i + 1;
+    return '<button type="button" data-n="' + n + '" title="' + DIAS[i] + '" aria-label="' + DIAS[i] + '" aria-pressed="' +
+      (deporteElegidos.indexOf(n) >= 0) + '">' + l + '</button>';
+  }).join('');
+  document.querySelectorAll('#deporteDias button').forEach(function(b){
+    b.addEventListener('click', function(){
+      const n = Number(b.dataset.n), i = deporteElegidos.indexOf(n);
+      if (i >= 0) deporteElegidos.splice(i, 1); else deporteElegidos.push(n);
+      b.setAttribute('aria-pressed', String(i < 0));
+    });
+  });
+  const n = dep.dias.length;
+  document.getElementById('deporteCuenta').textContent = n ? n + (n === 1 ? ' día a la semana' : ' días a la semana') : 'Sin marcar';
+}
+
+/* rehace la dieta desde hoy hasta el final con los días de deporte; lo pasado se queda igual */
+async function readaptarPlan(){
+  const plan = DATOS.plan;
+  if (!plan || !plan.dias || !plan.dias.length) return false;
+  const k = clave(hoy);
+  if (plan.hasta < k) return false;
+  const desde = plan.desde > k ? desdeClave(plan.desde) : hoy;
+  const pasados = plan.dias.filter(function(d){ return d.fecha < clave(desde); });
+  const total = Math.round((desdeClave(plan.hasta) - desde) / 86400000) + 1;
+  const nuevos = prepararDieta(desde, total, Math.floor(Math.random() * 4294967295));
+  recibir(await api('/api/dieta', 'POST', { accion:'plan', dias: pasados.concat(nuevos) }));
+  return true;
+}
+
+document.getElementById('guardarDeporte').addEventListener('click', async function(){
+  const boton = this; boton.disabled = true;
+  try{
+    recibir(await api('/api/dieta', 'POST', { accion:'deporte', dias: deporteElegidos.slice().sort(),
+      momento: document.getElementById('dMomento').value, actividad: document.getElementById('dActividad').value }));
+    const hecho = await readaptarPlan();
+    avisar(hecho ? 'Guardado. Tu dieta se ha adaptado a los días de deporte desde hoy.'
+                 : 'Guardado. Cuando prepares tu dieta para un tiempo, se adaptará a estos días.');
+  }catch(e){ alert(e.message); }
+  boton.disabled = false;
+});
+
 /* vista día a día */
 let semanaVisible = 0;
 function planDeHoy(){
@@ -966,7 +1132,8 @@ function pintarPlan(){
   document.getElementById('planDias').innerHTML = dias.slice(semanaVisible * 7, semanaVisible * 7 + 7).map(function(d){
     const f = desdeClave(d.fecha), esHoy = d.fecha === k;
     return '<li class="plan-dia' + (esHoy ? ' plan-dia--hoy' : '') + '"><h3>' + DIAS[(f.getDay() + 6) % 7] + ' ' + f.getDate() +
-      ' de ' + MESES[f.getMonth()] + (esHoy ? '<small>hoy</small>' : '') + '</h3><div class="plan-comidas">' +
+      ' de ' + MESES[f.getMonth()] + (esHoy ? '<small>hoy</small>' : '') +
+      (d.deporte ? '<span class="marca-deporte">Deporte</span>' : '') + '</h3><div class="plan-comidas">' +
       COMIDAS.map(function(c){
         return '<div><p class="etiqueta">' + c.nombre + '</p><p>' + escapar(d[c.id] || '') + '</p></div>';
       }).join('') + '</div></li>';
@@ -1018,44 +1185,148 @@ function pintarResumen(){
   }
 }
 
-function pintarGrafica(){
-  const caja = document.getElementById('grafica');
-  const pts = DATOS.pesos.slice().reverse();          // del más antiguo al más reciente
-  if (pts.length < 2){
-    caja.innerHTML = '<p class="vacio">' + (pts.length ? 'Con dos pesos apuntados verás aquí cómo vas.' : 'Apunta tu peso para empezar a ver la evolución.') + '</p>';
-    return;
-  }
-  const W = 320, H = 170, iz = 34, de = 10, ar = 12, ab = 22;
-  const t0 = desdeClave(pts[0].fecha).getTime(), t1 = desdeClave(pts[pts.length-1].fecha).getTime();
-  const valores = pts.map(function(p){ return p.kg; });
-  if (DATOS.objetivo !== null) valores.push(DATOS.objetivo);
-  let min = Math.min.apply(null, valores), max = Math.max.apply(null, valores);
-  if (max - min < 2){ const m = (max + min) / 2; min = m - 1; max = m + 1; }
-  min = Math.floor(min); max = Math.ceil(max);
-  const x = function(t){ return iz + (t1 === t0 ? 0.5 : (t - t0) / (t1 - t0)) * (W - iz - de); };
-  const y = function(v){ return ar + (1 - (v - min) / (max - min)) * (H - ar - ab); };
+/* ---------- gráficas de progreso: lo que llevas bajado ---------- */
+function conSigno(v){ return (v > 0.04 ? '−' : v < -0.04 ? '+' : '') + kg(Math.abs(v)); }
 
-  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Evolución del peso">';
-  [min, (min+max)/2, max].forEach(function(v){
-    s += '<line x1="' + iz + '" x2="' + (W-de) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="#E3E9E7"/>' +
-         '<text x="' + (iz-6) + '" y="' + (y(v)+4) + '" font-size="10" text-anchor="end" fill="#657678">' + KG.format(v).replace(',0','') + '</text>';
-  });
-  if (DATOS.objetivo !== null){
-    const yo = y(DATOS.objetivo);
-    s += '<line x1="' + iz + '" x2="' + (W-de) + '" y1="' + yo + '" y2="' + yo + '" stroke="#B08A3E" stroke-dasharray="4 4"/>' +
-         '<text x="' + (W-de) + '" y="' + (yo-5) + '" font-size="10" text-anchor="end" fill="#8A6A2C">objetivo</text>';
+function graficaProgreso(caja, c){
+  /* c: { id, titulo, unidad, color, puntos:[{fecha, medida, perdido}], meta, sub, chapa, vacio } */
+  const pts = c.puntos;
+  const ultimo = pts.length ? pts[pts.length - 1].perdido : 0;
+  let cab = '<div class="graf__cab"><div><p class="graf__tit"><i></i>' + c.titulo + '</p>';
+  if (pts.length >= 2){
+    cab += '<p class="graf__num">' + (ultimo < -0.04 ? '+' : '') + kg(Math.abs(ultimo)) + '<small>' + c.unidad +
+           (ultimo < -0.04 ? ' más' : ' menos') + '</small></p><p class="graf__sub">' + c.sub + '</p></div>' +
+           (c.chapa ? '<span class="chapa">' + c.chapa + '</span>' : '');
+  } else cab += '</div>';
+  cab += '</div>';
+  if (pts.length < 2){ caja.innerHTML = cab + '<p class="graf__vacio">' + c.vacio + '</p>'; return; }
+
+  const W = 560, H = 250, iz = 44, de = 24, ar = 30, ab = 30;
+  const tiempos = pts.map(function(p){ return desdeClave(p.fecha).getTime(); });
+  const t0 = tiempos[0], t1 = tiempos[tiempos.length - 1];
+  const vals = pts.map(function(p){ return p.perdido; }).concat(0);
+  if (c.meta) vals.push(c.meta);
+  let lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+  if (hi - lo < 1) hi = lo + 1;
+  const paso = [0.5, 1, 2, 5, 10, 20, 50].filter(function(p){ return (hi - lo) / p <= 5; })[0] || 100;
+  lo = Math.floor(lo / paso) * paso; hi = Math.ceil((hi + (hi - lo) * 0.08) / paso) * paso;
+  const x = function(t){ return iz + (t1 === t0 ? 0.5 : (t - t0) / (t1 - t0)) * (W - iz - de); };
+  const y = function(v){ return ar + (1 - (v - lo) / (hi - lo)) * (H - ar - ab); };
+  const grad = 'g_' + c.id;
+  const num = function(v){ return KG.format(v).replace(/,0$/, ''); };
+
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + c.titulo + ': ' + kg(ultimo) + ' ' + c.unidad + '">' +
+    '<defs><linearGradient id="' + grad + '" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="' + c.color + '" stop-opacity=".42"/><stop offset="1" stop-color="' + c.color + '" stop-opacity=".03"/></linearGradient></defs>';
+  for (let v = lo; v <= hi + 1e-9; v += paso){
+    const cero = Math.abs(v) < 1e-9;
+    s += '<line x1="' + iz + '" x2="' + (W - de) + '" y1="' + y(v).toFixed(1) + '" y2="' + y(v).toFixed(1) + '" stroke="' +
+         (cero ? '#9FB0AD' : '#E6ECEA') + '"' + (cero ? ' stroke-width="1.2"' : '') + '/>' +
+         '<text x="' + (iz - 8) + '" y="' + (y(v) + 4).toFixed(1) + '" font-size="11.5" text-anchor="end" fill="#657678">' + num(v) + '</text>';
   }
-  const camino = pts.map(function(p, i){
-    return (i ? 'L' : 'M') + x(desdeClave(p.fecha).getTime()).toFixed(1) + ' ' + y(p.kg).toFixed(1);
-  }).join(' ');
-  s += '<path d="' + camino + '" fill="none" stroke="#2F6F5E" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
-  pts.forEach(function(p){
-    s += '<circle cx="' + x(desdeClave(p.fecha).getTime()).toFixed(1) + '" cy="' + y(p.kg).toFixed(1) + '" r="3" fill="#fff" stroke="#2F6F5E" stroke-width="1.6"><title>' +
-         fechaCorta(p.fecha) + ': ' + kg(p.kg) + ' kg</title></circle>';
+  if (c.meta){
+    const ym = y(c.meta).toFixed(1);
+    s += '<line x1="' + iz + '" x2="' + (W - de) + '" y1="' + ym + '" y2="' + ym + '" stroke="#1B2A33" stroke-width="1.3" stroke-dasharray="5 5" opacity=".55"/>' +
+         '<text x="' + (iz + 6) + '" y="' + (Number(ym) - 7) + '" font-size="12" font-weight="600" fill="#1B2A33">Meta: ' + num(c.meta) + ' ' + c.unidad + '</text>';
+  }
+  const xy = pts.map(function(p, i){ return [x(tiempos[i]), y(p.perdido)]; });
+  const linea = xy.map(function(q, i){ return (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1); }).join(' ');
+  s += '<path class="relleno-dib" d="' + linea + ' L' + xy[xy.length-1][0].toFixed(1) + ' ' + y(0).toFixed(1) +
+       ' L' + xy[0][0].toFixed(1) + ' ' + y(0).toFixed(1) + ' Z" fill="url(#' + grad + ')"/>';
+  s += '<path class="linea-dib" pathLength="1" d="' + linea + '" fill="none" stroke="' + c.color +
+       '" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>';
+  xy.forEach(function(q, i){
+    if (i === xy.length - 1) return;
+    s += '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="4" fill="#fff" stroke="' + c.color + '" stroke-width="2"/>';
   });
-  s += '<text x="' + iz + '" y="' + (H-5) + '" font-size="10" fill="#657678">' + fechaCorta(pts[0].fecha) + '</text>' +
-       '<text x="' + (W-de) + '" y="' + (H-5) + '" font-size="10" text-anchor="end" fill="#657678">' + fechaCorta(pts[pts.length-1].fecha) + '</text>';
-  caja.innerHTML = s + '</svg>';
+  const f = xy[xy.length - 1];
+  s += '<circle cx="' + f[0].toFixed(1) + '" cy="' + f[1].toFixed(1) + '" r="11" fill="' + c.color + '" opacity=".18" class="punto-fin"/>' +
+       '<circle cx="' + f[0].toFixed(1) + '" cy="' + f[1].toFixed(1) + '" r="6" fill="' + c.color + '" stroke="#fff" stroke-width="2.5"/>' +
+       '<text x="' + Math.min(f[0], W - de - 4).toFixed(1) + '" y="' + (f[1] - 16).toFixed(1) + '" font-size="13" font-weight="700" text-anchor="end" fill="#1B2A33">' +
+       conSigno(ultimo) + ' ' + c.unidad + '</text>';
+  s += '<text x="' + iz + '" y="' + (H - 8) + '" font-size="11.5" fill="#657678">' + fechaCorta(pts[0].fecha) + '</text>' +
+       '<text x="' + (W - de) + '" y="' + (H - 8) + '" font-size="11.5" text-anchor="end" fill="#657678">' + fechaCorta(pts[pts.length-1].fecha) + '</text>';
+  s += '<g class="guia" visibility="hidden"><line y1="' + ar + '" y2="' + (H - ab) + '" stroke="#1B2A33" stroke-width="1" opacity=".35"/>' +
+       '<circle r="6" fill="' + c.color + '" stroke="#fff" stroke-width="2.5"/></g>' +
+       '<rect class="zona" x="' + iz + '" y="0" width="' + (W - iz - de) + '" height="' + H + '" fill="transparent"/>';
+  caja.innerHTML = cab + '<div class="graf__lienzo">' + s + '</svg><div class="globo" hidden></div></div>';
+
+  /* al pasar el dedo o el ratón: el punto más cercano */
+  const lienzo = caja.querySelector('.graf__lienzo'), svg = lienzo.querySelector('svg'),
+        guia = svg.querySelector('.guia'), globo = lienzo.querySelector('.globo');
+  const mover = function(ev){
+    const caj = svg.getBoundingClientRect();
+    const px = ((ev.touches ? ev.touches[0].clientX : ev.clientX) - caj.left) / caj.width * W;
+    let i = 0;
+    xy.forEach(function(q, k){ if (Math.abs(q[0] - px) < Math.abs(xy[i][0] - px)) i = k; });
+    const q = xy[i], p = pts[i];
+    guia.setAttribute('visibility', 'visible');
+    guia.querySelector('line').setAttribute('x1', q[0]); guia.querySelector('line').setAttribute('x2', q[0]);
+    guia.querySelector('circle').setAttribute('cx', q[0]); guia.querySelector('circle').setAttribute('cy', q[1]);
+    globo.innerHTML = fechaCorta(p.fecha) + ' · <b>' + kg(p.medida) + ' ' + c.unidad + '</b> · ' + conSigno(p.perdido) + ' ' + c.unidad;
+    globo.hidden = false;
+    const izq = lienzo.offsetLeft + svg.offsetLeft + q[0] / W * caj.width;
+    globo.style.left = Math.max(globo.offsetWidth / 2, Math.min(lienzo.clientWidth - globo.offsetWidth / 2, izq)) + 'px';
+    globo.style.top = (svg.offsetTop + q[1] / H * caj.height) + 'px';
+  };
+  const salir = function(){ guia.setAttribute('visibility', 'hidden'); globo.hidden = true; };
+  const zona = svg.querySelector('.zona');
+  zona.addEventListener('mousemove', mover); zona.addEventListener('mouseleave', salir);
+  zona.addEventListener('touchstart', mover, { passive:true }); zona.addEventListener('touchmove', mover, { passive:true });
+  zona.addEventListener('touchend', function(){ setTimeout(salir, 1500); });
+}
+
+function pintarGraficas(){
+  /* kilos perdidos */
+  const pesos = DATOS.pesos.slice().reverse();
+  const ini = pesoInicio(), obj = DATOS.objetivo;
+  const ptsKg = ini === null ? [] : pesos.map(function(p){ return { fecha:p.fecha, medida:p.kg, perdido: ini - p.kg }; });
+  const metaKg = (obj !== null && ini !== null && ini - obj > 0) ? ini - obj : null;
+  let chapaKg = '';
+  if (ptsKg.length >= 2){
+    const perd = ptsKg[ptsKg.length - 1].perdido;
+    if (metaKg) chapaKg = Math.max(0, Math.min(100, Math.round(perd / metaKg * 100))) + ' % de la meta';
+    else chapaKg = 'Última vez: ' + conSigno(ptsKg[ptsKg.length-2].medida - ptsKg[ptsKg.length-1].medida) + ' kg';
+  }
+  graficaProgreso(document.getElementById('grafKg'), {
+    id:'kg', titulo:'Kilos que has bajado', unidad:'kg', color:'#1F9D74', puntos: ptsKg, meta: metaKg, chapa: chapaKg,
+    sub: ptsKg.length ? 'Empezaste en <b>' + kg(ini) + ' kg</b> · ahora <b>' + kg(pesos[pesos.length-1].kg) + ' kg</b>' : '',
+    vacio: pesos.length ? 'Con dos pesos apuntados verás aquí los kilos que vas bajando.' : 'Pulsa «+ Apuntar peso y abdomen» para empezar a ver tus kilos bajados.'
+  });
+
+  /* centímetros de abdomen */
+  const abd = DATOS.abdomen.slice().reverse();
+  const iniCm = abd.length ? abd[0].cm : null;
+  const ptsCm = abd.map(function(a){ return { fecha:a.fecha, medida:a.cm, perdido: iniCm - a.cm }; });
+  graficaProgreso(document.getElementById('grafCm'), {
+    id:'cm', titulo:'Centímetros de abdomen', unidad:'cm', color:'#E8672F', puntos: ptsCm, meta: null,
+    chapa: ptsCm.length >= 2 ? 'Última vez: ' + conSigno(ptsCm[ptsCm.length-2].medida - ptsCm[ptsCm.length-1].medida) + ' cm' : '',
+    sub: ptsCm.length ? 'Empezaste con <b>' + kg(iniCm) + ' cm</b> · ahora <b>' + kg(abd[abd.length-1].cm) + ' cm</b>' : '',
+    vacio: abd.length ? 'Con dos medidas apuntadas verás aquí los centímetros que vas bajando.' : 'Mídete el abdomen a la altura del ombligo y apúntalo junto al peso.'
+  });
+}
+
+function pintarAbdomen(){
+  const a = DATOS.abdomen;
+  document.getElementById('listaAbdomen').innerHTML = a.length ? a.map(function(r, i){
+    const ant = a[i+1];
+    let dif = '<span class="dif"></span>';
+    if (ant){
+      const d = r.cm - ant.cm;
+      dif = '<span class="dif" style="color:' + (Math.abs(d) < 0.05 ? 'var(--apagado)' : d < 0 ? 'var(--acento-hondo)' : 'var(--rojo)') + '">' +
+            (d > 0 ? '+' : d < 0 ? '−' : '') + kg(Math.abs(d)) + '</span>';
+    }
+    return '<li><span class="cuando">' + fechaCorta(r.fecha) + '</span><span class="kg">' + kg(r.cm) + ' cm</span>' + dif +
+      '<button class="borrar" data-id="' + r.id + '">Borrar</button></li>';
+  }).join('') : '<li class="vacio" style="padding:10px 20px">Todavía sin medidas.</li>';
+  document.querySelectorAll('#listaAbdomen .borrar').forEach(function(b){
+    b.addEventListener('click', async function(){
+      if (!confirm('¿Borrar esta medida del abdomen? No se puede deshacer.')) return;
+      b.disabled = true;
+      try{ recibir(await api('/api/dieta?que=abdomen&id=' + b.dataset.id, 'DELETE')); }
+      catch(e){ alert(e.message); b.disabled = false; }
+    });
+  });
 }
 
 function pintarPesos(){
@@ -1098,6 +1369,7 @@ document.addEventListener('keydown', function(e){
 
 document.getElementById('btnPeso').addEventListener('click', function(){
   document.getElementById('fKg').value = '';
+  document.getElementById('fCm').value = '';
   document.getElementById('fFecha').value = clave(hoy);
   document.getElementById('fNota').value = '';
   mostrarError('errorPeso','');
@@ -1106,17 +1378,28 @@ document.getElementById('btnPeso').addEventListener('click', function(){
 });
 document.getElementById('guardarPeso').addEventListener('click', async function(){
   const boton = this;
-  const datos = { accion:'peso', kg: document.getElementById('fKg').value,
-                  fecha: document.getElementById('fFecha').value, nota: document.getElementById('fNota').value.trim() };
-  const n = Number(String(datos.kg).replace(',', '.'));
-  if (!datos.fecha || !(n >= 20 && n <= 400)){ mostrarError('errorPeso','Pon el día y un peso entre 20 y 400 kg.'); return; }
+  const fecha = document.getElementById('fFecha').value;
+  const kgTxt = document.getElementById('fKg').value.trim(), cmTxt = document.getElementById('fCm').value.trim();
+  const n = Number(kgTxt.replace(',', '.')), c = Number(cmTxt.replace(',', '.'));
+  if (!fecha){ mostrarError('errorPeso','Pon el día.'); return; }
+  if (!kgTxt && !cmTxt){ mostrarError('errorPeso','Pon el peso, la medida del abdomen o las dos cosas.'); return; }
+  if (kgTxt && !(n >= 20 && n <= 400)){ mostrarError('errorPeso','El peso tiene que estar entre 20 y 400 kg.'); return; }
+  if (cmTxt && !(c >= 40 && c <= 250)){ mostrarError('errorPeso','El abdomen tiene que estar entre 40 y 250 cm.'); return; }
   boton.disabled = true;
-  try{ recibir(await api('/api/dieta', 'POST', datos)); cerrar('veloPeso'); avisar('Peso apuntado.'); }
+  try{
+    let datos = null;
+    if (kgTxt) datos = await api('/api/dieta', 'POST', { accion:'peso', kg: kgTxt, fecha: fecha, nota: document.getElementById('fNota').value.trim() });
+    if (cmTxt) datos = await api('/api/dieta', 'POST', { accion:'abdomen', cm: cmTxt, fecha: fecha });
+    recibir(datos); cerrar('veloPeso');
+    avisar(kgTxt && cmTxt ? 'Peso y abdomen apuntados.' : kgTxt ? 'Peso apuntado.' : 'Abdomen apuntado.');
+  }
   catch(e){ mostrarError('errorPeso', e.message); }
   boton.disabled = false;
 });
-document.getElementById('fKg').addEventListener('keydown', function(e){
-  if (e.key === 'Enter') document.getElementById('guardarPeso').click();
+['fKg','fCm'].forEach(function(id){
+  document.getElementById(id).addEventListener('keydown', function(e){
+    if (e.key === 'Enter') document.getElementById('guardarPeso').click();
+  });
 });
 
 document.getElementById('btnObjetivo').addEventListener('click', function(){
@@ -1141,7 +1424,8 @@ document.getElementById('guardarObjetivo').addEventListener('click', async funct
 function pintarTodo(){
   document.getElementById('fechaHoy').textContent =
     DIAS[diaHoy-1].toLowerCase() + ', ' + hoy.getDate() + ' de ' + MESES[hoy.getMonth()] + ' de ' + hoy.getFullYear();
-  pintarResumen(); pintarHoy(); pintarPlan(); pintarPdf(); pintarDias(); pintarComidas(); pintarGrafica(); pintarPesos();
+  pintarResumen(); pintarGraficas(); pintarHoy(); pintarDeporte(); pintarPlan(); pintarPdf(); pintarDias(); pintarComidas();
+  pintarPesos(); pintarAbdomen();
 }
 
 arrancar();
