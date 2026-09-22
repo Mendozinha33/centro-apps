@@ -155,7 +155,39 @@
   .ventana__pie{display:flex;justify-content:flex-end;gap:10px;padding-top:4px;}
   .nota-peq{margin:0;font-size:13.5px;color:var(--apagado);}
 
+  /* dieta día a día */
+  .plan-cab{padding:14px 20px;border-bottom:1px solid var(--linea);display:flex;gap:12px;align-items:center;
+    justify-content:space-between;flex-wrap:wrap;}
+  .plan-cab p{margin:0;font-size:14px;color:var(--apagado);}
+  .plan-cab p b{color:var(--tinta);}
+  .semanas{display:flex;gap:6px;padding:12px 20px;border-bottom:1px solid var(--linea);overflow-x:auto;}
+  .semanas button{font:inherit;font-size:13.5px;border:1px solid var(--linea-fuerte);background:#fff;color:var(--tinta);
+    border-radius:99px;padding:6px 13px;cursor:pointer;white-space:nowrap;}
+  .semanas button[aria-pressed="true"]{background:var(--tinta);border-color:var(--tinta);color:var(--papel);font-weight:500;}
+  .plan-dias{list-style:none;margin:0;padding:0;}
+  .plan-dia{border-top:1px solid var(--linea);}
+  .plan-dia:first-child{border-top:0;}
+  .plan-dia--hoy{background:#F6FAF8;box-shadow:inset 3px 0 0 var(--acento);}
+  .plan-dia h3{margin:0;padding:14px 20px 4px;font-family:var(--serif);font-size:17px;font-weight:500;}
+  .plan-dia h3 small{font-family:var(--sans);font-size:12px;color:var(--acento-hondo);font-weight:600;margin-left:8px;
+    text-transform:uppercase;letter-spacing:.06em;}
+  .plan-comidas{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;padding:4px 8px 14px;}
+  .plan-comidas div{padding:6px 12px;}
+  .plan-comidas p{margin:0;font-size:13.5px;white-space:pre-line;}
+  .normas{padding:6px 20px 16px;border-top:1px solid var(--linea);}
+  .normas summary{cursor:pointer;font-size:14px;font-weight:600;padding:10px 0;color:var(--tinta);}
+  .normas ul{margin:4px 0 8px;padding-left:20px;font-size:14px;}
+  .normas li{margin:3px 0;}
+  .normas h4{margin:12px 0 2px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--apagado);}
+  .rapidos{display:flex;gap:6px;flex-wrap:wrap;}
+  .rapidos button{font:inherit;font-size:13px;border:1px solid var(--linea-fuerte);background:#fff;border-radius:99px;
+    padding:5px 12px;cursor:pointer;}
+  .rapidos button:hover{border-color:var(--tinta);}
+  .campo select{font:inherit;font-size:15px;padding:9px 11px;border:1px solid var(--linea-fuerte);border-radius:6px;background:#fff;width:100%;}
+  .resumen-plazo{margin:0;font-size:14px;background:#F1F8F5;border:1px solid #BEDCCF;color:#2A6B54;border-radius:6px;padding:10px 12px;}
+
   @media (max-width:900px){
+    .plan-comidas{grid-template-columns:1fr 1fr;}
     .lienzo{grid-template-columns:minmax(0,1fr);}
     .hoy{grid-template-columns:1fr 1fr;}
     .hoy .celda{border-bottom:1px solid var(--linea);}
@@ -167,9 +199,15 @@
     .resumen .celda,.hoy .celda{border-right:0;border-bottom:1px solid var(--linea);}
     .resumen .celda:last-child,.hoy .celda:last-child{border-bottom:0;}
     .comidas li{grid-template-columns:1fr;gap:4px;}
+    .plan-comidas{grid-template-columns:1fr;}
     .fila-doble{grid-template-columns:1fr;}
     .marca__t{font-size:17px;}
     .visor{padding:10px;}
+  }
+  @media print{
+    .cabecera,.barra,.ok,.tarjeta.hueco:not(#tarjetaPlan),.lienzo,.semanas,.plan-cab .pdf-acciones,.velo{display:none !important;}
+    body{background:#fff;} #tarjetaPlan{border:0;} .plan-dia{break-inside:avoid;}
+    .plan-dia--hoy{background:none;box-shadow:none;}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
 </style>
@@ -209,6 +247,7 @@
     </div>
     <div class="mandos">
       <button class="btn" id="btnSubir">Subir la dieta (PDF)</button>
+      <button class="btn" id="btnPlazo" hidden>Dieta para un tiempo</button>
       <button class="btn btn--solido" id="btnPeso">+ Apuntar peso</button>
       <input type="file" id="archivoPdf" accept="application/pdf,.pdf" hidden>
     </div>
@@ -236,6 +275,25 @@
   <section class="tarjeta hueco">
     <div class="tarjeta__cab"><h2>Hoy toca</h2><span class="cuenta" id="hoyDia"></span></div>
     <div class="hoy" id="hoyToca"></div>
+  </section>
+
+  <!-- La dieta día a día -->
+  <section class="tarjeta hueco" id="tarjetaPlan" hidden>
+    <div class="tarjeta__cab"><h2>Tu dieta día a día</h2><span class="cuenta" id="planCuenta"></span></div>
+    <div class="plan-cab">
+      <p id="planTexto"></p>
+      <div class="pdf-acciones">
+        <button class="btn btn--mini" id="btnOtraPropuesta" title="Mismas normas, otros platos">Otra propuesta</button>
+        <button class="btn btn--mini" id="btnCambiarPlazo">Cambiar el tiempo</button>
+        <button class="btn btn--mini" id="btnImprimir">Imprimir</button>
+      </div>
+    </div>
+    <div class="semanas" id="semanas" role="group" aria-label="Semana"></div>
+    <ul class="plan-dias" id="planDias"></ul>
+    <details class="normas">
+      <summary>Normas de tu dieta (lo que dice el PDF)</summary>
+      <div id="normas"></div>
+    </details>
   </section>
 
   <!-- La dieta en PDF -->
@@ -295,6 +353,39 @@
   </div>
 </div>
 
+<!-- Ventana: tiempo de la dieta -->
+<div class="velo" id="veloPlan" hidden>
+  <div class="ventana" role="dialog" aria-modal="true" aria-labelledby="tituloPlan">
+    <div class="ventana__cab">
+      <h2 id="tituloPlan">¿Para cuánto tiempo?</h2>
+      <button class="cerrar" data-cerrar="veloPlan" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="ventana__cuerpo">
+      <div class="error" id="errorPlan" hidden></div>
+      <p class="nota-peq">Te preparo el menú de cada día, con su fecha, siguiendo las normas de tu dieta.</p>
+      <div class="rapidos" id="rapidos">
+        <button type="button" data-n="1" data-u="semanas">1 semana</button>
+        <button type="button" data-n="2" data-u="semanas">2 semanas</button>
+        <button type="button" data-n="3" data-u="semanas">3 semanas</button>
+        <button type="button" data-n="4" data-u="semanas">4 semanas</button>
+        <button type="button" data-n="1" data-u="meses">1 mes</button>
+      </div>
+      <div class="campo"><label for="pDesde">Empiezo el día</label><input id="pDesde" type="date"></div>
+      <div class="fila-doble">
+        <div class="campo"><label for="pCuanto">Durante</label>
+          <input id="pCuanto" type="number" min="1" max="92" step="1" inputmode="numeric"></div>
+        <div class="campo"><label for="pUnidad">&nbsp;</label>
+          <select id="pUnidad"><option value="dias">días</option><option value="semanas" selected>semanas</option><option value="meses">meses</option></select></div>
+      </div>
+      <p class="resumen-plazo" id="pResumen"></p>
+      <div class="ventana__pie">
+        <button class="btn" data-cerrar="veloPlan">Ahora no</button>
+        <button class="btn btn--solido" id="guardarPlan">Preparar mi dieta</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Ventana: objetivo -->
 <div class="velo" id="veloObjetivo" hidden>
   <div class="ventana" role="dialog" aria-modal="true" aria-labelledby="tituloObjetivo">
@@ -340,7 +431,7 @@ const MAX_PDF = 3 * 1024 * 1024;
 
 const hoy = new Date(); hoy.setHours(0,0,0,0);
 const diaHoy = ((hoy.getDay() + 6) % 7) + 1;      // 1 = lunes … 7 = domingo
-let DATOS = { menus:[], pesos:[], pdf:null, objetivo:null, inicio:null };
+let DATOS = { menus:[], pesos:[], pdf:null, objetivo:null, inicio:null, plan:null };
 let diaVisible = diaHoy;
 let editandoMenus = false;
 let borrador = {};
@@ -442,8 +533,9 @@ function textoMenu(dia, comida){
 
 function pintarHoy(){
   document.getElementById('hoyDia').textContent = DIAS[diaHoy - 1];
+  const delPlan = planDeHoy();
   document.getElementById('hoyToca').innerHTML = COMIDAS.map(function(c){
-    const t = textoMenu(diaHoy, c.id);
+    const t = delPlan ? (delPlan[c.id] || '') : textoMenu(diaHoy, c.id);
     return '<div class="celda"><p class="etiqueta">' + c.nombre + '</p>' +
       (t ? '<p class="texto">' + escapar(t) + '</p>' : '<p class="texto texto--vacio">Sin escribir</p>') + '</div>';
   }).join('');
@@ -610,13 +702,276 @@ document.getElementById('archivoPdf').addEventListener('change', function(){
       pdfCargado = null;
       const visor = document.getElementById('visor'); visor.hidden = true; visor.dataset.pintado = '';
       pintarPdf();
-      avisar('Dieta subida. Pulsa «Ver los menús completos» para verla.');
+      avisar('Dieta subida. Ahora dime para cuánto tiempo la quieres.');
+      abrirPlazo();
     }catch(e){ alert(e.message); }
     boton.disabled = false; boton.textContent = 'Subir la dieta (PDF)';
   };
   lector.onerror = function(){ alert('No se ha podido leer el archivo.'); boton.disabled = false; boton.textContent = 'Subir la dieta (PDF)'; };
   lector.readAsDataURL(archivo);
 });
+
+/* ---------- la dieta para un tiempo: pautas del PDF y menús día a día ---------- */
+/* Pautas de la «Dieta de tres semanas» (Sanitas) que subió el usuario. El PDF es un
+   escaneo sin texto, así que sus normas están escritas aquí. Si cambia de dieta,
+   hay que actualizar este bloque. */
+const PAUTAS = {
+  bebidaDesayuno: ['Taza de leche desnatada con café', 'Taza de leche desnatada con descafeinado',
+                   'Taza de leche desnatada con una infusión', 'Taza de leche desnatada sola'],
+  acompDesayuno: ['Barrita de pan con un poquito de aceite de oliva', 'Barrita de pan con un poquito de aceite de oliva',
+                  '2 biscotes', '4 galletas tipo María'],
+  frutas: ['manzana', 'pera', 'naranja', 'mandarina', 'kiwi', 'melocotón', 'un cuenco de fresas',
+           'dos rodajas de piña', 'una tajada de melón', 'una tajada de sandía', 'nectarina', 'dos ciruelas'],
+  verduras: ['Judías verdes rehogadas con ajo', 'Brócoli al vapor', 'Parrillada de verduras (calabacín, berenjena y pimiento)',
+             'Espinacas rehogadas con ajo', 'Acelgas rehogadas', 'Coliflor al vapor', 'Crema de calabacín (sin patata)',
+             'Puré de calabaza y zanahoria (sin patata)', 'Espárragos verdes a la plancha', 'Champiñones a la plancha con ajo y perejil',
+             'Pisto de verduras (sin patata)', 'Menestra de verduras (sin patata)', 'Alcachofas a la plancha', 'Puerros al vapor con vinagreta'],
+  ensaladas: ['Ensalada de lechuga, tomate y cebolla', 'Ensalada de tomate con atún al natural',
+              'Ensalada de pepino, tomate y pimiento', 'Ensalada de canónigos con zanahoria rallada',
+              'Ensalada de escarola con espárragos blancos', 'Ensalada de lechuga, tomate y bonito al natural',
+              'Ensalada de rúcula, tomate cherry y cebolla morada'],
+  carnes: ['Pechuga de pollo a la plancha', 'Filete de ternera a la plancha', 'Pavo a la plancha', 'Conejo al horno',
+           'Lomo de cerdo magro a la plancha', 'Pollo al horno (sin piel)', 'Brochetas de pollo a la brasa',
+           'Solomillo de cerdo al horno', 'Filete de buey a la plancha'],
+  pescados: ['Merluza a la plancha', 'Salmón al horno', 'Dorada al horno', 'Lubina a la brasa', 'Sardinas a la plancha',
+             'Bacalao al horno', 'Gallo a la plancha', 'Bonito fresco a la plancha', 'Caballa al horno',
+             'Emperador a la plancha', 'Rape cocido', 'Lenguado a la plancha'],
+  huevos: ['2 huevos cocidos', '2 huevos a la plancha', 'Tortilla francesa de 2 huevos', '2 huevos revueltos'],
+  fiambres: ['Jamón serrano y queso fresco', 'Pechuga de pavo y queso fresco', 'Jamón York y queso fresco',
+             'Lacón y queso fresco', 'Jamón serrano y pechuga de pavo', 'Jamón York y lacón'],
+  tentempies: ['fruta', 'Un biscote con queso de untar light', 'Un yogur desnatado'],
+  normas: [
+    ['Cada día', [
+      'Media mañana y merienda: 2 cosas a elegir (fruta, biscote con queso de untar light o yogur desnatado). Café, infusión o bebida light, opcional.',
+      'Comida y cena: primer plato de verdura u hortaliza (cocida, a la plancha, en puré, rehogada o al vapor) o ensalada.',
+      'Segundo plato: carne magra o pescado a la plancha, al horno, a la brasa o cocido. La cantidad que quieras.',
+      'Postre: 1 pieza de fruta en la comida y un yogur desnatado en la cena. Café o infusión, opcional.',
+      '2 días a la semana, en la cena, 2 huevos en lugar del segundo plato; y 3 días, jamón serrano, jamón York, pechuga de pavo, lacón o queso fresco.'
+    ]],
+    ['Aceite y aliños', [
+      'Solo 2 cucharadas soperas de aceite de oliva en la comida y otras 2 en la cena.',
+      'Vinagre, ajo, especias y hierbas aromáticas, libremente. La sal, poca.',
+      'Ensaladas sin aceitunas ni conservas en aceite o en escabeche; las conservas al natural, sí.'
+    ]],
+    ['No se puede tomar', [
+      'Arroz, pasta ni legumbres.', 'Quesos, mantequillas, margarinas ni embutidos.',
+      'Salsas comerciales, alcohol ni bebidas que no sean light.', 'Frutos secos, ni cereales de desayuno en las cenas.',
+      'Patatas ni pan en la comida o en la cena.', 'Azúcar, dulces, bollería, chocolate ni miel.'
+    ]],
+    ['Recomendaciones', [
+      'No pesar la comida: raciones normales.',
+      'Cualquier fruta, pero con cuidado con el plátano, las uvas, los higos, la chirimoya y el aguacate. Nunca más de 5 piezas al día, y nada de fruta en la cena.',
+      'Hacer ejercicio todos los días.', 'Beber unos 2-3 litros de agua al día.',
+      'Revisión con el médico a las 3-4 semanas.'
+    ]]
+  ]
+};
+
+/* números al azar con semilla: la misma semilla da siempre los mismos menús */
+function azar(semilla){
+  let a = semilla >>> 0;
+  return function(){
+    a = (a + 0x6D2B79F5) >>> 0; let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function barajar(lista, r){
+  const l = lista.slice();
+  for (let i = l.length - 1; i > 0; i--){ const j = Math.floor(r() * (i + 1)); const x = l[i]; l[i] = l[j]; l[j] = x; }
+  return l;
+}
+/* saca platos de una bolsa sin repetir hasta que se acaban todos */
+function bolsa(lista, r){
+  let quedan = [];
+  return function(evitar){
+    if (!quedan.length) quedan = barajar(lista, r);
+    let i = quedan.length - 1;
+    if (evitar) while (i > 0 && evitar.indexOf(quedan[i]) >= 0) i--;
+    return quedan.splice(i, 1)[0];
+  };
+}
+function sumarDias(d, n){ const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+
+function cenasDeLaSemana(r){
+  /* 2 días huevos, 3 días fiambre y 2 días carne o pescado, sin huevos dos días seguidos */
+  let mejor = null;
+  for (let i = 0; i < 60; i++){
+    const s = barajar(['huevos','huevos','fiambre','fiambre','fiambre','plato','plato'], r);
+    let ok = true;
+    for (let k = 1; k < 7; k++) if (s[k] === 'huevos' && s[k-1] === 'huevos') ok = false;
+    if (ok){ mejor = s; break; }
+  }
+  return mejor || ['plato','huevos','fiambre','plato','fiambre','huevos','fiambre'];
+}
+
+function prepararDieta(desde, numDias, semilla){
+  const r = azar(semilla);
+  const P = PAUTAS;
+  const fruta = bolsa(P.frutas, r), verdura = bolsa(P.verduras, r), ensalada = bolsa(P.ensaladas, r),
+        carne = bolsa(P.carnes, r), pescado = bolsa(P.pescados, r), huevo = bolsa(P.huevos, r),
+        fiambre = bolsa(P.fiambres, r), bebida = bolsa(P.bebidaDesayuno, r), acomp = bolsa(P.acompDesayuno, r);
+  const parejas = [['fruta','Un yogur desnatado'], ['fruta','Un biscote con queso de untar light'],
+                   ['Un biscote con queso de untar light','Un yogur desnatado']];
+  const dias = [];
+  let cenas = [], segundoAyer = r() < 0.5 ? 'carne' : 'pescado';
+  for (let n = 0; n < numDias; n++){
+    if (n % 7 === 0) cenas = cenasDeLaSemana(r);
+    const hoyUsadas = [];
+    const unaFruta = function(){ const f = fruta(hoyUsadas); hoyUsadas.push(f); return f; };
+
+    const desayuno = [bebida(), '1 pieza de fruta: ' + unaFruta(), acomp()];
+
+    const pm = barajar(parejas, r);
+    const tentempie = function(par){
+      return par.map(function(x){ return x === 'fruta' ? '1 pieza de fruta: ' + unaFruta() : x; })
+                .concat('Café, infusión o bebida light (opcional)');
+    };
+    const media = tentempie(pm[0]), merienda = tentempie(pm[1]);
+
+    const comidaVerdura = r() < 0.5;
+    const segundo = segundoAyer === 'carne' ? 'pescado' : 'carne'; segundoAyer = segundo;
+    const comida = [
+      comidaVerdura ? verdura() : ensalada(),
+      segundo === 'carne' ? carne() : pescado(),
+      'Postre: 1 pieza de fruta: ' + unaFruta()
+    ];
+
+    const tipoCena = cenas[n % 7];
+    const cena = [
+      comidaVerdura ? ensalada() : verdura(),
+      tipoCena === 'huevos' ? huevo() : tipoCena === 'fiambre' ? fiambre()
+        : (segundo === 'carne' ? pescado() : carne()),
+      'Postre: un yogur desnatado'
+    ];
+    dias.push({ fecha: clave(sumarDias(desde, n)), desayuno: desayuno.join('\n'), media: media.join('\n'),
+                comida: comida.join('\n'), merienda: merienda.join('\n'), cena: cena.join('\n') });
+  }
+  return dias;
+}
+
+/* ventana «¿Para cuánto tiempo?» */
+function diasDelPlazo(){
+  const n = Math.floor(Number(document.getElementById('pCuanto').value));
+  const u = document.getElementById('pUnidad').value;
+  const desdeTxt = document.getElementById('pDesde').value;
+  if (!desdeTxt || !(n >= 1)) return null;
+  const desde = desdeClave(desdeTxt);
+  let total = u === 'dias' ? n : u === 'semanas' ? n * 7
+            : Math.round((new Date(desde.getFullYear(), desde.getMonth() + n, desde.getDate()) - desde) / 86400000);
+  return { desde: desde, total: total };
+}
+function fechaLarga(d){ return DIAS[(d.getDay() + 6) % 7].toLowerCase() + ' ' + d.getDate() + ' de ' + MESES[d.getMonth()]; }
+function pintarResumenPlazo(){
+  const p = diasDelPlazo(), caja = document.getElementById('pResumen');
+  if (!p){ caja.textContent = 'Pon el día en que empiezas y cuánto tiempo.'; return; }
+  if (p.total > 92){ caja.textContent = 'Como mucho, 3 meses (92 días).'; return; }
+  caja.textContent = 'Del ' + fechaLarga(p.desde) + ' al ' + fechaLarga(sumarDias(p.desde, p.total - 1)) +
+    ': ' + p.total + (p.total === 1 ? ' día.' : ' días.');
+}
+function abrirPlazo(){
+  mostrarError('errorPlan', '');
+  const plan = DATOS.plan;
+  document.getElementById('pDesde').value = clave(hoy);
+  document.getElementById('pCuanto').value = 3;           // la revisión es a las 3-4 semanas
+  document.getElementById('pUnidad').value = 'semanas';
+  if (plan && plan.dias && plan.dias.length){
+    const n = plan.dias.length;
+    document.getElementById('pDesde').value = plan.desde < clave(hoy) ? clave(hoy) : plan.desde;
+    if (n % 7 === 0){ document.getElementById('pCuanto').value = n / 7; }
+    else { document.getElementById('pCuanto').value = n; document.getElementById('pUnidad').value = 'dias'; }
+  }
+  pintarResumenPlazo();
+  abrir('veloPlan');
+}
+['pDesde','pCuanto','pUnidad'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', pintarResumenPlazo);
+  document.getElementById(id).addEventListener('change', pintarResumenPlazo);
+});
+document.querySelectorAll('#rapidos button').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.getElementById('pCuanto').value = b.dataset.n;
+    document.getElementById('pUnidad').value = b.dataset.u;
+    pintarResumenPlazo();
+  });
+});
+async function guardarDieta(desde, total, boton){
+  const dias = prepararDieta(desde, total, Math.floor(Math.random() * 4294967295));
+  if (boton) boton.disabled = true;
+  try{
+    recibir(await api('/api/dieta', 'POST', { accion:'plan', dias: dias }));
+    semanaVisible = semanaDeHoy();
+    pintarPlan();
+    return true;
+  }finally{ if (boton) boton.disabled = false; }
+}
+document.getElementById('guardarPlan').addEventListener('click', async function(){
+  const p = diasDelPlazo();
+  if (!p){ mostrarError('errorPlan', 'Pon el día en que empiezas y cuánto tiempo.'); return; }
+  if (p.total < 1 || p.total > 92){ mostrarError('errorPlan', 'El tiempo tiene que ser de 1 día a 3 meses.'); return; }
+  try{
+    await guardarDieta(p.desde, p.total, this);
+    cerrar('veloPlan');
+    avisar('Dieta preparada: ' + p.total + ' días.');
+    document.getElementById('tarjetaPlan').scrollIntoView({ behavior:'smooth', block:'start' });
+  }catch(e){ mostrarError('errorPlan', e.message); }
+});
+document.getElementById('btnPlazo').addEventListener('click', abrirPlazo);
+document.getElementById('btnCambiarPlazo').addEventListener('click', abrirPlazo);
+document.getElementById('btnImprimir').addEventListener('click', function(){ window.print(); });
+document.getElementById('btnOtraPropuesta').addEventListener('click', async function(){
+  const plan = DATOS.plan; if (!plan) return;
+  if (!confirm('¿Cambiar los platos de todos los días por otros? Se siguen las mismas normas.')) return;
+  try{ await guardarDieta(desdeClave(plan.desde), plan.dias.length, this); avisar('Nueva propuesta preparada.'); }
+  catch(e){ alert(e.message); }
+});
+
+/* vista día a día */
+let semanaVisible = 0;
+function planDeHoy(){
+  const p = DATOS.plan; if (!p || !p.dias) return null;
+  const k = clave(hoy);
+  return p.dias.filter(function(d){ return d.fecha === k; })[0] || null;
+}
+function semanaDeHoy(){
+  const p = DATOS.plan; if (!p || !p.dias) return 0;
+  const i = p.dias.findIndex(function(d){ return d.fecha === clave(hoy); });
+  return i >= 0 ? Math.floor(i / 7) : 0;
+}
+function pintarPlan(){
+  const p = DATOS.plan;
+  document.getElementById('btnPlazo').hidden = !DATOS.pdf;
+  document.getElementById('normas').innerHTML = PAUTAS.normas.map(function(g){
+    return '<h4>' + g[0] + '</h4><ul>' + g[1].map(function(t){ return '<li>' + escapar(t) + '</li>'; }).join('') + '</ul>';
+  }).join('');
+  if (!p || !p.dias || !p.dias.length){ ver('tarjetaPlan', false); return; }
+  ver('tarjetaPlan', true);
+  const dias = p.dias, total = dias.length, semanas = Math.ceil(total / 7);
+  if (semanaVisible >= semanas) semanaVisible = 0;
+  const fin = desdeClave(p.hasta), k = clave(hoy);
+  document.getElementById('planCuenta').textContent = total + (total === 1 ? ' día' : ' días');
+  document.getElementById('planTexto').innerHTML = 'Del <b>' + fechaCorta(p.desde) + '</b> al <b>' + fechaCorta(p.hasta) + '</b>' +
+    (k > p.hasta ? ' · <b>ya ha terminado</b>: pulsa «Cambiar el tiempo» para seguir.' : '');
+  document.getElementById('semanas').innerHTML = semanas > 1 ? Array.from({ length: semanas }, function(_, i){
+    const a = dias[i * 7], b = dias[Math.min(total, i * 7 + 7) - 1];
+    return '<button type="button" data-s="' + i + '" aria-pressed="' + (i === semanaVisible) + '">Semana ' + (i + 1) +
+      ' · ' + desdeClave(a.fecha).getDate() +
+      (desdeClave(a.fecha).getMonth() !== desdeClave(b.fecha).getMonth() ? ' ' + MESES[desdeClave(a.fecha).getMonth()].slice(0,3) : '') +
+      '-' + desdeClave(b.fecha).getDate() + ' ' + MESES[desdeClave(b.fecha).getMonth()].slice(0,3) + '</button>';
+  }).join('') : '';
+  ver('semanas', semanas > 1);
+  document.querySelectorAll('#semanas button').forEach(function(b){
+    b.addEventListener('click', function(){ semanaVisible = Number(b.dataset.s); pintarPlan(); });
+  });
+  document.getElementById('planDias').innerHTML = dias.slice(semanaVisible * 7, semanaVisible * 7 + 7).map(function(d){
+    const f = desdeClave(d.fecha), esHoy = d.fecha === k;
+    return '<li class="plan-dia' + (esHoy ? ' plan-dia--hoy' : '') + '"><h3>' + DIAS[(f.getDay() + 6) % 7] + ' ' + f.getDate() +
+      ' de ' + MESES[f.getMonth()] + (esHoy ? '<small>hoy</small>' : '') + '</h3><div class="plan-comidas">' +
+      COMIDAS.map(function(c){
+        return '<div><p class="etiqueta">' + c.nombre + '</p><p>' + escapar(d[c.id] || '') + '</p></div>';
+      }).join('') + '</div></li>';
+  }).join('');
+}
 
 /* ---------- peso ---------- */
 function pesoInicio(){
@@ -734,11 +1089,11 @@ function cerrar(id){ document.getElementById(id).hidden = true; }
 document.querySelectorAll('[data-cerrar]').forEach(function(b){
   b.addEventListener('click', function(){ cerrar(b.dataset.cerrar); });
 });
-['veloPeso','veloObjetivo'].forEach(function(id){
+['veloPeso','veloObjetivo','veloPlan'].forEach(function(id){
   document.getElementById(id).addEventListener('click', function(e){ if (e.target.id === id) cerrar(id); });
 });
 document.addEventListener('keydown', function(e){
-  if (e.key === 'Escape'){ cerrar('veloPeso'); cerrar('veloObjetivo'); }
+  if (e.key === 'Escape'){ cerrar('veloPeso'); cerrar('veloObjetivo'); cerrar('veloPlan'); }
 });
 
 document.getElementById('btnPeso').addEventListener('click', function(){
@@ -786,7 +1141,7 @@ document.getElementById('guardarObjetivo').addEventListener('click', async funct
 function pintarTodo(){
   document.getElementById('fechaHoy').textContent =
     DIAS[diaHoy-1].toLowerCase() + ', ' + hoy.getDate() + ' de ' + MESES[hoy.getMonth()] + ' de ' + hoy.getFullYear();
-  pintarResumen(); pintarHoy(); pintarPdf(); pintarDias(); pintarComidas(); pintarGrafica(); pintarPesos();
+  pintarResumen(); pintarHoy(); pintarPlan(); pintarPdf(); pintarDias(); pintarComidas(); pintarGrafica(); pintarPesos();
 }
 
 arrancar();

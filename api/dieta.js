@@ -20,6 +20,9 @@ async function prepararTablas(sql){
     nota text not null default '', unique (usuario_id, fecha))`
   await sql`create table if not exists dieta_ajustes (
     usuario_id text primary key, objetivo numeric(5,2), inicio numeric(5,2))`
+  await sql`create table if not exists dieta_plan (
+    usuario_id text primary key, desde date not null, hasta date not null,
+    dias jsonb not null, creado timestamptz not null default now())`
   tablasListas = true
 }
 
@@ -29,19 +32,22 @@ function numeroKg(v){
 }
 
 async function todo(sql, uid){
-  const [menus, pesos, pdfs, ajustes] = await Promise.all([
+  const [menus, pesos, pdfs, ajustes, planes] = await Promise.all([
     sql`select dia, comida, texto from dieta_menus where usuario_id = ${uid}`,
     sql`select id, to_char(fecha,'YYYY-MM-DD') as fecha, kg::float8 as kg, nota
         from dieta_pesos where usuario_id = ${uid} order by fecha desc`,
     sql`select id, nombre, tamano, to_char(subido at time zone 'Europe/Madrid','YYYY-MM-DD') as subido
         from dieta_pdf where usuario_id = ${uid} order by subido desc limit 1`,
-    sql`select objetivo::float8 as objetivo, inicio::float8 as inicio from dieta_ajustes where usuario_id = ${uid}`
+    sql`select objetivo::float8 as objetivo, inicio::float8 as inicio from dieta_ajustes where usuario_id = ${uid}`,
+    sql`select to_char(desde,'YYYY-MM-DD') as desde, to_char(hasta,'YYYY-MM-DD') as hasta, dias
+        from dieta_plan where usuario_id = ${uid}`
   ])
   return {
     menus, pesos,
     pdf: pdfs[0] || null,
     objetivo: ajustes.length ? ajustes[0].objetivo : null,
-    inicio: ajustes.length ? ajustes[0].inicio : null
+    inicio: ajustes.length ? ajustes[0].inicio : null,
+    plan: planes[0] || null
   }
 }
 
@@ -91,6 +97,28 @@ export default async function handler(req, res){
         return res.status(200).json(await todo(sql, uid))
       }
 
+      if (c.accion === 'plan'){
+        // la dieta día a día para el tiempo que se haya indicado (máximo 3 meses)
+        const lista = Array.isArray(c.dias) ? c.dias : []
+        if (!lista.length || lista.length > 92) return res.status(400).json({ error: 'El tiempo tiene que ser de 1 a 92 días.' })
+        const dias = []
+        for (const d of lista){
+          const fecha = String(d.fecha || '')
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return res.status(400).json({ error: 'Hay un día con la fecha mal puesta.' })
+          const dia = { fecha }
+          for (const k of COMIDAS) dia[k] = String(d[k] || '').slice(0, 800)
+          dias.push(dia)
+        }
+        dias.sort((a, b) => a.fecha < b.fecha ? -1 : 1)
+        const desde = dias[0].fecha, hasta = dias[dias.length - 1].fecha
+        await sql`
+          insert into dieta_plan (usuario_id, desde, hasta, dias, creado)
+          values (${uid}, ${desde}, ${hasta}, ${JSON.stringify(dias)}::jsonb, now())
+          on conflict (usuario_id) do update set desde = excluded.desde, hasta = excluded.hasta,
+            dias = excluded.dias, creado = now()`
+        return res.status(200).json(await todo(sql, uid))
+      }
+
       if (c.accion === 'menus'){
         const lista = Array.isArray(c.menus) ? c.menus : []
         for (const m of lista){
@@ -133,6 +161,10 @@ export default async function handler(req, res){
     }
 
     if (req.method === 'DELETE'){
+      if (req.query.que === 'plan'){
+        await sql`delete from dieta_plan where usuario_id = ${uid}`
+        return res.status(200).json(await todo(sql, uid))
+      }
       if (req.query.que === 'pdf'){
         await sql`delete from dieta_pdf where usuario_id = ${uid}`
         return res.status(200).json(await todo(sql, uid))
