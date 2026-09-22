@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Apps Mendoza · Centro de aplicaciones</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%231B2A4A'/%3E%3Ctext x='32' y='42' font-family='Georgia,serif' font-size='36' fill='%23FFFFFF' text-anchor='middle'%3EM%3C/text%3E%3Crect x='20' y='50' width='24' height='3' fill='%23B08D57'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --tinta:#1B2A4A;
+    --tinta-honda:#131E36;
+    --papel:#F4F5F8;
+    --superficie:#FFFFFF;
+    --linea:#DDE1E9;
+    --linea-fuerte:#C3C9D5;
+    --acento:#B08D57;
+    --acento-hondo:#8A6B3D;
+    --en-uso:#3F7D5E;
+    --apagado:#5F6878;
+    --aviso:#A0651F;
+    --parada:#8C9797;
+    --sans:"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --serif:"Newsreader", Georgia, "Times New Roman", serif;
+    --alto-cabecera:70px;
+  }
+
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--papel);
+    color:var(--tinta);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+  :focus-visible{outline:2px solid var(--acento-hondo);outline-offset:3px;border-radius:2px;}
+
+  .contenedor{max-width:940px;margin:0 auto;padding:0 24px;}
+
+  /* ---------- Cabecera fija ---------- */
+  .cabecera{
+    position:sticky;
+    top:0;
+    z-index:50;
+    background:rgba(255,255,255,.94);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--linea-fuerte);
+  }
+  .cabecera .contenedor{
+    height:var(--alto-cabecera);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+  }
+  .marca{
+    display:flex;
+    align-items:center;
+    flex:none;
+    margin:0;
+    text-decoration:none;
+    border-radius:6px;
+  }
+  .marca__logo{
+    display:block;
+    height:52px;
+    width:auto;
+    border-radius:6px;
+  }
+
+  .inicio{
+    flex:none;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font:inherit;
+    font-size:14.5px;
+    font-weight:500;
+    text-decoration:none;
+    color:var(--tinta);
+    background:var(--superficie);
+    border:1px solid var(--linea-fuerte);
+    border-radius:6px;
+    padding:8px 16px;
+    white-space:nowrap;
+  }
+  .inicio:hover{background:var(--tinta);border-color:var(--tinta);color:var(--papel);}
+  .inicio svg{flex:none;}
+
+  /* ---------- Portada ---------- */
+  .portada{
+    position:relative;
+    overflow:hidden;
+    background:linear-gradient(180deg,var(--tinta) 0%, var(--tinta-honda) 100%);
+    color:#FFFFFF;
+    padding-bottom:62px;
+  }
+
+  /* cinta rotativa del nombre */
+  .cinta{
+    position:relative;
+    overflow:hidden;
+    border-bottom:1px solid rgba(176,141,87,.35);
+    padding:22px 0 20px;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent);
+    mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent);
+  }
+  .cinta__pista{
+    display:flex;
+    width:max-content;
+    animation:desfile 40s linear infinite;
+  }
+  .cinta__bloque{display:flex;flex:none;}
+  .cinta__item{
+    display:flex;
+    align-items:center;
+    flex:none;
+    padding-right:72px;
+  }
+  .cinta__item img{
+    display:block;
+    height:clamp(56px,10vw,92px);
+    width:auto;
+  }
+  .cinta__item:nth-child(even) img{opacity:.28;}
+  @keyframes desfile{
+    from{transform:translate3d(0,0,0);}
+    to{transform:translate3d(-50%,0,0);}
+  }
+
+  .portada__cuerpo{position:relative;z-index:1;padding-top:52px;}
+  .portada h1{
+    font-family:var(--serif);
+    font-weight:400;
+    font-size:clamp(36px,6.6vw,62px);
+    line-height:1.08;
+    letter-spacing:-0.025em;
+    margin:0 0 20px;
+    max-width:17ch;
+  }
+  .portada__entrada{
+    margin:0 0 34px;
+    max-width:56ch;
+    font-size:17px;
+    color:rgba(241,244,243,.74);
+  }
+  .portada__pie{
+    display:flex;
+    align-items:center;
+    gap:22px;
+    flex-wrap:wrap;
+  }
+  .portada__cta{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    font-size:15px;
+    font-weight:600;
+    text-decoration:none;
+    background:#FFFFFF;
+    color:var(--tinta);
+    border:1px solid #FFFFFF;
+    border-radius:6px;
+    padding:13px 28px;
+  }
+  .portada__cta:hover{background:var(--acento);border-color:var(--acento);color:#FFFFFF;}
+  .contador{
+    display:inline-flex;
+    align-items:center;
+    gap:9px;
+    margin:0;
+    font-size:14px;
+    color:rgba(241,244,243,.7);
+  }
+  .contador::before{
+    content:"";
+    width:7px;height:7px;border-radius:50%;
+    background:var(--acento);
+    box-shadow:0 0 0 4px rgba(176,141,87,.25);
+  }
+
+  /* ---------- Controles ---------- */
+  .zona{padding-top:54px;}
+  .zona h2.zona__titulo{
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:24px;
+    letter-spacing:-0.015em;
+    margin:0 0 20px;
+    scroll-margin-top:calc(var(--alto-cabecera) + 20px);
+  }
+  .controles{
+    display:flex;
+    gap:14px;
+    align-items:center;
+    flex-wrap:wrap;
+    padding-bottom:18px;
+  }
+  .buscador{
+    flex:1 1 260px;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    background:var(--superficie);
+    border:1px solid var(--linea);
+    border-radius:6px;
+    padding:9px 13px;
+  }
+  .buscador svg{flex:none;color:var(--apagado);}
+  .buscador input{border:0;background:none;font:inherit;font-size:15px;color:inherit;width:100%;padding:0;}
+  .buscador input:focus{outline:none;}
+  .buscador:focus-within{border-color:var(--tinta);}
+  .filtros{display:flex;gap:8px;flex-wrap:wrap;}
+  .filtro{
+    font:inherit;font-size:13.5px;
+    background:none;
+    border:1px solid var(--linea);
+    border-radius:999px;
+    padding:6px 14px;
+    color:var(--apagado);
+    cursor:pointer;
+  }
+  .filtro:hover{border-color:var(--linea-fuerte);color:var(--tinta);}
+  .filtro[aria-pressed="true"]{background:var(--tinta);border-color:var(--tinta);color:var(--papel);}
+
+  /* ---------- Registro de aplicaciones ---------- */
+  .registro{
+    list-style:none;
+    margin:0 0 20px;
+    padding:0;
+    background:var(--superficie);
+    border:1px solid var(--linea);
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .registro__fila{border-top:1px solid var(--linea);}
+  .registro__fila:first-child{border-top:0;}
+
+  .ficha{padding:26px;}
+  .ficha{transition:box-shadow .15s ease;}
+  .ficha:hover{background:#FAFBFD;box-shadow:inset 3px 0 0 var(--acento);}
+  .ficha__alto{display:flex;gap:26px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;}
+  .ficha__texto{flex:1 1 380px;min-width:0;}
+  .estado{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--apagado);margin:0 0 7px;}
+  .estado__punto{width:7px;height:7px;border-radius:50%;background:var(--en-uso);flex:none;}
+  .estado--pruebas .estado__punto{background:var(--aviso);}
+  .estado--parada .estado__punto{background:var(--parada);}
+  .ficha__nombre{font-family:var(--serif);font-size:25px;font-weight:500;letter-spacing:-0.015em;line-height:1.2;margin:0 0 7px;}
+  .ficha__resumen{margin:0 0 10px;max-width:58ch;font-size:15.5px;}
+  .ficha__meta{margin:0;font-size:13.5px;color:var(--apagado);}
+  .ficha__meta span+span::before{
+    content:"";display:inline-block;width:1px;height:11px;
+    background:var(--linea-fuerte);margin:0 10px -1px;
+  }
+  .ficha__acciones{flex:none;display:flex;gap:10px;align-items:center;padding-top:4px;}
+  .abrir{
+    font:inherit;font-size:14.5px;font-weight:500;text-decoration:none;
+    background:var(--tinta);color:var(--papel);border:1px solid var(--tinta);
+    border-radius:6px;padding:9px 20px;white-space:nowrap;
+  }
+  .abrir:hover{background:var(--tinta-honda);}
+  .detalles{
+    font:inherit;font-size:14.5px;background:none;
+    border:1px solid var(--linea);border-radius:6px;padding:9px 16px;
+    color:var(--tinta);cursor:pointer;white-space:nowrap;
+  }
+  .detalles:hover{border-color:var(--linea-fuerte);}
+
+  .ficha__panel{margin-top:20px;padding-top:18px;border-top:1px dashed var(--linea);}
+  .ficha__panel[hidden]{display:none;}
+  .ficha__panel h3{margin:0 0 9px;font-size:13.5px;font-weight:600;color:var(--apagado);}
+  .ficha__panel ul{margin:0 0 16px;padding-left:19px;max-width:62ch;}
+  .ficha__panel li{margin-bottom:5px;font-size:15px;}
+  .direccion{margin:0;font-size:13.5px;color:var(--apagado);word-break:break-all;}
+  .direccion a{color:var(--acento-hondo);text-decoration:none;border-bottom:1px solid rgba(138,107,61,.35);}
+  .direccion a:hover{border-bottom-color:var(--acento-hondo);}
+
+  .reserva{
+    padding:24px 26px;
+    background:#F9FAFC;
+  }
+  .reserva h2{font-family:var(--serif);font-weight:500;font-size:19px;margin:0 0 5px;}
+  .reserva p{margin:0;font-size:14.5px;color:var(--apagado);max-width:60ch;}
+
+  .sin-resultados{
+    margin:0 0 20px;padding:30px 26px;
+    background:var(--superficie);border:1px solid var(--linea);border-radius:8px;
+    color:var(--apagado);font-size:15.5px;
+  }
+  .sin-resultados[hidden]{display:none;}
+
+  /* ---------- Pie ---------- */
+  .pie{border-top:1px solid var(--linea-fuerte);margin-top:46px;padding:26px 0 46px;}
+  .pie .contenedor{
+    display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    font-size:13.5px;color:var(--apagado);
+  }
+  .pie p{margin:0;}
+
+  @media (max-width:640px){
+    .contenedor{padding:0 18px;}
+    .cinta{padding:18px 0 16px;}
+    .portada{padding-bottom:48px;}
+    .portada__cuerpo{padding-top:40px;}
+    .zona{padding-top:40px;}
+    .ficha{padding:22px 18px;}
+    .reserva{padding:22px 18px;}
+    .ficha__acciones{width:100%;}
+    .abrir,.detalles{flex:1;text-align:center;}
+    .inicio{padding:8px 13px;}
+    .marca__logo{height:46px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto;}
+    .cinta__pista{animation:none;}
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body id="arriba">
+
+<header class="cabecera">
+  <div class="contenedor">
+    <a class="marca" href="#arriba"><img class="marca__logo" src="/logo-app-mendoza.png" width="119" height="52" alt="App Mendoza"></a>
+    <a class="inicio" href="#arriba">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg>
+      Inicio
+    </a>
+  </div>
+</header>
+
+<section class="portada">
+  <div class="cinta" aria-hidden="true">
+    <div class="cinta__pista" id="cinta"></div>
+  </div>
+  <div class="contenedor portada__cuerpo">
+    <h1>Todas mis aplicaciones, desde un mismo sitio.</h1>
+    <p class="portada__entrada">Un único punto de entrada a las aplicaciones que uso para el trabajo del día a día. Cada acceso indica para qué sirve y qué hace falta para entrar.</p>
+    <div class="portada__pie">
+      <a class="portada__cta" href="#aplicaciones">Ver aplicaciones</a>
+      <p class="contador" id="contador"></p>
+    </div>
+  </div>
+</section>
+
+<main class="contenedor zona">
+
+  <h2 class="zona__titulo" id="aplicaciones">Aplicaciones</h2>
+
+  <div class="controles" id="controles" hidden>
+    <label class="buscador">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+      <input type="search" id="busqueda" placeholder="Buscar una aplicación" aria-label="Buscar una aplicación">
+    </label>
+    <div class="filtros" id="filtros"></div>
+  </div>
+
+  <ul class="registro" id="registro"></ul>
+
+  <p class="sin-resultados" id="sinResultados" hidden>No hay ninguna aplicación con ese nombre. Prueba con otra palabra o borra la búsqueda.</p>
+
+</main>
+
+<footer class="pie">
+  <div class="contenedor">
+    <p>Apps Mendoza · aplicaciones propias</p>
+    <p>Acceso restringido · cada aplicación pide su propio usuario</p>
+  </div>
+</footer>
+
+<script>
+/* ------------------------------------------------------------------
+   LISTA DE APLICACIONES
+   Para añadir una app nueva, se copia un bloque y se rellenan sus datos.
+   estado: "activa" (en uso) · "pruebas" (en pruebas) · "parada"
+------------------------------------------------------------------- */
+const APLICACIONES = [
+  {
+    nombre: "Archivo de nóminas",
+    categoria: "Gestión laboral",
+    estado: "activa",
+    acceso: "Usuario y contraseña",
+    direccion: "https://archivo-nominas.vercel.app",
+    resumen: "Reparte el PDF mensual de la gestoría entre las carpetas de cada trabajador y avisa de a quién le falta la nómina.",
+    detalles: [
+      "Separa el PDF de toda la plantilla y guarda cada hoja en el archivo del trabajador al que pertenece.",
+      "Reconoce a la persona por su DNI o por su nombre; lo que no encaja queda aparte, sin asignar a nadie.",
+      "Guarda contratos y otros documentos, y descarga el archivo completo de una persona en un ZIP.",
+      "Comprueba, antes de cerrar el mes, quién se ha quedado sin nómina."
+    ]
+  },
+  {
+    nombre: "Mi calendario",
+    categoria: "Personal",
+    estado: "activa",
+    acceso: "Usuario y contrase\u00f1a",
+    direccion: "https://centro-apps.vercel.app/calendario",
+    resumen: "Mi agenda personal: m\u00e9dicos, cumplea\u00f1os, coche y casa, papeleo y planes, con aviso de lo que vence esta semana.",
+    detalles: [
+      "El mes entero de un vistazo, con cada cita del color de su tipo.",
+      "Lo que viene en los pr\u00f3ximos treinta d\u00edas, en una lista aparte.",
+      "Avisa de lo que no se puede pasar: m\u00e9dico, coche y casa, papeleo y pagos.",
+      "Los cumplea\u00f1os y los recibos fijos se apuntan una vez y se repiten solos.",
+      "Se guarda en internet, as\u00ed que se ve igual desde el ordenador y desde el m\u00f3vil."
+    ]
+  },
+  {
+    nombre: "Mis gastos",
+    categoria: "Personal",
+    estado: "activa",
+    acceso: "La misma cuenta que el calendario",
+    direccion: "https://centro-apps.vercel.app/gastos",
+    resumen: "Lo que entra y lo que sale cada mes, con un tope de gasto que avisa cuando te est\u00e1s acercando.",
+    detalles: [
+      "Apuntas gastos e ingresos con su importe, su d\u00eda y su categor\u00eda.",
+      "Cada mes te ense\u00f1a ingresos, gastos y la diferencia entre los dos.",
+      "Te pones un tope de gasto mensual y avisa al llegar al 80% y al pasarte.",
+      "Un desglose de en qu\u00e9 se te va el dinero, ordenado de mayor a menor.",
+      "Se entra con el mismo correo y contrase\u00f1a que Mi calendario."
+    ]
+  },
+  {
+    nombre: "Mi dieta",
+    categoria: "Personal",
+    estado: "activa",
+    acceso: "La misma cuenta que el calendario",
+    direccion: "https://centro-apps.vercel.app/dieta",
+    resumen: "La dieta del nutricionista siempre a mano, lo que toca comer hoy y el control del peso hasta llegar al objetivo.",
+    detalles: [
+      "Subes el PDF de la dieta y lo ves entero desde el m\u00f3vil o el ordenador, o lo descargas.",
+      "Le dices para cu\u00e1nto tiempo la quieres y te prepara el men\u00fa de cada d\u00eda, con su fecha, siguiendo las normas de tu dieta.",
+      "Escribes los men\u00fas de cada d\u00eda de la semana y la portada te ense\u00f1a lo que toca hoy.",
+      "Apuntas tu peso cuando te pesas y ves en una gr\u00e1fica c\u00f3mo vas.",
+      "Te pones un peso objetivo y te dice cu\u00e1nto te falta y qu\u00e9 parte del camino llevas.",
+      "Se entra con el mismo correo y contrase\u00f1a que Mi calendario."
+    ]
+  }
+];
+
+const registro = document.getElementById("registro");
+const sinResultados = document.getElementById("sinResultados");
+const controles = document.getElementById("controles");
+const filtros = document.getElementById("filtros");
+const busqueda = document.getElementById("busqueda");
+
+const ETIQUETA_ESTADO = { activa: "En uso", pruebas: "En pruebas", parada: "Parada" };
+const CLASE_ESTADO = { activa: "", pruebas: " estado--pruebas", parada: " estado--parada" };
+
+let categoriaActiva = "todas";
+let textoBuscado = "";
+
+function escapar(t){
+  return String(t).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+
+/* Cinta rotativa: el logo repetido, en marcha continua de derecha a izquierda.
+   Se pinta dos veces el mismo bloque para que el giro no tenga costuras. */
+function pintarCinta(){
+  const item = '<span class="cinta__item"><img src="/logo-app-mendoza-claro.png" width="444" height="180" alt=""></span>';
+  const bloque = '<span class="cinta__bloque">' + item.repeat(4) + '</span>';
+  document.getElementById("cinta").innerHTML = bloque + bloque;
+}
+
+function pintarContador(){
+  const enUso = APLICACIONES.filter(a => a.estado === "activa").length;
+  document.getElementById("contador").textContent =
+    enUso === 1 ? "1 aplicación en uso" : enUso + " aplicaciones en uso";
+}
+
+function pintarFiltros(){
+  const categorias = [...new Set(APLICACIONES.map(a => a.categoria))];
+  if (APLICACIONES.length < 3) return;          // con pocas apps, buscador y filtros sobran
+  controles.hidden = false;
+  if (categorias.length < 2) return;
+  filtros.innerHTML = ["todas", ...categorias].map(c =>
+    `<button class="filtro" type="button" data-categoria="${escapar(c)}" aria-pressed="${c === categoriaActiva}">${c === "todas" ? "Todas" : escapar(c)}</button>`
+  ).join("");
+  filtros.querySelectorAll(".filtro").forEach(b => {
+    b.addEventListener("click", () => {
+      categoriaActiva = b.dataset.categoria;
+      filtros.querySelectorAll(".filtro").forEach(o => o.setAttribute("aria-pressed", o === b));
+      pintarRegistro();
+    });
+  });
+}
+
+function filaAplicacion(app, i){
+  const idPanel = "panel-" + i;
+  const dominio = app.direccion.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  const tieneDetalles = app.detalles && app.detalles.length;
+  return `
+  <li class="registro__fila">
+    <article class="ficha">
+      <div class="ficha__alto">
+        <div class="ficha__texto">
+          <p class="estado${CLASE_ESTADO[app.estado] || ""}"><span class="estado__punto"></span>${ETIQUETA_ESTADO[app.estado] || "En uso"}</p>
+          <h3 class="ficha__nombre">${escapar(app.nombre)}</h3>
+          <p class="ficha__resumen">${escapar(app.resumen)}</p>
+          <p class="ficha__meta"><span>${escapar(app.categoria)}</span><span>${escapar(app.acceso)}</span></p>
+        </div>
+        <div class="ficha__acciones">
+          <a class="abrir" href="${escapar(app.direccion)}" target="_blank" rel="noopener">Abrir</a>
+          ${tieneDetalles ? `<button class="detalles" type="button" aria-expanded="false" aria-controls="${idPanel}">Detalles</button>` : ""}
+        </div>
+      </div>
+      ${tieneDetalles ? `
+      <div class="ficha__panel" id="${idPanel}" hidden>
+        <h3>Qué puedes hacer con ella</h3>
+        <ul>${app.detalles.map(d => `<li>${escapar(d)}</li>`).join("")}</ul>
+        <p class="direccion">Dirección: <a href="${escapar(app.direccion)}" target="_blank" rel="noopener">${escapar(dominio)}</a></p>
+      </div>` : ""}
+    </article>
+  </li>`;
+}
+
+function filaReserva(){
+  return `
+  <li class="registro__fila">
+    <div class="reserva">
+      <h2>Próximas aplicaciones</h2>
+      <p>Aquí irán apareciendo el resto de tus aplicaciones. Basta con decir cómo se llama cada una, para qué sirve y su dirección.</p>
+    </div>
+  </li>`;
+}
+
+function pintarRegistro(){
+  const texto = textoBuscado.trim().toLowerCase();
+  const visibles = APLICACIONES.filter(app => {
+    const porCategoria = categoriaActiva === "todas" || app.categoria === categoriaActiva;
+    const porTexto = !texto || (app.nombre + " " + app.resumen + " " + app.categoria).toLowerCase().includes(texto);
+    return porCategoria && porTexto;
+  });
+
+  registro.innerHTML = visibles.map(filaAplicacion).join("") + (texto ? "" : filaReserva());
+  registro.hidden = visibles.length === 0 && !!texto;
+  sinResultados.hidden = !(visibles.length === 0 && !!texto);
+
+  registro.querySelectorAll(".detalles").forEach(boton => {
+    boton.addEventListener("click", () => {
+      const panel = document.getElementById(boton.getAttribute("aria-controls"));
+      const abierto = boton.getAttribute("aria-expanded") === "true";
+      boton.setAttribute("aria-expanded", String(!abierto));
+      boton.textContent = abierto ? "Detalles" : "Cerrar";
+      panel.hidden = abierto;
+    });
+  });
+}
+
+if (busqueda) {
+  busqueda.addEventListener("input", e => { textoBuscado = e.target.value; pintarRegistro(); });
+}
+pintarCinta();
+pintarContador();
+pintarFiltros();
+pintarRegistro();
+</script>
+
+</body>
+</html>
