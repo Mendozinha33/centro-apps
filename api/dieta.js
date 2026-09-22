@@ -23,6 +23,12 @@ async function prepararTablas(sql){
   await sql`create table if not exists dieta_plan (
     usuario_id text primary key, desde date not null, hasta date not null,
     dias jsonb not null, creado timestamptz not null default now())`
+  await sql`create table if not exists dieta_abdomen (
+    id serial primary key, usuario_id text not null, fecha date not null, cm numeric(5,1) not null,
+    unique (usuario_id, fecha))`
+  await sql`create table if not exists dieta_deporte (
+    usuario_id text primary key, dias jsonb not null default '[]'::jsonb,
+    momento text not null default 'tarde', actividad text not null default '')`
   tablasListas = true
 }
 
@@ -32,7 +38,7 @@ function numeroKg(v){
 }
 
 async function todo(sql, uid){
-  const [menus, pesos, pdfs, ajustes, planes] = await Promise.all([
+  const [menus, pesos, pdfs, ajustes, planes, abdomen, deporte] = await Promise.all([
     sql`select dia, comida, texto from dieta_menus where usuario_id = ${uid}`,
     sql`select id, to_char(fecha,'YYYY-MM-DD') as fecha, kg::float8 as kg, nota
         from dieta_pesos where usuario_id = ${uid} order by fecha desc`,
@@ -40,14 +46,19 @@ async function todo(sql, uid){
         from dieta_pdf where usuario_id = ${uid} order by subido desc limit 1`,
     sql`select objetivo::float8 as objetivo, inicio::float8 as inicio from dieta_ajustes where usuario_id = ${uid}`,
     sql`select to_char(desde,'YYYY-MM-DD') as desde, to_char(hasta,'YYYY-MM-DD') as hasta, dias
-        from dieta_plan where usuario_id = ${uid}`
+        from dieta_plan where usuario_id = ${uid}`,
+    sql`select id, to_char(fecha,'YYYY-MM-DD') as fecha, cm::float8 as cm
+        from dieta_abdomen where usuario_id = ${uid} order by fecha desc`,
+    sql`select dias, momento, actividad from dieta_deporte where usuario_id = ${uid}`
   ])
   return {
     menus, pesos,
     pdf: pdfs[0] || null,
     objetivo: ajustes.length ? ajustes[0].objetivo : null,
     inicio: ajustes.length ? ajustes[0].inicio : null,
-    plan: planes[0] || null
+    plan: planes[0] || null,
+    abdomen,
+    deporte: deporte[0] || { dias: [], momento: 'tarde', actividad: '' }
   }
 }
 
@@ -107,6 +118,7 @@ export default async function handler(req, res){
           if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return res.status(400).json({ error: 'Hay un día con la fecha mal puesta.' })
           const dia = { fecha }
           for (const k of COMIDAS) dia[k] = String(d[k] || '').slice(0, 800)
+          if (d.deporte) dia.deporte = true
           dias.push(dia)
         }
         dias.sort((a, b) => a.fecha < b.fecha ? -1 : 1)
@@ -145,6 +157,31 @@ export default async function handler(req, res){
         return res.status(200).json(await todo(sql, uid))
       }
 
+      if (c.accion === 'abdomen'){
+        const fecha = String(c.fecha || '')
+        const cm = Math.round(Number(String(c.cm ?? '').replace(',', '.')) * 10) / 10
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || !(cm >= 40 && cm <= 250)){
+          return res.status(400).json({ error: 'Pon el día y una medida de abdomen entre 40 y 250 cm.' })
+        }
+        await sql`
+          insert into dieta_abdomen (usuario_id, fecha, cm) values (${uid}, ${fecha}, ${cm})
+          on conflict (usuario_id, fecha) do update set cm = excluded.cm`
+        return res.status(200).json(await todo(sql, uid))
+      }
+
+      if (c.accion === 'deporte'){
+        const dias = [...new Set((Array.isArray(c.dias) ? c.dias : []).map(Number))]
+          .filter(n => n >= 1 && n <= 7).sort()
+        const momento = ['manana', 'tarde', 'noche'].includes(c.momento) ? c.momento : 'tarde'
+        const actividad = String(c.actividad || '').trim().slice(0, 80)
+        await sql`
+          insert into dieta_deporte (usuario_id, dias, momento, actividad)
+          values (${uid}, ${JSON.stringify(dias)}::jsonb, ${momento}, ${actividad})
+          on conflict (usuario_id) do update set dias = excluded.dias, momento = excluded.momento,
+            actividad = excluded.actividad`
+        return res.status(200).json(await todo(sql, uid))
+      }
+
       if (c.accion === 'objetivo'){
         const objetivo = c.objetivo === '' || c.objetivo == null ? null : numeroKg(c.objetivo)
         const inicio = c.inicio === '' || c.inicio == null ? null : numeroKg(c.inicio)
@@ -163,6 +200,12 @@ export default async function handler(req, res){
     if (req.method === 'DELETE'){
       if (req.query.que === 'plan'){
         await sql`delete from dieta_plan where usuario_id = ${uid}`
+        return res.status(200).json(await todo(sql, uid))
+      }
+      if (req.query.que === 'abdomen'){
+        const idA = Number(req.query.id)
+        if (!idA) return res.status(400).json({ error: 'Falta la medida a borrar.' })
+        await sql`delete from dieta_abdomen where id = ${idA} and usuario_id = ${uid}`
         return res.status(200).json(await todo(sql, uid))
       }
       if (req.query.que === 'pdf'){
