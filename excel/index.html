@@ -1,0 +1,1115 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Mis Excel · Apps Mendoza</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%231B2A33'/%3E%3Ctext x='32' y='45' font-family='Georgia,serif' font-size='38' fill='%23F4F6F5' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --tinta:#1B2A33; --tinta-honda:#122029; --papel:#F1F4F3; --superficie:#FFFFFF;
+    --linea:#D6DEDC; --linea-fuerte:#B9C5C2; --acento:#3E8C76; --acento-hondo:#2F6F5E;
+    --apagado:#657678; --rojo:#A33B34; --oro:#B08A3E;
+    --verde-excel:#1D6F42; --rejilla:#E2E8E6; --cabeza-rejilla:#EEF2F1;
+    --sans:"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --serif:"Newsreader", Georgia, "Times New Roman", serif;
+    --alto-cabecera:68px;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;background:var(--papel);color:var(--tinta);font-family:var(--sans);
+    font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  :focus-visible{outline:2px solid var(--acento);outline-offset:2px;border-radius:3px;}
+  .contenedor{max-width:1180px;margin:0 auto;padding:0 24px;}
+  [hidden]{display:none !important;}
+
+  .cabecera{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.94);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--linea-fuerte);}
+  .cabecera .contenedor{height:var(--alto-cabecera);display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .marca{display:flex;align-items:center;gap:14px;text-decoration:none;min-width:0;color:inherit;}
+  .marca__logo{flex:none;display:block;height:52px;width:auto;border-radius:6px;}
+  .marca__t{padding-left:14px;border-left:1px solid var(--linea-fuerte);font-family:var(--serif);font-size:20px;
+    font-weight:500;letter-spacing:-.015em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .acciones-cab{display:flex;align-items:center;gap:8px;}
+  .quien{font-size:13.5px;color:var(--apagado);white-space:nowrap;}
+
+  .btn{font:inherit;font-size:14.5px;background:var(--superficie);border:1px solid var(--linea-fuerte);
+    border-radius:6px;padding:9px 15px;color:var(--tinta);cursor:pointer;white-space:nowrap;
+    display:inline-flex;align-items:center;gap:7px;text-decoration:none;}
+  .btn:hover{border-color:var(--tinta);}
+  .btn:disabled{opacity:.55;cursor:default;}
+  .btn--solido{background:var(--tinta);border-color:var(--tinta);color:var(--papel);font-weight:500;}
+  .btn--solido:hover{background:var(--tinta-honda);}
+  .btn--peligro{color:var(--rojo);}
+  .btn--peligro:hover{border-color:var(--rojo);}
+  .btn--mini{font-size:13px;padding:7px 12px;}
+  .enlace{background:none;border:0;padding:0;font:inherit;color:var(--acento-hondo);cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+
+  .entrada{max-width:430px;margin:8vh auto 40px;padding:0 20px;}
+  .entrada .tarjeta{padding:28px 26px 30px;}
+  .entrada h1{font-family:var(--serif);font-size:30px;font-weight:500;margin:0 0 6px;letter-spacing:-.02em;}
+  .entrada .intro{margin:0 0 22px;font-size:14.5px;color:var(--apagado);}
+  .entrada .campo{margin-bottom:14px;}
+  .entrada .btn{width:100%;justify-content:center;padding:12px;}
+  .error{background:#FCF3F2;border:1px solid #E7CBC8;color:#8C3A33;border-radius:6px;padding:11px 13px;font-size:14px;}
+  .cargando{padding:40px 0;text-align:center;color:var(--apagado);font-size:15px;}
+
+  .barra{padding:26px 0 18px;display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;justify-content:space-between;}
+  .titulo{font-family:var(--serif);font-size:clamp(26px,3.6vw,36px);font-weight:500;letter-spacing:-.02em;margin:0;}
+  .sub{margin:2px 0 0;font-size:14px;color:var(--apagado);}
+  .mandos{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .buscar{font:inherit;font-size:14.5px;padding:9px 12px;border:1px solid var(--linea-fuerte);border-radius:6px;width:220px;background:#fff;}
+
+  .tarjeta{background:var(--superficie);border:1px solid var(--linea);border-radius:8px;overflow:hidden;}
+  .tarjeta__cab{padding:16px 20px;border-bottom:1px solid var(--linea);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+  .tarjeta__cab h2{font-family:var(--serif);font-size:20px;font-weight:500;margin:0;letter-spacing:-.01em;}
+  .tarjeta__cab .cuenta{font-size:13px;color:var(--apagado);}
+
+  .lienzo{display:grid;grid-template-columns:250px minmax(0,1fr);gap:22px;align-items:start;padding-bottom:60px;}
+
+  /* carpetas */
+  .carpetas{list-style:none;margin:0;padding:8px;}
+  .carpetas button{width:100%;display:flex;align-items:center;gap:10px;justify-content:space-between;background:none;border:0;
+    font:inherit;font-size:14.5px;color:var(--tinta);padding:9px 12px;border-radius:6px;cursor:pointer;text-align:left;}
+  .carpetas button:hover{background:#F3F6F5;}
+  .carpetas button[aria-current="true"]{background:var(--tinta);color:var(--papel);}
+  .carpetas button[aria-current="true"] .n{color:#C5D0CE;}
+  .carpetas .nom{display:flex;align-items:center;gap:9px;min-width:0;}
+  .carpetas .nom span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .carpetas .n{font-size:12.5px;color:var(--apagado);font-variant-numeric:tabular-nums;}
+  .carpetas .sep{height:1px;background:var(--linea);margin:6px 4px;}
+  .ico-carpeta{flex:none;width:16px;height:13px;}
+  .carpetas__pie{padding:10px 16px 16px;border-top:1px solid var(--linea);display:grid;gap:8px;}
+  .carpetas__pie .acciones{display:flex;gap:6px;flex-wrap:wrap;}
+  .espacio{font-size:12.5px;color:var(--apagado);margin:0;}
+
+  /* ficheros */
+  .zona{position:relative;}
+  .soltar{position:absolute;inset:0;z-index:5;background:rgba(241,248,245,.94);border:2px dashed var(--acento);border-radius:8px;
+    display:grid;place-items:center;font-size:16px;color:var(--acento-hondo);font-weight:500;pointer-events:none;}
+  .ficheros{list-style:none;margin:0;padding:0;}
+  .ficheros li{display:flex;align-items:center;gap:14px;padding:12px 20px;border-top:1px solid var(--linea);}
+  .ficheros li:first-child{border-top:0;}
+  .ficheros li:hover{background:#FAFCFB;}
+  .tipo{flex:none;width:44px;height:52px;border-radius:4px;background:var(--verde-excel);color:#fff;display:flex;flex-direction:column;
+    justify-content:flex-end;align-items:center;padding-bottom:6px;font-size:10.5px;font-weight:600;letter-spacing:.04em;position:relative;}
+  .tipo::before{content:"";position:absolute;top:9px;left:9px;right:9px;height:20px;
+    background:linear-gradient(rgba(255,255,255,.55),rgba(255,255,255,.55)) 0 0/100% 1px no-repeat,
+      repeating-linear-gradient(rgba(255,255,255,.4) 0 1px,transparent 1px 7px),
+      linear-gradient(90deg,transparent 45%,rgba(255,255,255,.4) 45% calc(45% + 1px),transparent calc(45% + 1px));}
+  .tipo--csv{background:#56707A;}
+  .tipo--xls{background:#3F6B53;}
+  .tipo--xlsm{background:#24584A;}
+  .fichero__cuerpo{flex:1;min-width:0;}
+  .fichero__nombre{background:none;border:0;padding:0;font:inherit;font-size:15px;font-weight:500;color:var(--tinta);cursor:pointer;
+    text-align:left;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;}
+  .fichero__nombre:hover{text-decoration:underline;text-underline-offset:2px;}
+  .fichero__meta{margin:2px 0 0;font-size:13px;color:var(--apagado);}
+  .fichero__acciones{flex:none;display:flex;gap:6px;align-items:center;}
+  .menu{position:relative;}
+  .menu__lista{position:absolute;right:0;top:calc(100% + 4px);z-index:30;background:#fff;border:1px solid var(--linea-fuerte);
+    border-radius:8px;box-shadow:0 8px 24px rgba(18,32,41,.16);min-width:220px;padding:6px;list-style:none;margin:0;}
+  .menu__lista button{width:100%;text-align:left;background:none;border:0;font:inherit;font-size:14px;padding:9px 12px;border-radius:5px;cursor:pointer;color:var(--tinta);}
+  .menu__lista button:hover{background:#F1F4F3;}
+  .menu__lista .peligro{color:var(--rojo);}
+  .vacio{padding:42px 24px;text-align:center;color:var(--apagado);font-size:14.5px;margin:0;}
+  .vacio b{display:block;font-family:var(--serif);font-weight:500;font-size:21px;color:var(--tinta);margin-bottom:6px;}
+
+  /* ventanas */
+  .velo{position:fixed;inset:0;background:rgba(18,32,41,.45);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:7vh 18px;overflow:auto;}
+  .ventana{background:var(--superficie);border-radius:10px;width:100%;max-width:470px;overflow:hidden;}
+  .ventana--ancha{max-width:620px;}
+  .ventana__cab{padding:18px 22px;border-bottom:1px solid var(--linea);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .ventana__cab h2{font-family:var(--serif);font-size:21px;font-weight:500;margin:0;}
+  .cerrar{background:none;border:0;font-size:22px;line-height:1;cursor:pointer;color:var(--apagado);padding:2px 6px;}
+  .ventana__cuerpo{padding:20px 22px 22px;display:grid;gap:14px;font-size:15px;}
+  .ventana__cuerpo p{margin:0;}
+  .ventana__pie{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;padding:0 22px 22px;}
+  .campo{display:grid;gap:5px;}
+  .campo label{font-size:13px;font-weight:600;color:var(--apagado);}
+  .campo input,.campo select{font:inherit;font-size:15px;padding:9px 11px;border:1px solid var(--linea-fuerte);border-radius:6px;background:#fff;color:inherit;width:100%;}
+  .nota-peq{font-size:13.5px;color:var(--apagado);}
+  .versiones{list-style:none;margin:0;padding:0;border:1px solid var(--linea);border-radius:8px;max-height:52vh;overflow:auto;}
+  .versiones li{display:flex;gap:12px;align-items:center;padding:11px 14px;border-top:1px solid var(--linea);}
+  .versiones li:first-child{border-top:0;}
+  .versiones .cuando{flex:1;min-width:0;font-size:14px;}
+  .versiones .cuando small{display:block;color:var(--apagado);font-size:12.5px;}
+  .chapa{font-size:11.5px;font-weight:600;background:#E6F2EC;color:var(--verde-excel);padding:2px 8px;border-radius:99px;margin-left:6px;}
+
+  .aviso-flota{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:300;background:var(--tinta);color:#fff;
+    padding:11px 18px;border-radius:8px;font-size:14.5px;box-shadow:0 6px 20px rgba(18,32,41,.3);max-width:calc(100% - 32px);}
+  .aviso-flota--error{background:var(--rojo);}
+
+  /* ================= editor ================= */
+  .editor{position:fixed;inset:0;z-index:100;background:var(--superficie);display:flex;flex-direction:column;}
+  .ed-cab{display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--linea-fuerte);flex-wrap:wrap;}
+  .ed-cab .volver{flex:none;}
+  .ed-nombre{flex:1;min-width:140px;}
+  .ed-nombre h1{margin:0;font-family:var(--serif);font-size:21px;font-weight:500;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ed-estado{margin:0;font-size:13px;color:var(--apagado);}
+  .ed-estado--sin{color:#8A6A2C;font-weight:500;}
+  .ed-estado--mal{color:var(--rojo);font-weight:500;}
+  .ed-botones{display:flex;gap:8px;flex-wrap:wrap;}
+  .ed-formula{display:flex;align-items:stretch;border-bottom:1px solid var(--linea-fuerte);background:#FAFBFB;}
+  .ed-ref{flex:none;width:86px;padding:8px 10px;font-size:13.5px;font-weight:600;border-right:1px solid var(--linea);text-align:center;
+    font-variant-numeric:tabular-nums;color:var(--tinta);}
+  .ed-fx{flex:none;padding:8px 10px;font-family:var(--serif);font-style:italic;color:var(--apagado);border-right:1px solid var(--linea);}
+  .ed-entrada{flex:1;min-width:0;border:0;font:inherit;font-size:14.5px;padding:8px 12px;background:transparent;color:var(--tinta);}
+  .ed-entrada:focus{outline:none;background:#fff;box-shadow:inset 0 -2px 0 var(--acento);}
+  .ed-aviso{padding:8px 18px;font-size:13.5px;background:#FBF6EA;border-bottom:1px solid #EADDBD;color:#6B5320;}
+  .ed-rejilla{flex:1;overflow:auto;position:relative;background:#fff;overscroll-behavior:contain;}
+  .ed-cargando{flex:1;display:grid;place-items:center;color:var(--apagado);font-size:15px;padding:20px;text-align:center;}
+  .hoja{border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:13.5px;}
+  .hoja th,.hoja td{border-right:1px solid var(--rejilla);border-bottom:1px solid var(--rejilla);height:26px;padding:0 6px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .hoja td{cursor:cell;background:#fff;}
+  .hoja thead th{position:sticky;top:0;z-index:3;background:var(--cabeza-rejilla);color:var(--apagado);font-weight:500;font-size:12px;
+    text-align:center;border-bottom-color:var(--linea-fuerte);user-select:none;}
+  .hoja tbody th{position:sticky;left:0;z-index:2;background:var(--cabeza-rejilla);color:var(--apagado);font-weight:500;font-size:12px;
+    text-align:right;padding-right:8px;border-right-color:var(--linea-fuerte);user-select:none;}
+  .hoja thead th:first-child{left:0;z-index:4;}
+  .hoja thead th.activa,.hoja tbody th.activa{background:#D7E6E0;color:var(--tinta);}
+  .hoja td.sel{outline:2px solid var(--acento);outline-offset:-2px;}
+  .hoja td.calc::after{content:"*";color:#B08A3E;margin-left:2px;}
+  .hoja td.reciente{animation:destello 1.1s ease-out;}
+  @keyframes destello{from{box-shadow:inset 0 0 0 999px rgba(62,140,118,.18);}to{box-shadow:inset 0 0 0 999px rgba(62,140,118,0);}}
+  .celda-edit{position:absolute;z-index:6;border:2px solid var(--acento);font:inherit;font-size:13.5px;padding:0 5px;background:#fff;
+    color:var(--tinta);box-shadow:0 4px 14px rgba(18,32,41,.18);min-width:120px;}
+  .celda-edit:focus{outline:none;}
+  .ed-mas{padding:14px 18px 30px;}
+  .ed-pestanas{display:flex;gap:2px;padding:0 10px;border-top:1px solid var(--linea-fuerte);background:var(--cabeza-rejilla);overflow-x:auto;flex:none;}
+  .ed-pestanas button{font:inherit;font-size:13.5px;border:0;background:transparent;color:var(--apagado);padding:9px 16px;cursor:pointer;
+    border-bottom:3px solid transparent;white-space:nowrap;}
+  .ed-pestanas button[aria-selected="true"]{background:#fff;color:var(--tinta);font-weight:600;border-bottom-color:var(--verde-excel);}
+  .ed-pestanas button.oculta{font-style:italic;opacity:.7;}
+
+  @media (max-width:900px){
+    .lienzo{grid-template-columns:minmax(0,1fr);}
+    .carpetas{display:flex;gap:6px;overflow-x:auto;padding:10px;}
+    .carpetas li{flex:none;}
+    .carpetas .sep{display:none;}
+    .carpetas button{width:auto;}
+    .quien{display:none;}
+    .buscar{width:100%;}
+    .mandos{width:100%;}
+  }
+  @media (max-width:600px){
+    .contenedor{padding:0 14px;}
+    .marca__logo{height:42px;}
+    .marca{gap:10px;}
+    .marca__t{font-size:17px;padding-left:10px;}
+    .acciones-cab a.btn{display:none;}
+    .ficheros li{padding:12px 14px;gap:11px;flex-wrap:wrap;}
+    .tipo{width:36px;height:44px;}
+    .fichero__acciones{width:100%;justify-content:flex-end;}
+    .ed-cab{padding:8px 12px;}
+    .ed-botones .btn{padding:8px 11px;}
+    .ed-ref{width:62px;}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+</style>
+</head>
+<body>
+
+<header class="cabecera">
+  <div class="contenedor">
+    <a class="marca" href="/" title="Volver a App Mendoza"><img class="marca__logo" src="/logo-app-mendoza.png" width="119" height="52" alt="App Mendoza"><span class="marca__t">Mis Excel</span></a>
+    <div class="acciones-cab">
+      <span class="quien" id="quien"></span>
+      <button class="btn btn--mini" id="btnSalir" hidden>Salir</button>
+      <a class="btn btn--mini" href="/" title="Volver al centro de aplicaciones">Apps Mendoza</a>
+    </div>
+  </div>
+</header>
+
+<section class="entrada" id="pantallaEntrada" hidden>
+  <div class="tarjeta">
+    <h1>Mis Excel</h1>
+    <p class="intro">Entra con el mismo correo y la misma contraseña que usas en el calendario.</p>
+    <div class="error" id="entradaError" hidden style="margin-bottom:16px"></div>
+    <div class="campo"><label for="eCorreo">Correo</label><input id="eCorreo" type="email" autocomplete="username"></div>
+    <div class="campo"><label for="eClave">Contraseña</label><input id="eClave" type="password" autocomplete="current-password"></div>
+    <button class="btn btn--solido" id="btnEntrar">Entrar</button>
+  </div>
+</section>
+
+<p class="cargando" id="cargando">Abriendo tus Excel…</p>
+
+<div class="contenedor" id="pantallaApp" hidden>
+  <div class="barra">
+    <div>
+      <h1 class="titulo">Mis Excel</h1>
+      <p class="sub" id="resumen"></p>
+    </div>
+    <div class="mandos">
+      <input class="buscar" id="buscar" type="search" placeholder="Buscar por nombre" aria-label="Buscar un Excel por su nombre">
+      <button class="btn" id="btnNuevo">Excel en blanco</button>
+      <button class="btn btn--solido" id="btnSubir">Subir Excel</button>
+      <input type="file" id="elegirFicheros" accept=".xlsx,.xlsm,.xls,.csv" multiple hidden>
+      <input type="file" id="elegirVersion" accept=".xlsx,.xlsm,.xls,.csv" hidden>
+    </div>
+  </div>
+
+  <div class="lienzo">
+    <aside class="tarjeta">
+      <ul class="carpetas" id="carpetas"></ul>
+      <div class="carpetas__pie">
+        <button class="btn btn--mini" id="btnCarpeta">+ Nueva carpeta</button>
+        <div class="acciones" id="accionesCarpeta" hidden>
+          <button class="btn btn--mini" id="btnRenombrarCarpeta">Renombrar</button>
+          <button class="btn btn--mini btn--peligro" id="btnBorrarCarpeta">Quitar carpeta</button>
+        </div>
+        <p class="espacio" id="espacio"></p>
+      </div>
+    </aside>
+
+    <section class="tarjeta zona" id="zona">
+      <div class="tarjeta__cab"><h2 id="tituloCarpeta">Todos los ficheros</h2><span class="cuenta" id="cuentaFicheros"></span></div>
+      <ul class="ficheros" id="ficheros"></ul>
+      <div class="soltar" id="soltar" hidden>Suelta aquí los Excel para guardarlos</div>
+    </section>
+  </div>
+</div>
+
+<!-- Editor -->
+<div class="editor" id="editor" hidden>
+  <div class="ed-cab">
+    <button class="btn btn--mini volver" id="edVolver">‹ Mis Excel</button>
+    <div class="ed-nombre"><h1 id="edNombre"></h1><p class="ed-estado" id="edEstado"></p></div>
+    <div class="ed-botones">
+      <button class="btn btn--mini" id="edDeshacer" disabled title="Deshacer (Ctrl+Z)">Deshacer</button>
+      <button class="btn btn--mini" id="edDescargar">Descargar</button>
+      <button class="btn btn--solido btn--mini" id="edGuardar" disabled title="Guardar (Ctrl+S)">Guardar</button>
+    </div>
+  </div>
+  <div class="ed-formula">
+    <div class="ed-ref" id="edRef">A1</div>
+    <div class="ed-fx" aria-hidden="true">fx</div>
+    <input class="ed-entrada" id="edEntrada" type="text" autocomplete="off" spellcheck="false" aria-label="Contenido de la celda">
+  </div>
+  <div class="ed-aviso" id="edAviso" hidden></div>
+  <div class="ed-cargando" id="edCargando">Abriendo el Excel…</div>
+  <div class="ed-rejilla" id="edRejilla" hidden></div>
+  <div class="ed-pestanas" id="edPestanas" role="tablist" aria-label="Hojas"></div>
+</div>
+
+<!-- ventana genérica -->
+<div class="velo" id="velo" hidden>
+  <div class="ventana" id="ventana" role="dialog" aria-modal="true" aria-labelledby="ventanaTitulo">
+    <div class="ventana__cab"><h2 id="ventanaTitulo"></h2><button class="cerrar" id="ventanaCerrar" aria-label="Cerrar">&times;</button></div>
+    <div class="ventana__cuerpo" id="ventanaCuerpo"></div>
+    <div class="ventana__pie" id="ventanaPie"></div>
+  </div>
+</div>
+
+<div class="aviso-flota" id="avisoFlota" hidden role="status"></div>
+
+<script>
+/* ==================================================================
+   MIS EXCEL — dentro de Apps Mendoza
+   Misma cuenta que el calendario. Los ficheros se guardan en el servidor,
+   con sus versiones anteriores, y se pueden cambiar aquí mismo.
+================================================================== */
+const MAX_BYTES = 4 * 1024 * 1024;
+const TIPOS = ['xlsx','xlsm','xls','csv'];
+const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+let DATOS = { carpetas:[], ficheros:[], espacio:0 };
+let carpetaActual = 'todas';          // 'todas' | 'sin' | id de carpeta
+let busqueda = '';
+
+/* ---------- utilidades ---------- */
+function $(id){ return document.getElementById(id); }
+function escapar(t){
+  return String(t == null ? '' : t).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+}
+function ver(id, mostrar){ $(id).hidden = !mostrar; }
+function tipoDe(nombre){ const m = /\.([a-z0-9]+)$/i.exec(nombre || ''); return m ? m[1].toLowerCase() : ''; }
+function tamano(b){
+  if (b < 1024) return b + ' bytes';
+  if (b < 1024*1024) return Math.round(b/1024) + ' KB';
+  return (b/1024/1024).toFixed(1).replace('.', ',') + ' MB';
+}
+function cuando(t){
+  if (!t) return '';
+  const f = new Date(t.replace('T', ' ').replace(/-/g, '/'));
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const dia = new Date(f); dia.setHours(0,0,0,0);
+  const hora = t.slice(11, 16);
+  const dif = Math.round((hoy - dia) / 86400000);
+  if (dif === 0) return 'hoy a las ' + hora;
+  if (dif === 1) return 'ayer a las ' + hora;
+  return f.getDate() + ' ' + MESES[f.getMonth()] + (f.getFullYear() !== hoy.getFullYear() ? ' ' + f.getFullYear() : '') + ', ' + hora;
+}
+let temporizador = null;
+function avisar(texto, error){
+  const caja = $('avisoFlota');
+  caja.textContent = texto; caja.className = 'aviso-flota' + (error ? ' aviso-flota--error' : ''); caja.hidden = false;
+  clearTimeout(temporizador); temporizador = setTimeout(function(){ caja.hidden = true; }, error ? 6000 : 3500);
+}
+function guardarPase(p){ try{ p ? localStorage.setItem('apps_pase', p) : (localStorage.removeItem('apps_pase'), localStorage.removeItem('calendario_pase')); }catch(e){} }
+function leerPase(){ try{ return localStorage.getItem('apps_pase') || localStorage.getItem('calendario_pase') || ''; }catch(e){ return ''; } }
+
+async function api(ruta, metodo, cuerpo){
+  const cab = { 'Content-Type':'application/json' };
+  const pase = leerPase(); if (pase) cab['Authorization'] = 'Bearer ' + pase;
+  let r;
+  try { r = await fetch(ruta, { method: metodo || 'GET', headers: cab, body: cuerpo ? JSON.stringify(cuerpo) : undefined }); }
+  catch (e){ throw new Error('No hay conexión con el servidor. Comprueba internet y vuelve a probar.'); }
+  return respuesta(r);
+}
+async function respuesta(r){
+  let datos = {};
+  try { datos = await r.json(); } catch (e) {}
+  if (r.status === 401){ cerrarSesion(); throw new Error(datos.error || 'Hay que volver a entrar.'); }
+  if (r.status === 413) throw new Error('El fichero pesa más de 4 MB y no cabe.');
+  if (!r.ok) throw new Error(datos.error || 'Algo ha fallado en el servidor.');
+  return datos;
+}
+async function enviarBytes(bytes, parametros){
+  const q = new URLSearchParams(parametros).toString();
+  let r;
+  try {
+    r = await fetch('/api/excel?' + q, { method:'POST', body: bytes,
+      headers: { 'Content-Type':'application/octet-stream', 'Authorization':'Bearer ' + leerPase() } });
+  } catch (e){ throw new Error('No hay conexión con el servidor. Comprueba internet y vuelve a probar.'); }
+  return respuesta(r);
+}
+async function traerBytes(id, version){
+  const r = await fetch('/api/excel?que=fichero&id=' + id + (version ? '&version=' + version : ''),
+                        { headers: { 'Authorization':'Bearer ' + leerPase() } });
+  if (r.status === 401){ cerrarSesion(); throw new Error('Hay que volver a entrar.'); }
+  if (!r.ok) throw new Error('No se ha podido traer el fichero.');
+  return new Uint8Array(await r.arrayBuffer());
+}
+function bajar(bytes, nombre){
+  const url = URL.createObjectURL(new Blob([bytes], { type:'application/octet-stream' }));
+  const a = document.createElement('a'); a.href = url; a.download = nombre;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 15000);
+}
+
+/* ---------- ventana genérica ---------- */
+let cerrarVentanaActual = null;
+function ventana(op){
+  return new Promise(function(resolver){
+    $('ventana').className = 'ventana' + (op.ancha ? ' ventana--ancha' : '');
+    $('ventanaTitulo').textContent = op.titulo;
+    $('ventanaCuerpo').innerHTML = op.cuerpo || '';
+    $('ventanaPie').innerHTML = (op.botones || []).map(function(b, i){
+      return '<button class="btn' + (b.solido ? ' btn--solido' : '') + (b.peligro ? ' btn--peligro' : '') + '" data-i="' + i + '">' + escapar(b.texto) + '</button>';
+    }).join('');
+    ver('ventanaPie', !!(op.botones && op.botones.length));
+    $('velo').hidden = false;
+    const terminar = function(valor){ $('velo').hidden = true; cerrarVentanaActual = null; resolver(valor); };
+    cerrarVentanaActual = function(){ terminar(null); };
+    $('ventanaPie').querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click', async function(){
+        const def = op.botones[Number(b.dataset.i)];
+        if (def.antes){ const ok = await def.antes(); if (ok === false) return; }
+        terminar(def.valor);
+      });
+    });
+    if (op.alAbrir) op.alAbrir(terminar);
+    const primero = $('ventanaCuerpo').querySelector('input,select');
+    if (primero){ primero.focus(); if (primero.select) primero.select(); }
+  });
+}
+$('ventanaCerrar').addEventListener('click', function(){ if (cerrarVentanaActual) cerrarVentanaActual(); });
+$('velo').addEventListener('click', function(e){ if (e.target.id === 'velo' && cerrarVentanaActual) cerrarVentanaActual(); });
+function confirmar(titulo, texto, boton, peligro){
+  return ventana({ titulo: titulo, cuerpo: '<p>' + texto + '</p>',
+    botones: [{ texto:'Cancelar', valor:false }, { texto: boton, valor:true, solido: !peligro, peligro: peligro }] });
+}
+function mensaje(titulo, texto){
+  return ventana({ titulo: titulo, cuerpo: '<p>' + texto + '</p>', botones: [{ texto:'Entendido', valor:true, solido:true }] });
+}
+function pedirTexto(titulo, etiqueta, valor, boton, nota){
+  let escrito = null;
+  return ventana({ titulo: titulo,
+    cuerpo: '<div class="campo"><label for="vTexto">' + escapar(etiqueta) + '</label><input id="vTexto" type="text" maxlength="150" value="' + escapar(valor || '') + '"></div>' + (nota ? '<p class="nota-peq">' + nota + '</p>' : ''),
+    botones: [{ texto:'Cancelar', valor:null }, { texto: boton, solido:true, valor:'ok', antes: function(){ escrito = $('vTexto').value; } }],
+    alAbrir: function(){
+      $('vTexto').addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); $('ventanaPie').querySelector('.btn--solido').click(); } });
+    }
+  }).then(function(v){ return v === 'ok' ? escrito : null; });
+}
+
+/* ---------- entrada ---------- */
+function cerrarSesion(){
+  guardarPase('');
+  ver('pantallaApp', false); ver('cargando', false); ver('pantallaEntrada', true); ver('btnSalir', false); ver('editor', false);
+  $('quien').textContent = '';
+}
+async function arrancar(){
+  if (leerPase()){
+    try {
+      const info = JSON.parse(decodeURIComponent(escape(atob(leerPase().split('.')[0].replace(/-/g,'+').replace(/_/g,'/')))));
+      $('quien').textContent = info.nombre || '';
+    } catch (e) {}
+    try { await cargar(); ver('btnSalir', true); return; } catch (e) {}
+  }
+  ver('cargando', false); ver('pantallaEntrada', true);
+}
+$('btnEntrar').addEventListener('click', async function(){
+  const boton = this; $('entradaError').hidden = true;
+  const correo = $('eCorreo').value.trim(), clave = $('eClave').value;
+  if (!correo || !clave){ $('entradaError').textContent = 'Pon tu correo y tu contraseña.'; $('entradaError').hidden = false; return; }
+  boton.disabled = true;
+  try {
+    const d = await api('/api/acceso', 'POST', { accion:'entrar', correo: correo, clave: clave });
+    guardarPase(d.pase); $('quien').textContent = d.usuario.nombre;
+    ver('pantallaEntrada', false); ver('btnSalir', true);
+    await cargar();
+  } catch (e){ $('entradaError').textContent = e.message; $('entradaError').hidden = false; }
+  boton.disabled = false;
+});
+['eCorreo','eClave'].forEach(function(id){
+  $(id).addEventListener('keydown', function(e){ if (e.key === 'Enter') $('btnEntrar').click(); });
+});
+$('btnSalir').addEventListener('click', cerrarSesion);
+
+async function cargar(){
+  recibir(await api('/api/excel'));
+  ver('cargando', false); ver('pantallaEntrada', false); ver('pantallaApp', true);
+}
+function recibir(d){
+  DATOS = { carpetas: d.carpetas || [], ficheros: d.ficheros || [], espacio: d.espacio || 0 };
+  if (typeof carpetaActual === 'number' && !DATOS.carpetas.some(function(c){ return c.id === carpetaActual; })) carpetaActual = 'todas';
+  pintar();
+}
+
+/* ---------- pintar la lista ---------- */
+const ICONO_CARPETA = '<svg class="ico-carpeta" viewBox="0 0 16 13" aria-hidden="true"><path d="M1 2.2C1 1.5 1.5 1 2.2 1h3.6l1.6 1.8h6.4c.7 0 1.2.5 1.2 1.2v6.8c0 .7-.5 1.2-1.2 1.2H2.2c-.7 0-1.2-.5-1.2-1.2z" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
+function nombreCarpeta(id){
+  const c = DATOS.carpetas.filter(function(x){ return x.id === id; })[0];
+  return c ? c.nombre : 'Sin carpeta';
+}
+function ficherosVisibles(){
+  return DATOS.ficheros.filter(function(f){
+    if (carpetaActual === 'sin' && f.carpeta_id !== null) return false;
+    if (typeof carpetaActual === 'number' && f.carpeta_id !== carpetaActual) return false;
+    if (busqueda && f.nombre.toLowerCase().indexOf(busqueda) < 0) return false;
+    return true;
+  });
+}
+function pintar(){
+  const n = DATOS.ficheros.length;
+  $('resumen').textContent = n ? (n === 1 ? '1 fichero' : n + ' ficheros') + ' guardados' : 'Tu nube de Excel, ordenada en carpetas';
+  $('espacio').textContent = 'Espacio usado: ' + tamano(DATOS.espacio) + ', con las versiones anteriores.';
+
+  const cuenta = function(filtro){ return DATOS.ficheros.filter(filtro).length; };
+  const boton = function(clave, nombre, total, icono){
+    return '<li><button type="button" data-carpeta="' + clave + '" aria-current="' + (String(carpetaActual) === String(clave)) + '">' +
+      '<span class="nom">' + (icono ? ICONO_CARPETA : '') + '<span>' + escapar(nombre) + '</span></span><span class="n">' + total + '</span></button></li>';
+  };
+  $('carpetas').innerHTML =
+    boton('todas', 'Todos los ficheros', n, false) +
+    boton('sin', 'Sin carpeta', cuenta(function(f){ return f.carpeta_id === null; }), false) +
+    (DATOS.carpetas.length ? '<li class="sep" aria-hidden="true"></li>' : '') +
+    DATOS.carpetas.map(function(c){ return boton(c.id, c.nombre, cuenta(function(f){ return f.carpeta_id === c.id; }), true); }).join('');
+  $('carpetas').querySelectorAll('button').forEach(function(b){
+    b.addEventListener('click', function(){
+      const v = b.dataset.carpeta; carpetaActual = (v === 'todas' || v === 'sin') ? v : Number(v); pintar();
+    });
+  });
+  ver('accionesCarpeta', typeof carpetaActual === 'number');
+
+  $('tituloCarpeta').textContent = carpetaActual === 'todas' ? 'Todos los ficheros' : nombreCarpeta(carpetaActual === 'sin' ? null : carpetaActual);
+  const lista = ficherosVisibles();
+  $('cuentaFicheros').textContent = lista.length === 1 ? '1 fichero' : lista.length + ' ficheros';
+
+  if (!lista.length){
+    $('ficheros').innerHTML = '<li style="display:block"><p class="vacio">' + (busqueda
+      ? '<b>Ningún fichero se llama así</b>Prueba con otra parte del nombre.'
+      : n ? '<b>Esta carpeta está vacía</b>Sube un Excel aquí o arrástralo encima.'
+          : '<b>Todavía no has guardado ningún Excel</b>Pulsa «Subir Excel» o arrastra los ficheros a este recuadro.') + '</p></li>';
+    return;
+  }
+  $('ficheros').innerHTML = lista.map(function(f){
+    const meta = [];
+    if (carpetaActual === 'todas') meta.push(f.carpeta_id === null ? 'Sin carpeta' : nombreCarpeta(f.carpeta_id));
+    meta.push(tamano(f.tamano));
+    meta.push('cambiado ' + cuando(f.actualizado));
+    if (f.versiones > 1) meta.push(f.versiones + ' versiones');
+    return '<li data-id="' + f.id + '">' +
+      '<span class="tipo tipo--' + f.tipo + '" aria-hidden="true">' + f.tipo.toUpperCase() + '</span>' +
+      '<div class="fichero__cuerpo"><button class="fichero__nombre" data-accion="abrir">' + escapar(f.nombre) + '</button>' +
+      '<p class="fichero__meta">' + escapar(meta.join(', ')) + '</p></div>' +
+      '<div class="fichero__acciones">' +
+        '<button class="btn btn--mini" data-accion="abrir">' + (f.tipo === 'xls' ? 'Ver' : 'Abrir') + '</button>' +
+        '<button class="btn btn--mini" data-accion="descargar">Descargar</button>' +
+        '<div class="menu"><button class="btn btn--mini" data-accion="menu" aria-haspopup="true" aria-expanded="false" aria-label="Más opciones de ' + escapar(f.nombre) + '">Más</button></div>' +
+      '</div></li>';
+  }).join('');
+}
+
+/* acciones de cada fichero */
+function ficheroPorId(id){ return DATOS.ficheros.filter(function(f){ return f.id === id; })[0]; }
+function cerrarMenus(){
+  document.querySelectorAll('.menu__lista').forEach(function(m){ m.remove(); });
+  document.querySelectorAll('[data-accion="menu"]').forEach(function(b){ b.setAttribute('aria-expanded', 'false'); });
+}
+document.addEventListener('click', function(e){ if (!e.target.closest('.menu')) cerrarMenus(); });
+$('ficheros').addEventListener('click', async function(e){
+  const b = e.target.closest('[data-accion]'); if (!b) return;
+  const li = b.closest('li[data-id]'); if (!li) return;
+  const f = ficheroPorId(Number(li.dataset.id)); if (!f) return;
+  const accion = b.dataset.accion;
+  if (accion === 'menu'){
+    const abierto = b.getAttribute('aria-expanded') === 'true';
+    cerrarMenus(); if (abierto) return;
+    b.setAttribute('aria-expanded', 'true');
+    const ul = document.createElement('ul'); ul.className = 'menu__lista';
+    ul.innerHTML = [
+      ['version','Subir una versión nueva'], ['versiones','Versiones anteriores'],
+      ['renombrar','Cambiar el nombre'], ['mover','Mover a otra carpeta'], ['borrar','Borrar']
+    ].map(function(o){ return '<li><button type="button" data-accion="' + o[0] + '"' + (o[0] === 'borrar' ? ' class="peligro"' : '') + '>' + o[1] + '</button></li>'; }).join('');
+    b.parentNode.appendChild(ul);
+    return;
+  }
+  cerrarMenus();
+  try {
+    if (accion === 'abrir') abrirEditor(f);
+    else if (accion === 'descargar'){ bajar(await traerBytes(f.id), f.nombre); }
+    else if (accion === 'version'){ ficheroParaVersion = f; $('elegirVersion').click(); }
+    else if (accion === 'versiones') verVersiones(f);
+    else if (accion === 'renombrar'){
+      const nombre = await pedirTexto('Cambiar el nombre', 'Nombre del fichero', f.nombre, 'Guardar');
+      if (nombre && nombre.trim() !== f.nombre){ recibir(await api('/api/excel', 'POST', { accion:'renombrar', id: f.id, nombre: nombre })); avisar('Nombre cambiado.'); }
+    }
+    else if (accion === 'mover'){
+      const opciones = '<option value="">Sin carpeta</option>' + DATOS.carpetas.map(function(c){
+        return '<option value="' + c.id + '"' + (c.id === f.carpeta_id ? ' selected' : '') + '>' + escapar(c.nombre) + '</option>'; }).join('');
+      let elegida = null;
+      const ok = await ventana({ titulo: 'Mover «' + f.nombre + '»',
+        cuerpo: '<div class="campo"><label for="vCarpeta">Llevarlo a</label><select id="vCarpeta">' + opciones + '</select></div>' +
+                (DATOS.carpetas.length ? '' : '<p class="nota-peq">Todavía no tienes carpetas. Crea una con «+ Nueva carpeta».</p>'),
+        botones: [{ texto:'Cancelar', valor:false }, { texto:'Mover', valor:true, solido:true, antes: function(){ elegida = $('vCarpeta').value; } }] });
+      if (ok){ recibir(await api('/api/excel', 'POST', { accion:'mover', id: f.id, carpeta: elegida || null })); avisar('Movido a «' + (elegida ? nombreCarpeta(Number(elegida)) : 'Sin carpeta') + '».'); }
+    }
+    else if (accion === 'borrar'){
+      const ok = await confirmar('Borrar «' + f.nombre + '»',
+        'Se borra el fichero y todas sus versiones anteriores' + (f.versiones > 1 ? ' (' + f.versiones + ')' : '') + '. <b>No se puede deshacer.</b> Si tienes dudas, descárgalo antes.', 'Borrar para siempre', true);
+      if (ok){ recibir(await api('/api/excel?id=' + f.id, 'DELETE')); avisar('Fichero borrado.'); }
+    }
+  } catch (err){ avisar(err.message, true); }
+});
+
+/* ---------- versiones anteriores ---------- */
+async function verVersiones(f){
+  let lista;
+  try { lista = (await api('/api/excel?que=versiones&id=' + f.id)).versiones; }
+  catch (e){ avisar(e.message, true); return; }
+  ventana({ titulo: 'Versiones de «' + f.nombre + '»', ancha: true,
+    cuerpo: '<p class="nota-peq">Cada vez que el fichero cambia se guarda la versión anterior. Se conservan las 10 últimas.</p>' +
+      '<ul class="versiones">' + lista.map(function(v, i){
+        return '<li><span class="cuando">' + escapar(cuando(v.creado)) + (i === 0 ? '<span class="chapa">La de ahora</span>' : '') +
+          '<small>' + escapar(v.motivo) + ', ' + tamano(v.tamano) + '</small></span>' +
+          '<button class="btn btn--mini" data-v="' + v.id + '" data-que="bajar">Descargar</button>' +
+          (i > 0 ? '<button class="btn btn--mini" data-v="' + v.id + '" data-que="volver">Volver a esta</button>' : '') + '</li>';
+      }).join('') + '</ul>',
+    botones: [{ texto:'Cerrar', valor:null }],
+    alAbrir: function(terminar){
+      $('ventanaCuerpo').querySelectorAll('[data-v]').forEach(function(b){
+        b.addEventListener('click', async function(){
+          const v = lista.filter(function(x){ return String(x.id) === b.dataset.v; })[0];
+          try {
+            if (b.dataset.que === 'bajar'){
+              const nombre = f.nombre.replace(/(\.[a-z0-9]+)$/i, ' (' + v.creado.slice(0,10) + ' ' + v.creado.slice(11,16).replace(':','h') + ')$1');
+              bajar(await traerBytes(f.id, v.id), nombre); return;
+            }
+            terminar(null);
+            const ok = await confirmar('Volver a una versión anterior',
+              'El fichero volverá a estar como el <b>' + escapar(cuando(v.creado)) + '</b>. La versión de ahora no se pierde: queda guardada en esta lista.', 'Volver a esa versión');
+            if (ok){ recibir(await api('/api/excel', 'POST', { accion:'recuperar', id: f.id, version: v.id })); avisar('Recuperada la versión del ' + cuando(v.creado) + '.'); }
+          } catch (e){ avisar(e.message, true); }
+        });
+      });
+    }
+  });
+}
+
+/* ---------- carpetas ---------- */
+$('btnCarpeta').addEventListener('click', async function(){
+  const nombre = await pedirTexto('Nueva carpeta', 'Nombre de la carpeta', '', 'Crear carpeta', 'Por ejemplo: Club, Casa, Trabajo…');
+  if (!nombre || !nombre.trim()) return;
+  try { const d = await api('/api/excel', 'POST', { accion:'carpeta_nueva', nombre: nombre }); carpetaActual = d.carpeta; recibir(d); avisar('Carpeta creada.'); }
+  catch (e){ avisar(e.message, true); }
+});
+$('btnRenombrarCarpeta').addEventListener('click', async function(){
+  const nombre = await pedirTexto('Renombrar la carpeta', 'Nombre de la carpeta', nombreCarpeta(carpetaActual), 'Guardar');
+  if (!nombre || !nombre.trim()) return;
+  try { recibir(await api('/api/excel', 'POST', { accion:'carpeta_renombrar', id: carpetaActual, nombre: nombre })); avisar('Carpeta renombrada.'); }
+  catch (e){ avisar(e.message, true); }
+});
+$('btnBorrarCarpeta').addEventListener('click', async function(){
+  const n = DATOS.ficheros.filter(function(f){ return f.carpeta_id === carpetaActual; }).length;
+  const ok = await confirmar('Quitar la carpeta «' + nombreCarpeta(carpetaActual) + '»',
+    n === 0 ? 'La carpeta está vacía.' : n === 1 ? 'El fichero que tiene no se borra: pasa a «Sin carpeta».' : 'Sus ' + n + ' ficheros no se borran: pasan a «Sin carpeta».', 'Quitar carpeta', true);
+  if (!ok) return;
+  try { recibir(await api('/api/excel?que=carpeta&id=' + carpetaActual, 'DELETE')); carpetaActual = 'todas'; pintar(); avisar('Carpeta quitada.'); }
+  catch (e){ avisar(e.message, true); }
+});
+$('buscar').addEventListener('input', function(){ busqueda = this.value.trim().toLowerCase(); pintar(); });
+
+/* ---------- subir ---------- */
+function carpetaDestino(){ return typeof carpetaActual === 'number' ? carpetaActual : null; }
+function nombreCopia(nombre, carpeta){
+  const base = nombre.replace(/(\.[a-z0-9]+)$/i, ''), ext = (/(\.[a-z0-9]+)$/i.exec(nombre) || [''])[0];
+  let n = 2, prueba;
+  do { prueba = base + ' (' + n + ')' + ext; n++; }
+  while (DATOS.ficheros.some(function(f){ return f.carpeta_id === carpeta && f.nombre.toLowerCase() === prueba.toLowerCase(); }));
+  return prueba;
+}
+async function subirVarios(archivos){
+  const carpeta = carpetaDestino();
+  let subidos = 0;
+  for (const a of archivos){
+    const tipo = tipoDe(a.name);
+    if (TIPOS.indexOf(tipo) < 0){ await mensaje('No es un Excel', '«' + escapar(a.name) + '» no es un fichero de Excel (.xlsx, .xlsm, .xls o .csv), así que no se guarda.'); continue; }
+    if (a.size > MAX_BYTES){ await mensaje('Fichero demasiado grande', '«' + escapar(a.name) + '» pesa ' + tamano(a.size) + ' y aquí caben ficheros de hasta 4 MB. Si tiene fotos o gráficos muy pesados, prueba a guardarlo sin ellos.'); continue; }
+    const igual = DATOS.ficheros.filter(function(f){ return f.carpeta_id === carpeta && f.nombre.toLowerCase() === a.name.toLowerCase(); })[0];
+    let params = { nombre: a.name, carpeta: carpeta === null ? '' : carpeta };
+    if (igual){
+      const que = await ventana({ titulo: 'Ya tienes «' + a.name + '»',
+        cuerpo: '<p>En ' + (carpeta === null ? '«Sin carpeta»' : 'esta carpeta') + ' ya hay un fichero con ese nombre. ¿Qué hago con el que estás subiendo?</p>' +
+                '<p class="nota-peq">Si lo guardas como versión nueva, el de ahora no se pierde: queda en «Versiones anteriores».</p>',
+        botones: [{ texto:'No subirlo', valor:'no' }, { texto:'Guardar como copia', valor:'copia' }, { texto:'Guardar como versión nueva', valor:'version', solido:true }] });
+      if (!que || que === 'no') continue;
+      if (que === 'version'){
+        if (tipoDe(igual.nombre) !== tipo){ await mensaje('Tipo distinto', 'El fichero guardado es .' + igual.tipo + ' y el nuevo es .' + tipo + '; se guarda como copia.'); params.nombre = nombreCopia(a.name, carpeta); }
+        else params = { fichero: igual.id };
+      } else params.nombre = nombreCopia(a.name, carpeta);
+    }
+    avisar('Subiendo «' + a.name + '»…');
+    try {
+      const bytes = new Uint8Array(await a.arrayBuffer());
+      recibir(await enviarBytes(bytes, params)); subidos++;
+    } catch (e){ await mensaje('No se ha podido subir', '«' + escapar(a.name) + '»: ' + escapar(e.message)); }
+  }
+  if (subidos) avisar(subidos === 1 ? 'Excel guardado.' : subidos + ' Excel guardados.');
+}
+$('btnSubir').addEventListener('click', function(){ $('elegirFicheros').click(); });
+$('elegirFicheros').addEventListener('change', function(){ const l = Array.from(this.files); this.value = ''; if (l.length) subirVarios(l); });
+
+let ficheroParaVersion = null;
+$('elegirVersion').addEventListener('change', async function(){
+  const a = this.files[0]; this.value = ''; const f = ficheroParaVersion; ficheroParaVersion = null;
+  if (!a || !f) return;
+  if (tipoDe(a.name) !== f.tipo){ await mensaje('Tipo distinto', 'Para ser una versión nueva tiene que ser también un .' + f.tipo + '. Si quieres guardarlo igualmente, súbelo como fichero aparte.'); return; }
+  if (a.size > MAX_BYTES){ await mensaje('Fichero demasiado grande', 'Pesa ' + tamano(a.size) + ' y aquí caben ficheros de hasta 4 MB.'); return; }
+  try { recibir(await enviarBytes(new Uint8Array(await a.arrayBuffer()), { fichero: f.id })); avisar('Versión nueva de «' + f.nombre + '» guardada. La anterior sigue en «Versiones anteriores».'); }
+  catch (e){ avisar(e.message, true); }
+});
+
+/* arrastrar y soltar */
+let arrastres = 0;
+const zona = $('zona');
+zona.addEventListener('dragenter', function(e){ if (!e.dataTransfer || Array.from(e.dataTransfer.types).indexOf('Files') < 0) return; e.preventDefault(); arrastres++; ver('soltar', true); });
+zona.addEventListener('dragover', function(e){ if (Array.from(e.dataTransfer.types).indexOf('Files') >= 0) e.preventDefault(); });
+zona.addEventListener('dragleave', function(){ arrastres = Math.max(0, arrastres - 1); if (!arrastres) ver('soltar', false); });
+zona.addEventListener('drop', function(e){
+  e.preventDefault(); arrastres = 0; ver('soltar', false);
+  const l = Array.from(e.dataTransfer.files || []); if (l.length) subirVarios(l);
+});
+
+/* ---------- Excel en blanco ---------- */
+$('btnNuevo').addEventListener('click', async function(){
+  let nombre = await pedirTexto('Excel en blanco', 'Nombre del Excel', 'Nuevo Excel', 'Crear y abrir',
+    carpetaDestino() === null ? 'Se guarda en «Sin carpeta». Para meterlo en una carpeta, entra antes en ella.' : 'Se guarda en «' + escapar(nombreCarpeta(carpetaDestino())) + '».');
+  if (nombre === null) return;
+  nombre = nombre.trim() || 'Nuevo Excel';
+  if (!/\.xlsx$/i.test(nombre)) nombre = nombre.replace(/\.(xlsm|xls|csv)$/i, '') + '.xlsx';
+  if (DATOS.ficheros.some(function(f){ return f.carpeta_id === carpetaDestino() && f.nombre.toLowerCase() === nombre.toLowerCase(); }))
+    nombre = nombreCopia(nombre, carpetaDestino());
+  try {
+    await cargarLibrerias();
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([[]]), 'Hoja1');
+    const bytes = new Uint8Array(XLSX.write(wb, { type:'array', bookType:'xlsx' }));
+    const d = await enviarBytes(bytes, { nombre: nombre, carpeta: carpetaDestino() === null ? '' : carpetaDestino(), motivo:'nuevo' });
+    recibir(d);
+    const f = ficheroPorId(d.fichero); if (f) abrirEditor(f);
+  } catch (e){ avisar(e.message, true); }
+});
+
+/* ==================================================================
+   EDITOR
+================================================================== */
+let librerias = null;
+function cargarScript(src){
+  return new Promise(function(ok, mal){
+    const s = document.createElement('script'); s.src = src;
+    s.onload = ok; s.onerror = function(){ mal(new Error('No se ha podido cargar el editor. Comprueba internet y vuelve a probar.')); };
+    document.head.appendChild(s);
+  });
+}
+function cargarLibrerias(){
+  if (!librerias){
+    librerias = Promise.all([cargarScript('/excel/lib/fflate.min.js'), cargarScript('/excel/lib/xlsx.full.min.js'),
+                             cargarScript('/excel/lib/hyperformula.full.min.js'), cargarScript('/excel/motor.js')])
+      .then(function(){
+        const HF = window.HyperFormula && (window.HyperFormula.buildFromSheets ? window.HyperFormula : window.HyperFormula.HyperFormula);
+        MotorExcel.preparar({ XLSX: window.XLSX, HyperFormula: HF, fflate: window.fflate, DOMParser: DOMParser, XMLSerializer: XMLSerializer });
+      })
+      .catch(function(e){ librerias = null; throw e; });
+  }
+  return librerias;
+}
+
+const ED = { fichero:null, libro:null, version:null, hoja:0, sel:{ r:0, c:0 }, filas:0, cols:0, limite:300, pendiente:null, editando:null };
+const A = function(r, c){ return XLSX.utils.encode_cell({ r: r, c: c }); };
+function letraCol(c){ return XLSX.utils.encode_col(c); }
+
+async function abrirEditor(f){
+  ED.fichero = f; ED.libro = null; ED.pendiente = null; ED.hoja = 0; ED.sel = { r:0, c:0 }; ED.limite = 300;
+  $('edNombre').textContent = f.nombre;
+  ver('editor', true); ver('edCargando', true); ver('edRejilla', false); ver('edAviso', false);
+  $('edCargando').textContent = 'Abriendo «' + f.nombre + '»…';
+  $('edPestanas').innerHTML = ''; $('edEntrada').value = ''; $('edRef').textContent = '';
+  document.body.style.overflow = 'hidden';
+  estado();
+  try {
+    await cargarLibrerias();
+    const bytes = await traerBytes(f.id);
+    ED.version = f.version;
+    let libro;
+    try { libro = MotorExcel.abrir(bytes, f.tipo); }
+    catch (e){
+      console.error(e);
+      $('edCargando').innerHTML = 'Este Excel no se puede abrir aquí, pero sigue guardado tal cual.<br>Pulsa «Descargar» para abrirlo con Excel.';
+      return;
+    }
+    ED.libro = libro;
+    // primera hoja que se vea
+    ED.hoja = Math.max(0, libro.hojas.findIndex(function(h){ return !h.oculta; }));
+    const avisos = [];
+    if (!libro.editable) avisos.push(libro.motivoSoloVer);
+    else if (f.tipo === 'csv') avisos.push('Es un CSV: solo guarda texto y números, sin colores ni fórmulas.');
+    if (avisos.length){ $('edAviso').textContent = avisos.join(' '); ver('edAviso', true); }
+    ver('edCargando', false); ver('edRejilla', true);
+    pintarPestanas(); pintarHoja(); estado();
+  } catch (e){ $('edCargando').textContent = e.message; }
+}
+
+function estado(texto, clase){
+  const el = $('edEstado'), l = ED.libro;
+  if (!texto){
+    if (ED.pendiente && !(l && l.hayCambios)){ texto = 'No se ha podido guardar. Pulsa «Guardar» para volver a intentarlo.'; clase = 'mal'; }
+    else if (l && l.hayCambios){ texto = 'Cambios sin guardar'; clase = 'sin'; }
+    else if (l && !l.editable){ texto = 'Solo para ver'; }
+    else texto = ED.fichero ? 'Guardado, cambiado ' + cuando(ED.fichero.actualizado) : '';
+  }
+  el.textContent = texto; el.className = 'ed-estado' + (clase ? ' ed-estado--' + clase : '');
+  $('edGuardar').disabled = !(l && (l.hayCambios || ED.pendiente));
+  $('edDeshacer').disabled = !(l && l.historial.length);
+}
+
+function pintarPestanas(){
+  const l = ED.libro;
+  $('edPestanas').innerHTML = l.hojas.map(function(h, i){
+    if (h.oculta === 2) return '';
+    return '<button role="tab" data-h="' + i + '" aria-selected="' + (i === ED.hoja) + '"' + (h.oculta ? ' class="oculta" title="Hoja oculta en Excel"' : '') + '>' + escapar(h.nombre) + '</button>';
+  }).join('');
+  ver('edPestanas', l.hojas.length > 1 || l.tipo !== 'csv');
+  $('edPestanas').querySelectorAll('button').forEach(function(b){
+    b.addEventListener('mousedown', confirmarBarra);
+    b.addEventListener('click', function(){
+      terminarEdicion(true);
+      ED.hoja = Number(b.dataset.h); ED.sel = { r:0, c:0 }; ED.limite = 300;
+      pintarPestanas(); pintarHoja();
+    });
+  });
+}
+
+function pintarHoja(){
+  const l = ED.libro, hoja = l.hojas[ED.hoja];
+  const rango = hoja.ws['!ref'] ? XLSX.utils.decode_range(hoja.ws['!ref']) : { e: { r: -1, c: -1 } };
+  const extraF = l.editable ? 30 : 0, extraC = l.editable ? 4 : 0;
+  ED.filas = Math.max(rango.e.r + 1 + extraF, l.editable ? 40 : 1);
+  ED.cols = Math.max(rango.e.c + 1 + extraC, l.editable ? 10 : 1);
+  const filasVer = Math.min(ED.filas, ED.limite);
+
+  // celdas unidas
+  const tapadas = new Set(), madres = {};
+  (hoja.fusiones || []).forEach(function(m){
+    madres[A(m.s.r, m.s.c)] = { rs: m.e.r - m.s.r + 1, cs: m.e.c - m.s.c + 1 };
+    for (let r = m.s.r; r <= m.e.r; r++) for (let c = m.s.c; c <= m.e.c; c++) if (r !== m.s.r || c !== m.s.c) tapadas.add(A(r, c));
+  });
+  ED.madres = madres; ED.tapadas = tapadas;
+  const colOculta = function(c){ const x = hoja.columnas && hoja.columnas[c]; return !!(x && x.oculta); };
+
+  let cols = '', ancho = 48;
+  for (let c = 0; c < ED.cols; c++){
+    const x = hoja.columnas && hoja.columnas[c];
+    const px = colOculta(c) ? 0 : Math.max(36, Math.min(420, (x && x.px) || 86));
+    ancho += px;
+    cols += '<col style="width:' + px + 'px">';
+  }
+  let h = '<table class="hoja" id="edTabla" style="width:' + ancho + 'px"><colgroup><col style="width:48px">' + cols;
+  h += '</colgroup><thead><tr><th scope="col"></th>';
+  for (let c = 0; c < ED.cols; c++) h += '<th scope="col" data-c="' + c + '"' + (colOculta(c) ? ' style="display:none"' : '') + '>' + letraCol(c) + '</th>';
+  h += '</tr></thead><tbody>';
+  for (let r = 0; r < filasVer; r++){
+    if (hoja.filasOcultas && hoja.filasOcultas[r]) continue;
+    h += '<tr><th scope="row" data-r="' + r + '">' + (r + 1) + '</th>';
+    for (let c = 0; c < ED.cols; c++){
+      const d = A(r, c);
+      if (tapadas.has(d)) continue;
+      const m = madres[d];
+      h += '<td data-r="' + r + '" data-c="' + c + '"' + (m ? ' rowspan="' + m.rs + '" colspan="' + m.cs + '"' : '') + estiloCelda(r, c, colOculta(c)) + '</td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table>';
+  if (ED.filas > filasVer) h += '<div class="ed-mas"><button class="btn btn--mini" id="edMasFilas">Ver ' + Math.min(300, ED.filas - filasVer) + ' filas más (hay ' + ED.filas + ')</button></div>';
+  $('edRejilla').innerHTML = h;
+  if ($('edMasFilas')) $('edMasFilas').addEventListener('click', function(){ ED.limite += 300; const y = $('edRejilla').scrollTop; pintarHoja(); $('edRejilla').scrollTop = y; });
+  seleccionar(ED.sel.r, ED.sel.c, true);
+}
+/* atributos y contenido de una celda: devuelve ' style="..." class="..." title="...">texto' */
+function estiloCelda(r, c, oculta){
+  const x = ED.libro.celda(ED.hoja, r, c);
+  let st = x.css + (x.alin ? 'text-align:' + x.alin + ';' : '') + (oculta ? 'display:none;' : '');
+  const titulo = x.sinCalculo ? 'Este resultado se pondrá al día al abrir el fichero en Excel' : (x.texto.length > 18 ? x.texto : '');
+  return (st ? ' style="' + escapar(st) + '"' : '') + (x.sinCalculo ? ' class="calc"' : '') + (titulo ? ' title="' + escapar(titulo) + '"' : '') + '>' + escapar(x.texto);
+}
+function tdDe(r, c){ return $('edRejilla').querySelector('td[data-r="' + r + '"][data-c="' + c + '"]'); }
+function repintarCelda(r, c, destello){
+  const td = tdDe(r, c); if (!td) return;
+  const tmp = document.createElement('tbody');
+  tmp.innerHTML = '<tr><td' + estiloCelda(r, c, td.style.display === 'none') + '</td></tr>';
+  const nuevo = tmp.querySelector('td');
+  td.setAttribute('style', nuevo.getAttribute('style') || ''); if (!nuevo.getAttribute('style')) td.removeAttribute('style');
+  td.className = nuevo.className + (td.classList.contains('sel') ? ' sel' : '');
+  if (nuevo.title) td.title = nuevo.title; else td.removeAttribute('title');
+  td.textContent = nuevo.textContent;
+  if (destello){ td.classList.remove('reciente'); void td.offsetWidth; td.classList.add('reciente'); }
+}
+
+function madreDe(r, c){
+  if (!ED.tapadas || !ED.tapadas.has(A(r, c))) return { r: r, c: c };
+  for (const k in ED.madres){
+    const a = XLSX.utils.decode_cell(k), m = ED.madres[k];
+    if (r >= a.r && r < a.r + m.rs && c >= a.c && c < a.c + m.cs) return a;
+  }
+  return { r: r, c: c };
+}
+function seleccionar(r, c, sinDesplazar){
+  r = Math.max(0, Math.min(ED.filas - 1, r)); c = Math.max(0, Math.min(ED.cols - 1, c));
+  const p = madreDe(r, c); r = p.r; c = p.c;
+  const rej = $('edRejilla');
+  rej.querySelectorAll('.sel,.activa').forEach(function(x){ x.classList.remove('sel'); x.classList.remove('activa'); });
+  ED.sel = { r: r, c: c };
+  if (r >= ED.limite){ ED.limite = r + 100; pintarHoja(); return; }
+  const td = tdDe(r, c);
+  if (td){
+    td.classList.add('sel');
+    const ch = rej.querySelector('thead th[data-c="' + c + '"]'), rh = rej.querySelector('tbody th[data-r="' + r + '"]');
+    if (ch) ch.classList.add('activa'); if (rh) rh.classList.add('activa');
+    if (!sinDesplazar){
+      const caja = rej.getBoundingClientRect(), t = td.getBoundingClientRect();
+      if (t.top < caja.top + 28) rej.scrollTop -= (caja.top + 28 - t.top);
+      if (t.bottom > caja.bottom) rej.scrollTop += t.bottom - caja.bottom + 4;
+      if (t.left < caja.left + 48) rej.scrollLeft -= (caja.left + 48 - t.left);
+      if (t.right > caja.right) rej.scrollLeft += t.right - caja.right + 4;
+    }
+  }
+  $('edRef').textContent = A(r, c);
+  const x = ED.libro.celda(ED.hoja, r, c);
+  $('edEntrada').value = x.editar;
+  $('edEntrada').readOnly = !!ED.libro.porQueNoSePuede(ED.hoja, r, c);
+}
+
+/* aplicar lo escrito */
+function aplicar(r, c, texto){
+  const l = ED.libro;
+  const antes = l.celda(ED.hoja, r, c).editar;
+  if (texto === antes) return true;
+  const res = l.cambiar(ED.hoja, r, c, texto);
+  if (res.error){ avisar(res.error, true); return false; }
+  res.celdas.forEach(function(x, i){ if (x[0] === ED.hoja) repintarCelda(x[1], x[2], i > 0); });
+  if (r >= ED.filas - 5 || c >= ED.cols - 2){ pintarHoja(); }
+  estado();
+  return true;
+}
+
+/* edición dentro de la celda */
+function empezarEdicion(textoInicial){
+  const l = ED.libro; if (!l) return;
+  const motivo = l.porQueNoSePuede(ED.hoja, ED.sel.r, ED.sel.c);
+  if (motivo){ avisar(motivo, true); return; }
+  const td = tdDe(ED.sel.r, ED.sel.c); if (!td) return;
+  terminarEdicion(true);
+  const rej = $('edRejilla');
+  const inp = document.createElement('input');
+  inp.className = 'celda-edit'; inp.type = 'text'; inp.spellcheck = false; inp.autocomplete = 'off';
+  inp.setAttribute('aria-label', 'Editar ' + A(ED.sel.r, ED.sel.c));
+  inp.style.left = (td.offsetLeft) + 'px'; inp.style.top = (td.offsetTop) + 'px';
+  inp.style.width = Math.max(td.offsetWidth + 2, 140) + 'px'; inp.style.height = (td.offsetHeight + 1) + 'px';
+  inp.value = textoInicial !== undefined ? textoInicial : l.celda(ED.hoja, ED.sel.r, ED.sel.c).editar;
+  rej.appendChild(inp);
+  ED.editando = { el: inp, r: ED.sel.r, c: ED.sel.c };
+  inp.focus();
+  const n = inp.value.length; inp.setSelectionRange(n, n);
+  inp.addEventListener('input', function(){ $('edEntrada').value = inp.value; });
+  inp.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === 'Tab' || e.key === 'Escape') e.stopPropagation();
+    if (e.key === 'Enter' || e.key === 'Tab'){
+      e.preventDefault();
+      if (terminarEdicion(true) === false) return;
+      if (e.key === 'Enter') seleccionar(ED.sel.r + (e.shiftKey ? -1 : 1), ED.sel.c);
+      else seleccionar(ED.sel.r, ED.sel.c + (e.shiftKey ? -1 : 1));
+      $('edRejilla').focus({ preventScroll:true });
+    } else if (e.key === 'Escape'){ e.preventDefault(); terminarEdicion(false); $('edRejilla').focus({ preventScroll:true }); }
+  });
+  inp.addEventListener('blur', function(){ setTimeout(function(){ if (ED.editando && ED.editando.el === inp) terminarEdicion(true); }, 0); });
+}
+function terminarEdicion(guardar){
+  const e = ED.editando; if (!e) return true;
+  ED.editando = null;
+  let ok = true;
+  if (guardar) ok = aplicar(e.r, e.c, e.el.value);
+  e.el.remove();
+  if (ED.sel.r === e.r && ED.sel.c === e.c) $('edEntrada').value = ED.libro.celda(ED.hoja, e.r, e.c).editar;
+  return ok;
+}
+
+$('edRejilla').tabIndex = 0;
+$('edRejilla').addEventListener('mousedown', function(e){
+  const td = e.target.closest('td'); if (!td) return;
+  const r = Number(td.dataset.r), c = Number(td.dataset.c);
+  if (ED.editando && ED.editando.r === r && ED.editando.c === c) return;
+  terminarEdicion(true);
+  confirmarBarra();
+  seleccionar(r, c, true);
+});
+$('edRejilla').addEventListener('click', function(e){
+  const td = e.target.closest('td'); if (!td) return;
+  // en pantallas táctiles, tocar otra vez la celda elegida la pone a escribir
+  if (matchMedia('(hover: none)').matches && ED.ultimoToque === td.dataset.r + ',' + td.dataset.c) empezarEdicion();
+  ED.ultimoToque = td.dataset.r + ',' + td.dataset.c;
+});
+$('edRejilla').addEventListener('dblclick', function(e){ if (e.target.closest('td')) empezarEdicion(); });
+
+document.addEventListener('keydown', function(e){
+  if ($('editor').hidden || !ED.libro || !$('velo').hidden) return;
+  const meta = e.ctrlKey || e.metaKey;
+  if (meta && e.key.toLowerCase() === 's'){ e.preventDefault(); terminarEdicion(true); guardarEditor(); return; }
+  if (ED.editando || document.activeElement === $('edEntrada')) return;
+  if (meta && e.key.toLowerCase() === 'z'){ e.preventDefault(); deshacer(); return; }
+  const mov = { ArrowUp:[-1,0], ArrowDown:[1,0], ArrowLeft:[0,-1], ArrowRight:[0,1] }[e.key];
+  if (mov){ e.preventDefault();
+    let r = ED.sel.r + mov[0], c = ED.sel.c + mov[1];
+    const m = ED.madres && ED.madres[A(ED.sel.r, ED.sel.c)];
+    if (m && mov[0] > 0) r = ED.sel.r + m.rs; if (m && mov[1] > 0) c = ED.sel.c + m.cs;
+    seleccionar(r, c); return; }
+  if (e.key === 'Tab'){ e.preventDefault(); seleccionar(ED.sel.r, ED.sel.c + (e.shiftKey ? -1 : 1)); return; }
+  if (e.key === 'Enter' || e.key === 'F2'){ e.preventDefault(); empezarEdicion(); return; }
+  if (e.key === 'Delete' || e.key === 'Backspace'){
+    e.preventDefault();
+    const motivo = ED.libro.porQueNoSePuede(ED.hoja, ED.sel.r, ED.sel.c);
+    if (motivo){ avisar(motivo, true); return; }
+    aplicar(ED.sel.r, ED.sel.c, ''); seleccionar(ED.sel.r, ED.sel.c, true); return;
+  }
+  if (e.key.length === 1 && !meta && !e.altKey){ e.preventDefault(); empezarEdicion(e.key); }
+});
+
+/* barra de arriba (fx) */
+$('edEntrada').addEventListener('keydown', function(e){
+  if (e.key === 'Enter' || e.key === 'Escape') e.stopPropagation();
+  if (e.key === 'Enter'){
+    e.preventDefault();
+    if (this.readOnly){ avisar(ED.libro.porQueNoSePuede(ED.hoja, ED.sel.r, ED.sel.c), true); return; }
+    if (aplicar(ED.sel.r, ED.sel.c, this.value)){ seleccionar(ED.sel.r + 1, ED.sel.c); $('edRejilla').focus({ preventScroll:true }); }
+  } else if (e.key === 'Escape'){ this.value = ED.libro.celda(ED.hoja, ED.sel.r, ED.sel.c).editar; $('edRejilla').focus({ preventScroll:true }); }
+});
+$('edEntrada').addEventListener('focus', function(){ terminarEdicion(true); });
+/* si se ha escrito en la barra de arriba sin pulsar Intro, se apunta antes de hacer otra cosa */
+function confirmarBarra(){
+  const b = $('edEntrada');
+  if (!ED.libro || b.readOnly || document.activeElement !== b) return;
+  if (b.value !== ED.libro.celda(ED.hoja, ED.sel.r, ED.sel.c).editar) aplicar(ED.sel.r, ED.sel.c, b.value);
+}
+$('edEntrada').addEventListener('blur', function(){
+  if (!ED.libro || this.readOnly) return;
+  if (this.value !== ED.libro.celda(ED.hoja, ED.sel.r, ED.sel.c).editar) aplicar(ED.sel.r, ED.sel.c, this.value);
+});
+
+function deshacer(){
+  terminarEdicion(true);
+  const res = ED.libro && ED.libro.deshacer(); if (!res) return;
+  if (res.h !== ED.hoja){ ED.hoja = res.h; pintarPestanas(); pintarHoja(); }
+  else res.celdas.forEach(function(x){ if (x[0] === ED.hoja) repintarCelda(x[1], x[2], true); });
+  const p = res.celdas[0]; seleccionar(p[1], p[2]);
+  estado();
+}
+$('edDeshacer').addEventListener('click', deshacer);
+
+/* guardar */
+let guardando = false;
+async function guardarEditor(){
+  const l = ED.libro; if (!l || guardando) return;
+  if (!l.hayCambios && !ED.pendiente) return;
+  guardando = true; $('edGuardar').disabled = true; estado('Guardando…');
+  try {
+    if (l.hayCambios) ED.pendiente = l.guardar();
+    if (ED.pendiente.length > MAX_BYTES) throw new Error('Con los cambios, el fichero pasa de 4 MB y no cabe. Descárgalo y guárdalo en tu ordenador.');
+    const d = await enviarBytes(ED.pendiente, { fichero: ED.fichero.id, base: ED.version || '', motivo:'app' });
+    ED.pendiente = null; ED.version = d.version;
+    recibir(d);
+    ED.fichero = ficheroPorId(ED.fichero.id) || ED.fichero;
+    guardando = false; estado(); avisar('Guardado. La versión anterior sigue en «Versiones anteriores».');
+    return true;
+  } catch (e){
+    guardando = false; estado(); avisar(e.message, true);
+    return false;
+  }
+}
+$('edGuardar').addEventListener('mousedown', function(){ confirmarBarra(); });
+$('edGuardar').addEventListener('click', function(){ terminarEdicion(true); guardarEditor(); });
+
+$('edDescargar').addEventListener('click', async function(){
+  terminarEdicion(true);
+  try {
+    const l = ED.libro;
+    if (l && (l.hayCambios || ED.pendiente)){
+      const que = await ventana({ titulo: 'Tienes cambios sin guardar',
+        cuerpo: '<p>¿Lo guardo antes de descargarlo, para que el fichero descargado lleve tus cambios?</p>',
+        botones: [{ texto:'Descargar sin los cambios', valor:'sin' }, { texto:'Guardar y descargar', valor:'con', solido:true }] });
+      if (!que) return;
+      if (que === 'con' && !(await guardarEditor())) return;
+    }
+    bajar(await traerBytes(ED.fichero.id), ED.fichero.nombre);
+  } catch (e){ avisar(e.message, true); }
+});
+
+async function cerrarEditor(){
+  terminarEdicion(true);
+  const l = ED.libro;
+  if (l && (l.hayCambios || ED.pendiente)){
+    const que = await ventana({ titulo: 'Tienes cambios sin guardar',
+      cuerpo: '<p>Si sales sin guardar, los cambios de «' + escapar(ED.fichero.nombre) + '» se pierden.</p>',
+      botones: [{ texto:'Salir sin guardar', valor:'salir', peligro:true }, { texto:'Guardar y salir', valor:'guardar', solido:true }] });
+    if (!que) return;
+    if (que === 'guardar' && !(await guardarEditor())) return;
+  }
+  ED.libro = null; ED.fichero = null; ED.pendiente = null;
+  $('edRejilla').innerHTML = '';
+  ver('editor', false); document.body.style.overflow = '';
+}
+$('edVolver').addEventListener('mousedown', function(){ confirmarBarra(); });
+$('edVolver').addEventListener('click', cerrarEditor);
+window.addEventListener('beforeunload', function(e){
+  if (ED.libro && (ED.libro.hayCambios || ED.pendiente)){ e.preventDefault(); e.returnValue = ''; }
+});
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && cerrarVentanaActual) cerrarVentanaActual(); });
+
+arrancar();
+</script>
+</body>
+</html>
