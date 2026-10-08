@@ -20,3 +20,7 @@ Nube personal de ficheros de Excel, con la misma cuenta que Mi calendario.
   se editan; los .csv se guardan con su mismo separador y codificación.
 - `excel/lib/`: las tres librerías, servidas desde aquí mismo (SheetJS 0.18.5, HyperFormula 3.4.0,
   fflate). No dependen de webs de terceros.
+- `excel/pdf.js`: «PDF a Excel». Lee el texto del PDF en el navegador con pdf.js (`excel/lib/pdf.min.js`,
+  versión 3.11.174 legacy), lo coloca en filas y columnas según su posición y crea un .xlsx con los
+  importes, porcentajes y fechas como números. El PDF no se guarda; solo el Excel resultante.
+  Los PDF escaneados (una imagen, sin texto) no se pueden convertir y la app lo avisa.

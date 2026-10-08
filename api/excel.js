@@ -173,7 +173,7 @@ export default async function handler(req, res){
       const [f] = await sql`
         insert into excel_ficheros (usuario_id, carpeta_id, nombre, tipo, tamano)
         values (${uid}, ${carpeta}, ${nombre}, ${tipo}, ${bytes.length}) returning id`
-      const version = await nuevaVersion(sql, uid, f.id, bytes, q.motivo === 'nuevo' ? 'Creado en la app' : 'Subido')
+      const version = await nuevaVersion(sql, uid, f.id, bytes, q.motivo === 'nuevo' ? 'Creado en la app' : q.motivo === 'pdf' ? 'Convertido desde un PDF' : 'Subido')
       return res.status(200).json({ fichero: f.id, version, ...(await todo(sql, uid)) })
     }
 

@@ -92,9 +92,9 @@
   .soltar{position:absolute;inset:0;z-index:5;background:rgba(241,248,245,.94);border:2px dashed var(--acento);border-radius:8px;
     display:grid;place-items:center;font-size:16px;color:var(--acento-hondo);font-weight:500;pointer-events:none;}
   .ficheros{list-style:none;margin:0;padding:0;}
-  .ficheros li{display:flex;align-items:center;gap:14px;padding:12px 20px;border-top:1px solid var(--linea);}
-  .ficheros li:first-child{border-top:0;}
-  .ficheros li:hover{background:#FAFCFB;}
+  .ficheros > li{display:flex;align-items:center;gap:14px;padding:12px 20px;border-top:1px solid var(--linea);}
+  .ficheros > li:first-child{border-top:0;}
+  .ficheros > li:hover{background:#FAFCFB;}
   .tipo{flex:none;width:44px;height:52px;border-radius:4px;background:var(--verde-excel);color:#fff;display:flex;flex-direction:column;
     justify-content:flex-end;align-items:center;padding-bottom:6px;font-size:10.5px;font-weight:600;letter-spacing:.04em;position:relative;}
   .tipo::before{content:"";position:absolute;top:9px;left:9px;right:9px;height:20px;
@@ -110,9 +110,9 @@
   .fichero__nombre:hover{text-decoration:underline;text-underline-offset:2px;}
   .fichero__meta{margin:2px 0 0;font-size:13px;color:var(--apagado);}
   .fichero__acciones{flex:none;display:flex;gap:6px;align-items:center;}
-  .menu{position:relative;}
-  .menu__lista{position:absolute;right:0;top:calc(100% + 4px);z-index:30;background:#fff;border:1px solid var(--linea-fuerte);
+  .menu__lista{position:fixed;z-index:150;background:#fff;border:1px solid var(--linea-fuerte);
     border-radius:8px;box-shadow:0 8px 24px rgba(18,32,41,.16);min-width:220px;padding:6px;list-style:none;margin:0;}
+  .menu__lista li{display:block;padding:0;border:0;}
   .menu__lista button{width:100%;text-align:left;background:none;border:0;font:inherit;font-size:14px;padding:9px 12px;border-radius:5px;cursor:pointer;color:var(--tinta);}
   .menu__lista button:hover{background:#F1F4F3;}
   .menu__lista .peligro{color:var(--rojo);}
@@ -203,7 +203,8 @@
     .marca{gap:10px;}
     .marca__t{font-size:17px;padding-left:10px;}
     .acciones-cab a.btn{display:none;}
-    .ficheros li{padding:12px 14px;gap:11px;flex-wrap:wrap;}
+    .ficheros > li{padding:12px 14px;gap:11px;flex-wrap:wrap;}
+    .fichero__acciones{flex-wrap:wrap;}
     .tipo{width:36px;height:44px;}
     .fichero__acciones{width:100%;justify-content:flex-end;}
     .ed-cab{padding:8px 12px;}
@@ -248,8 +249,10 @@
     <div class="mandos">
       <input class="buscar" id="buscar" type="search" placeholder="Buscar por nombre" aria-label="Buscar un Excel por su nombre">
       <button class="btn" id="btnNuevo">Excel en blanco</button>
+      <button class="btn" id="btnPdf">PDF a Excel</button>
       <button class="btn btn--solido" id="btnSubir">Subir Excel</button>
-      <input type="file" id="elegirFicheros" accept=".xlsx,.xlsm,.xls,.csv" multiple hidden>
+      <input type="file" id="elegirFicheros" accept=".xlsx,.xlsm,.xls,.csv,.pdf" multiple hidden>
+      <input type="file" id="elegirPdf" accept=".pdf,application/pdf" hidden>
       <input type="file" id="elegirVersion" accept=".xlsx,.xlsm,.xls,.csv" hidden>
     </div>
   </div>
@@ -270,7 +273,7 @@
     <section class="tarjeta zona" id="zona">
       <div class="tarjeta__cab"><h2 id="tituloCarpeta">Todos los ficheros</h2><span class="cuenta" id="cuentaFicheros"></span></div>
       <ul class="ficheros" id="ficheros"></ul>
-      <div class="soltar" id="soltar" hidden>Suelta aquí los Excel para guardarlos</div>
+      <div class="soltar" id="soltar" hidden>Suelta aquí los Excel (o un PDF para pasarlo a Excel)</div>
     </section>
   </div>
 </div>
@@ -542,36 +545,68 @@ function pintar(){
       '<div class="fichero__acciones">' +
         '<button class="btn btn--mini" data-accion="abrir">' + (f.tipo === 'xls' ? 'Ver' : 'Abrir') + '</button>' +
         '<button class="btn btn--mini" data-accion="descargar">Descargar</button>' +
-        '<div class="menu"><button class="btn btn--mini" data-accion="menu" aria-haspopup="true" aria-expanded="false" aria-label="Más opciones de ' + escapar(f.nombre) + '">Más</button></div>' +
+        '<button class="btn btn--mini btn--peligro" data-accion="eliminar" aria-label="Eliminar ' + escapar(f.nombre) + '">Eliminar</button>' +
+        '<button class="btn btn--mini" data-accion="menu" aria-haspopup="menu" aria-expanded="false" aria-label="Más opciones de ' + escapar(f.nombre) + '">Más ▾</button>' +
       '</div></li>';
   }).join('');
 }
 
 /* acciones de cada fichero */
 function ficheroPorId(id){ return DATOS.ficheros.filter(function(f){ return f.id === id; })[0]; }
+
+/* menú «Más»: va fuera de la lista, flotando sobre todo, para que nunca quede tapado */
+const OPCIONES_MENU = [
+  ['version', 'Subir una versión nueva'], ['versiones', 'Versiones anteriores'],
+  ['renombrar', 'Cambiar el nombre'], ['mover', 'Mover a otra carpeta'], ['eliminar', 'Eliminar']
+];
+let menuDe = null;        // fichero cuyo menú está abierto
+let botonMenu = null;
 function cerrarMenus(){
-  document.querySelectorAll('.menu__lista').forEach(function(m){ m.remove(); });
-  document.querySelectorAll('[data-accion="menu"]').forEach(function(b){ b.setAttribute('aria-expanded', 'false'); });
+  const m = $('menuFlotante'); if (m) m.remove();
+  if (botonMenu) botonMenu.setAttribute('aria-expanded', 'false');
+  menuDe = null; botonMenu = null;
 }
-document.addEventListener('click', function(e){ if (!e.target.closest('.menu')) cerrarMenus(); });
-$('ficheros').addEventListener('click', async function(e){
+function abrirMenu(f, boton){
+  const yaAbierto = menuDe && menuDe.id === f.id;
+  cerrarMenus(); if (yaAbierto) return;
+  menuDe = f; botonMenu = boton; boton.setAttribute('aria-expanded', 'true');
+  const ul = document.createElement('ul');
+  ul.className = 'menu__lista'; ul.id = 'menuFlotante'; ul.setAttribute('role', 'menu');
+  ul.innerHTML = OPCIONES_MENU.map(function(o){
+    return '<li role="none"><button type="button" role="menuitem" data-opcion="' + o[0] + '"' + (o[0] === 'eliminar' ? ' class="peligro"' : '') + '>' + o[1] + '</button></li>';
+  }).join('');
+  document.body.appendChild(ul);
+  // debajo del botón; si no cabe, encima
+  const r = boton.getBoundingClientRect(), alto = ul.offsetHeight, ancho = ul.offsetWidth;
+  let top = r.bottom + 4;
+  if (top + alto > window.innerHeight - 8 && r.top - alto - 4 > 8) top = r.top - alto - 4;
+  ul.style.top = Math.max(8, top) + 'px';
+  ul.style.left = Math.max(8, Math.min(r.right - ancho, window.innerWidth - ancho - 8)) + 'px';
+  ul.addEventListener('click', function(e){
+    const b = e.target.closest('[data-opcion]'); if (!b) return;
+    const fich = menuDe; cerrarMenus(); accionFichero(fich, b.dataset.opcion);
+  });
+  ul.querySelector('button').focus();
+}
+document.addEventListener('click', function(e){
+  if (!e.target.closest('#menuFlotante') && !e.target.closest('[data-accion="menu"]')) cerrarMenus();
+});
+window.addEventListener('resize', cerrarMenus);
+window.addEventListener('scroll', cerrarMenus, true);
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape' && menuDe){ const b = botonMenu; cerrarMenus(); if (b) b.focus(); }
+});
+
+$('ficheros').addEventListener('click', function(e){
   const b = e.target.closest('[data-accion]'); if (!b) return;
   const li = b.closest('li[data-id]'); if (!li) return;
   const f = ficheroPorId(Number(li.dataset.id)); if (!f) return;
-  const accion = b.dataset.accion;
-  if (accion === 'menu'){
-    const abierto = b.getAttribute('aria-expanded') === 'true';
-    cerrarMenus(); if (abierto) return;
-    b.setAttribute('aria-expanded', 'true');
-    const ul = document.createElement('ul'); ul.className = 'menu__lista';
-    ul.innerHTML = [
-      ['version','Subir una versión nueva'], ['versiones','Versiones anteriores'],
-      ['renombrar','Cambiar el nombre'], ['mover','Mover a otra carpeta'], ['borrar','Borrar']
-    ].map(function(o){ return '<li><button type="button" data-accion="' + o[0] + '"' + (o[0] === 'borrar' ? ' class="peligro"' : '') + '>' + o[1] + '</button></li>'; }).join('');
-    b.parentNode.appendChild(ul);
-    return;
-  }
+  if (b.dataset.accion === 'menu'){ abrirMenu(f, b); return; }
   cerrarMenus();
+  accionFichero(f, b.dataset.accion);
+});
+
+async function accionFichero(f, accion){
   try {
     if (accion === 'abrir') abrirEditor(f);
     else if (accion === 'descargar'){ bajar(await traerBytes(f.id), f.nombre); }
@@ -591,13 +626,13 @@ $('ficheros').addEventListener('click', async function(e){
         botones: [{ texto:'Cancelar', valor:false }, { texto:'Mover', valor:true, solido:true, antes: function(){ elegida = $('vCarpeta').value; } }] });
       if (ok){ recibir(await api('/api/excel', 'POST', { accion:'mover', id: f.id, carpeta: elegida || null })); avisar('Movido a «' + (elegida ? nombreCarpeta(Number(elegida)) : 'Sin carpeta') + '».'); }
     }
-    else if (accion === 'borrar'){
-      const ok = await confirmar('Borrar «' + f.nombre + '»',
-        'Se borra el fichero y todas sus versiones anteriores' + (f.versiones > 1 ? ' (' + f.versiones + ')' : '') + '. <b>No se puede deshacer.</b> Si tienes dudas, descárgalo antes.', 'Borrar para siempre', true);
-      if (ok){ recibir(await api('/api/excel?id=' + f.id, 'DELETE')); avisar('Fichero borrado.'); }
+    else if (accion === 'eliminar'){
+      const ok = await confirmar('Eliminar «' + f.nombre + '»',
+        'Se elimina el fichero y todas sus versiones anteriores' + (f.versiones > 1 ? ' (' + f.versiones + ')' : '') + '. <b>No se puede deshacer.</b> Si tienes dudas, descárgalo antes.', 'Eliminar para siempre', true);
+      if (ok){ recibir(await api('/api/excel?id=' + f.id, 'DELETE')); avisar('Fichero eliminado.'); }
     }
   } catch (err){ avisar(err.message, true); }
-});
+}
 
 /* ---------- versiones anteriores ---------- */
 async function verVersiones(f){
@@ -670,7 +705,8 @@ async function subirVarios(archivos){
   let subidos = 0;
   for (const a of archivos){
     const tipo = tipoDe(a.name);
-    if (TIPOS.indexOf(tipo) < 0){ await mensaje('No es un Excel', '«' + escapar(a.name) + '» no es un fichero de Excel (.xlsx, .xlsm, .xls o .csv), así que no se guarda.'); continue; }
+    if (tipo === 'pdf'){ await convertirPdf(a); continue; }
+    if (TIPOS.indexOf(tipo) < 0){ await mensaje('No es un Excel', '«' + escapar(a.name) + '» no es un fichero de Excel (.xlsx, .xlsm, .xls o .csv) ni un PDF, así que no se guarda.'); continue; }
     if (a.size > MAX_BYTES){ await mensaje('Fichero demasiado grande', '«' + escapar(a.name) + '» pesa ' + tamano(a.size) + ' y aquí caben ficheros de hasta 4 MB. Si tiene fotos o gráficos muy pesados, prueba a guardarlo sin ellos.'); continue; }
     const igual = DATOS.ficheros.filter(function(f){ return f.carpeta_id === carpeta && f.nombre.toLowerCase() === a.name.toLowerCase(); })[0];
     let params = { nombre: a.name, carpeta: carpeta === null ? '' : carpeta };
@@ -695,6 +731,66 @@ async function subirVarios(archivos){
 }
 $('btnSubir').addEventListener('click', function(){ $('elegirFicheros').click(); });
 $('elegirFicheros').addEventListener('change', function(){ const l = Array.from(this.files); this.value = ''; if (l.length) subirVarios(l); });
+
+/* ---------- PDF a Excel ---------- */
+let pdfjsListo = null;
+function cargarPdfjs(){
+  if (!pdfjsListo){
+    pdfjsListo = Promise.all([cargarLibrerias(), cargarScript('/excel/lib/pdf.min.js'), cargarScript('/excel/pdf.js')])
+      .then(function(){ window.pdfjsLib.GlobalWorkerOptions.workerSrc = '/excel/lib/pdf.worker.min.js'; })
+      .catch(function(e){ pdfjsListo = null; throw e; });
+  }
+  return pdfjsListo;
+}
+$('btnPdf').addEventListener('click', function(){ $('elegirPdf').click(); });
+$('elegirPdf').addEventListener('change', function(){ const a = this.files[0]; this.value = ''; if (a) convertirPdf(a); });
+
+async function convertirPdf(archivo){
+  if (archivo.size > 40 * 1024 * 1024){
+    await mensaje('PDF demasiado grande', '«' + escapar(archivo.name) + '» pesa ' + tamano(archivo.size) + '. Se pueden convertir PDF de hasta 40 MB.'); return;
+  }
+  // ventana de espera mientras se lee
+  ventana({ titulo: 'Pasando el PDF a Excel', cuerpo: '<p id="vProgreso">Preparando…</p><p class="nota-peq">El PDF se lee aquí mismo, en tu dispositivo. Solo se guarda el Excel que sale.</p>' });
+  const progreso = function(t){ const el = $('vProgreso'); if (el) el.textContent = t; };
+  let paginas;
+  try {
+    await cargarPdfjs();
+    const bytes = new Uint8Array(await archivo.arrayBuffer());
+    paginas = await PdfAExcel.leer(window.pdfjsLib, bytes, function(p, total){ progreso('Leyendo la página ' + p + ' de ' + total + '…'); });
+  } catch (e){
+    if (cerrarVentanaActual) cerrarVentanaActual();
+    await mensaje('No se ha podido pasar a Excel', escapar(e.message)); return;
+  }
+  if (cerrarVentanaActual) cerrarVentanaActual();
+
+  let unaHoja = true;
+  if (paginas.length > 1){
+    const que = await ventana({ titulo: 'El PDF tiene ' + paginas.length + ' páginas',
+      cuerpo: '<p>¿Cómo quieres las páginas en el Excel?</p>' +
+              '<p class="nota-peq">Si es una lista o una tabla que sigue de una página a otra, mejor todo seguido en una hoja.</p>',
+      botones: [{ texto:'Una hoja por página', valor:'varias' }, { texto:'Todo seguido en una hoja', valor:'una', solido:true }] });
+    if (!que) return;
+    unaHoja = que === 'una';
+  }
+  try {
+    const hojas = PdfAExcel.hojasDe(paginas, { unaHoja: unaHoja });
+    const xlsx = PdfAExcel.aXlsx(window.XLSX, hojas);
+    if (xlsx.length > MAX_BYTES) throw new Error('El Excel que sale pesa más de 4 MB y no cabe. Prueba con menos páginas.');
+    const carpeta = carpetaDestino();
+    let nombre = archivo.name.replace(/\.pdf$/i, '') + '.xlsx';
+    if (DATOS.ficheros.some(function(f){ return f.carpeta_id === carpeta && f.nombre.toLowerCase() === nombre.toLowerCase(); })) nombre = nombreCopia(nombre, carpeta);
+    avisar('Guardando «' + nombre + '»…');
+    const d = await enviarBytes(xlsx, { nombre: nombre, carpeta: carpeta === null ? '' : carpeta, motivo: 'pdf' });
+    recibir(d);
+    avisar('Excel creado a partir del PDF.');
+    const f = ficheroPorId(d.fichero);
+    if (f){
+      await abrirEditor(f);
+      $('edAviso').textContent = 'Creado a partir del PDF «' + archivo.name + '». Repasa que las filas y columnas hayan quedado bien: lo que no encaje lo puedes corregir aquí mismo y guardar.';
+      ver('edAviso', true);
+    }
+  } catch (e){ await mensaje('No se ha podido pasar a Excel', escapar(e.message)); }
+}
 
 let ficheroParaVersion = null;
 $('elegirVersion').addEventListener('change', async function(){
@@ -846,7 +942,7 @@ function pintarHoja(){
   let cols = '', ancho = 48;
   for (let c = 0; c < ED.cols; c++){
     const x = hoja.columnas && hoja.columnas[c];
-    const px = colOculta(c) ? 0 : Math.max(36, Math.min(420, (x && x.px) || 86));
+    const px = colOculta(c) ? 0 : Math.max(36, Math.min(480, x && x.px ? Math.round(x.px * 1.2) : 86));
     ancho += px;
     cols += '<col style="width:' + px + 'px">';
   }
