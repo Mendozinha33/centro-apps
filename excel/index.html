@@ -187,6 +187,78 @@
   .ed-pestanas button[aria-selected="true"]{background:#fff;color:var(--tinta);font-weight:600;border-bottom-color:var(--verde-excel);}
   .ed-pestanas button.oculta{font-style:italic;opacity:.7;}
 
+  /* ================= aspecto Excel ================= */
+  :root{ --xl:#217346; --xl-hondo:#185C37; --xl-claro:#E6F2EA; --xl-raya:#F6FAF7; --xl-cuadro:#D8E2DC; }
+  :focus-visible{outline-color:var(--xl);}
+  body{background-color:#F2F5F3;
+    background-image:linear-gradient(var(--xl-cuadro) 1px, transparent 1px), linear-gradient(90deg, var(--xl-cuadro) 1px, transparent 1px);
+    background-size:72px 24px;background-attachment:fixed;}
+  .cabecera{background:var(--xl);border-bottom:1px solid var(--xl-hondo);backdrop-filter:none;}
+  .cabecera .marca__t{color:#fff;border-left-color:rgba(255,255,255,.45);}
+  .cabecera .quien{color:#D7EBDF;}
+  .cabecera .btn{background:transparent;border-color:rgba(255,255,255,.6);color:#fff;}
+  .cabecera .btn:hover{background:rgba(255,255,255,.14);border-color:#fff;}
+  .btn--solido{background:var(--xl);border-color:var(--xl);color:#fff;}
+  .btn--solido:hover{background:var(--xl-hondo);border-color:var(--xl-hondo);}
+  .btn:hover{border-color:var(--xl);}
+  .btn--peligro:hover{border-color:var(--rojo);}
+  .tarjeta{border-color:#C9D5CF;box-shadow:0 1px 2px rgba(24,92,55,.06);}
+
+  /* título de la página, como la cinta de opciones */
+  .barra{background:#fff;border:1px solid #C9D5CF;border-top:4px solid var(--xl);border-radius:8px;
+    margin:22px 0 18px;padding:16px 20px;align-items:center;}
+  .titulo{color:var(--xl-hondo);}
+  .buscar:focus{outline:none;border-color:var(--xl);box-shadow:0 0 0 2px rgba(33,115,70,.18);}
+
+  /* carpetas */
+  .carpetas button[aria-current="true"]{background:var(--xl);color:#fff;}
+  .carpetas button[aria-current="true"] .n{color:#CFE7D8;}
+  .carpetas button:hover{background:var(--xl-claro);}
+  .carpetas button[aria-current="true"]:hover{background:var(--xl-hondo);}
+
+  /* cabecera de la lista, como la fila de títulos de una tabla de Excel */
+  .tarjeta__cab{background:var(--xl);border-bottom:0;}
+  .tarjeta__cab h2{color:#fff;}
+  .tarjeta__cab .cuenta{color:#CFE7D8;}
+  .ficheros > li{border-top-color:#DCE5E0;}
+  .ficheros > li:nth-child(even){background:var(--xl-raya);}
+  .ficheros > li:hover{background:var(--xl-claro);}
+  .fichero__nombre{color:var(--xl-hondo);}
+  .soltar{border-color:var(--xl);color:var(--xl-hondo);background:rgba(230,242,234,.95);}
+  .entrada .tarjeta{border-top:4px solid var(--xl);}
+  .entrada h1{color:var(--xl-hondo);}
+  .ventana__cab{background:var(--xl);border-bottom:0;}
+  .ventana__cab h2{color:#fff;}
+  .ventana .cerrar{color:#fff;}
+  .chapa{background:var(--xl-claro);color:var(--xl-hondo);}
+
+  /* editor */
+  .ed-cab{background:var(--xl);border-bottom:0;color:#fff;}
+  .ed-nombre h1{color:#fff;}
+  .ed-estado{color:#D7EBDF;}
+  .ed-estado--sin{color:#FFE29A;}
+  .ed-estado--mal{color:#FFD2CC;}
+  .ed-cab .btn{background:transparent;border-color:rgba(255,255,255,.6);color:#fff;}
+  .ed-cab .btn:hover{background:rgba(255,255,255,.14);border-color:#fff;}
+  .ed-cab .btn--solido{background:#fff;border-color:#fff;color:var(--xl-hondo);font-weight:600;}
+  .ed-cab .btn--solido:hover{background:#EAF5EE;}
+  .ed-cab .btn:disabled{opacity:.5;}
+  .ed-formula{background:#fff;border-bottom-color:#C6C6C6;}
+  .ed-ref{border-right-color:#D4D4D4;}
+  .ed-entrada:focus{box-shadow:inset 0 -2px 0 var(--xl);}
+  .hoja th,.hoja td{border-right-color:#DADADA;border-bottom-color:#DADADA;}
+  .hoja thead th,.hoja tbody th{background:#F0F0F0;color:#444;}
+  .hoja thead th{border-bottom-color:#BDBDBD;}
+  .hoja tbody th{border-right-color:#BDBDBD;}
+  .hoja thead th.activa{background:#D3EBDC;color:var(--xl-hondo);font-weight:600;box-shadow:inset 0 -2px 0 var(--xl);}
+  .hoja tbody th.activa{background:#D3EBDC;color:var(--xl-hondo);font-weight:600;box-shadow:inset -2px 0 0 var(--xl);}
+  .hoja td.sel{outline-color:var(--xl);}
+  .celda-edit{border-color:var(--xl);}
+  .ed-pestanas{background:#F0F0F0;border-top-color:#C6C6C6;}
+  .ed-pestanas button{color:#444;}
+  .ed-pestanas button[aria-selected="true"]{background:#fff;color:var(--xl-hondo);border-bottom-color:var(--xl);
+    box-shadow:1px 0 0 #C6C6C6, -1px 0 0 #C6C6C6;}
+
   @media (max-width:900px){
     .lienzo{grid-template-columns:minmax(0,1fr);}
     .carpetas{display:flex;gap:6px;overflow-x:auto;padding:10px;}
