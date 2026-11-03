@@ -1,0 +1,930 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Mis vídeos · Apps Mendoza</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%231B2A33'/%3E%3Ctext x='32' y='45' font-family='Georgia,serif' font-size='38' fill='%23F4F6F5' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --tinta:#1B2A33; --tinta-honda:#122029; --papel:#F1F4F3; --superficie:#FFFFFF;
+    --linea:#D6DEDC; --linea-fuerte:#B9C5C2; --acento:#3E8C76; --acento-hondo:#2F6F5E;
+    --apagado:#657678; --rojo:#A33B34; --oro:#B08A3E; --morado:#5B4BC4; --morado-suave:#ECE9FB;
+    --sans:"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --serif:"Newsreader", Georgia, "Times New Roman", serif;
+    --alto-cabecera:68px;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;background:var(--papel);color:var(--tinta);font-family:var(--sans);
+    font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  :focus-visible{outline:2px solid var(--acento);outline-offset:2px;border-radius:3px;}
+  .contenedor{max-width:1180px;margin:0 auto;padding:0 24px;}
+  [hidden]{display:none !important;}
+
+  .cabecera{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.94);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--linea-fuerte);}
+  .cabecera .contenedor{height:var(--alto-cabecera);display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .marca{display:flex;align-items:center;gap:14px;text-decoration:none;min-width:0;color:inherit;}
+  .marca__logo{flex:none;display:block;height:52px;width:auto;border-radius:6px;}
+  .marca__t{padding-left:14px;border-left:1px solid var(--linea-fuerte);font-family:var(--serif);font-size:20px;
+    font-weight:500;letter-spacing:-.015em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .acciones-cab{display:flex;align-items:center;gap:8px;}
+  .quien{font-size:13.5px;color:var(--apagado);white-space:nowrap;}
+
+  .btn{font:inherit;font-size:14.5px;background:var(--superficie);border:1px solid var(--linea-fuerte);
+    border-radius:6px;padding:9px 15px;color:var(--tinta);cursor:pointer;white-space:nowrap;
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;text-decoration:none;}
+  .btn:hover{border-color:var(--tinta);}
+  .btn:disabled{opacity:.55;cursor:default;}
+  .btn--solido{background:var(--tinta);border-color:var(--tinta);color:var(--papel);font-weight:500;}
+  .btn--solido:hover{background:var(--tinta-honda);}
+  .btn--morado{background:var(--morado);border-color:var(--morado);color:#fff;font-weight:600;}
+  .btn--morado:hover{background:#4A3BAE;border-color:#4A3BAE;}
+  .btn--peligro{color:var(--rojo);}
+  .btn--peligro:hover{border-color:var(--rojo);}
+  .btn--mini{font-size:13px;padding:7px 12px;}
+  .btn--grande{font-size:16px;padding:13px 20px;}
+
+  .entrada{max-width:430px;margin:8vh auto 40px;padding:0 20px;}
+  .entrada .tarjeta{padding:28px 26px 30px;}
+  .entrada h1{font-family:var(--serif);font-size:30px;font-weight:500;margin:0 0 6px;letter-spacing:-.02em;}
+  .entrada .intro{margin:0 0 22px;font-size:14.5px;color:var(--apagado);}
+  .entrada .campo{margin-bottom:14px;}
+  .entrada .btn{width:100%;padding:12px;}
+  .error{background:#FCF3F2;border:1px solid #E7CBC8;color:#8C3A33;border-radius:6px;padding:11px 13px;font-size:14px;}
+  .ok{background:#F1F8F5;border:1px solid #BEDCCF;color:#2A6B54;border-radius:6px;padding:11px 13px;font-size:14px;}
+  .aviso{background:#FBF6EA;border:1px solid #E8D9B4;color:#7A5D1E;border-radius:6px;padding:11px 13px;font-size:14px;}
+  .cargando{padding:40px 0;text-align:center;color:var(--apagado);font-size:15px;}
+
+  .barra{padding:24px 0 16px;display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;justify-content:space-between;}
+  .titulo{font-family:var(--serif);font-size:clamp(26px,3.6vw,36px);font-weight:500;letter-spacing:-.02em;margin:0;}
+  .sub{margin:2px 0 0;font-size:14px;color:var(--apagado);}
+  .pestanas{display:flex;gap:4px;background:#E3E9E7;padding:4px;border-radius:9px;}
+  .pestanas button{font:inherit;font-size:14.5px;border:0;background:none;padding:8px 16px;border-radius:6px;cursor:pointer;color:var(--tinta);}
+  .pestanas button[aria-selected="true"]{background:#fff;font-weight:600;box-shadow:0 1px 3px rgba(18,32,41,.12);}
+
+  .tarjeta{background:var(--superficie);border:1px solid var(--linea);border-radius:8px;}
+  .tarjeta__cab{padding:15px 20px;border-bottom:1px solid var(--linea);display:flex;
+    justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+  .tarjeta__cab h2{font-family:var(--serif);font-size:19px;font-weight:500;margin:0;letter-spacing:-.01em;}
+  .tarjeta__cab .cuenta{font-size:13px;color:var(--apagado);}
+  .paso{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--morado);color:#fff;
+    font-family:var(--sans);font-size:13px;font-weight:700;margin-right:8px;vertical-align:2px;}
+
+  /* editor */
+  .editor{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:22px;align-items:start;padding-bottom:60px;}
+  .soltar{margin:20px;border:2px dashed var(--linea-fuerte);border-radius:10px;padding:46px 20px;text-align:center;
+    background:#FAFBFB;cursor:pointer;}
+  .soltar.encima{border-color:var(--morado);background:var(--morado-suave);}
+  .soltar p{margin:0 0 6px;}
+  .soltar .gris{color:var(--apagado);font-size:13.5px;}
+  .soltar .grande{font-family:var(--serif);font-size:22px;}
+  .escenario{padding:16px;background:#1B2A33;border-radius:0 0 8px 8px;display:flex;justify-content:center;}
+  .escena{position:relative;width:100%;max-height:70vh;margin:0 auto;background:#000;overflow:hidden;}
+  .escena video{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block;}
+  .escena .capa{position:absolute;pointer-events:none;user-select:none;}
+  .info-video{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px 20px;font-size:13.5px;color:var(--apagado);}
+  .info-video b{color:var(--tinta);}
+
+  .capas{list-style:none;margin:0;padding:0;}
+  .capas > li{padding:14px 18px 16px;border-top:1px solid var(--linea);}
+  .capas > li:first-child{border-top:0;}
+  .capa-cab{display:flex;gap:12px;align-items:center;margin-bottom:12px;}
+  .miniatura{flex:none;width:52px;height:52px;border-radius:6px;border:1px solid var(--linea);object-fit:contain;
+    background:repeating-conic-gradient(#EEF2F1 0 25%, #fff 0 50%) 0 0/14px 14px;}
+  .capa-cab .nombre{flex:1;min-width:0;font-weight:600;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .rejilla2{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;}
+  .campo{display:grid;gap:5px;}
+  .campo label,.campo .lbl{font-size:12.5px;font-weight:600;color:var(--apagado);}
+  .campo input[type=text],.campo input[type=email],.campo input[type=password],.campo input[type=number],.campo select{
+    font:inherit;font-size:15px;padding:8px 10px;border:1px solid var(--linea-fuerte);border-radius:6px;background:#fff;color:inherit;width:100%;}
+  .campo input[type=range]{width:100%;accent-color:var(--morado);}
+  .campo--todo{grid-column:1 / -1;}
+  .valor{float:right;font-weight:500;color:var(--tinta);font-variant-numeric:tabular-nums;}
+  .vacio{padding:22px 20px;color:var(--apagado);font-size:14px;margin:0;}
+  .pie{padding:14px 18px;border-top:1px solid var(--linea);display:flex;gap:10px;flex-wrap:wrap;}
+
+  .exportar{padding:16px 18px 18px;display:grid;gap:14px;}
+  .carril{height:10px;background:#EDF1F0;border-radius:99px;overflow:hidden;}
+  .carril span{display:block;height:100%;width:0;background:var(--morado);border-radius:99px;transition:width .3s;}
+  .progreso-txt{margin:0;font-size:14px;color:var(--apagado);font-variant-numeric:tabular-nums;}
+  .resultado{display:grid;gap:12px;}
+  .resultado video{width:100%;max-height:320px;background:#000;border-radius:6px;}
+  .botonera{display:flex;gap:8px;flex-wrap:wrap;}
+  .botonera .btn{flex:1;}
+
+  /* biblioteca */
+  .herramientas{padding:12px 20px;border-bottom:1px solid var(--linea);display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .herramientas input[type=search]{font:inherit;font-size:14.5px;padding:8px 11px;border:1px solid var(--linea-fuerte);
+    border-radius:6px;min-width:200px;flex:1;}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;}
+  .chips button{font:inherit;font-size:13px;border:1px solid var(--linea-fuerte);background:#fff;border-radius:99px;
+    padding:5px 12px;cursor:pointer;color:var(--tinta);}
+  .chips button[aria-pressed="true"]{background:var(--morado);border-color:var(--morado);color:#fff;font-weight:600;}
+  .galeria{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;padding:18px 20px 22px;}
+  .pieza{border:1px solid var(--linea);border-radius:8px;overflow:hidden;background:#fff;display:flex;flex-direction:column;}
+  .pieza__img{aspect-ratio:1/1;display:grid;place-items:center;padding:10px;
+    background:repeating-conic-gradient(#EEF2F1 0 25%, #fff 0 50%) 0 0/16px 16px;}
+  .pieza__img img{max-width:100%;max-height:100%;object-fit:contain;display:block;}
+  .pieza button.pieza__img{border:0;cursor:pointer;width:100%;}
+  .pieza button.pieza__img:hover{outline:3px solid var(--morado);outline-offset:-3px;}
+  .pieza__pie{padding:8px 10px 10px;border-top:1px solid var(--linea);}
+  .pieza__nombre{margin:0;font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pieza__grupo{margin:0;font-size:12px;color:var(--apagado);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pieza__acc{display:flex;gap:10px;margin-top:6px;}
+  .enlace{background:none;border:0;padding:0;font:inherit;font-size:12.5px;color:var(--acento-hondo);cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+  .enlace--rojo{color:var(--rojo);}
+
+  .velo{position:fixed;inset:0;background:rgba(18,32,41,.5);z-index:80;
+    display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;overflow:auto;}
+  .ventana{background:var(--superficie);border-radius:10px;width:100%;max-width:460px;overflow:hidden;}
+  .ventana--ancha{max-width:880px;}
+  .ventana__cab{padding:16px 22px;border-bottom:1px solid var(--linea);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .ventana__cab h2{font-family:var(--serif);font-size:21px;font-weight:500;margin:0;}
+  .cerrar{background:none;border:0;font-size:24px;line-height:1;cursor:pointer;color:var(--apagado);padding:2px 6px;}
+  .ventana__cuerpo{padding:20px 22px 24px;display:grid;gap:15px;}
+  .ventana__pie{display:flex;justify-content:flex-end;gap:10px;}
+  .nota-peq{margin:0;font-size:13px;color:var(--apagado);}
+
+  @media (max-width:980px){
+    .editor{grid-template-columns:minmax(0,1fr);}
+    .quien{display:none;}
+  }
+  @media (max-width:560px){
+    .contenedor{padding:0 12px;}
+    .marca__logo{height:40px;}
+    .marca__t{font-size:17px;padding-left:10px;}
+    .escenario{padding:8px;}
+    .galeria{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:14px;}
+    .soltar{margin:14px;padding:34px 14px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="cabecera">
+  <div class="contenedor">
+    <a class="marca" href="/" title="Volver a App Mendoza"><img class="marca__logo" src="/logo-app-mendoza.png" width="119" height="52" alt="App Mendoza"><span class="marca__t">Mis vídeos</span></a>
+    <div class="acciones-cab">
+      <span class="quien" id="quien"></span>
+      <button class="btn btn--mini" id="btnSalir" hidden>Salir</button>
+      <a class="btn btn--mini" href="/" title="Volver al centro de aplicaciones">Apps Mendoza</a>
+    </div>
+  </div>
+</header>
+
+<section class="entrada" id="pantallaEntrada" hidden>
+  <div class="tarjeta">
+    <h1>Mis vídeos</h1>
+    <p class="intro">Entra con el mismo correo y la misma contraseña que usas en el calendario.</p>
+    <div class="error" id="entradaError" hidden style="margin-bottom:16px"></div>
+    <div class="campo"><label for="eCorreo">Correo</label><input id="eCorreo" type="email" autocomplete="username"></div>
+    <div class="campo"><label for="eClave">Contraseña</label><input id="eClave" type="password" autocomplete="current-password"></div>
+    <button class="btn btn--solido" id="btnEntrar">Entrar</button>
+  </div>
+</section>
+
+<p class="cargando" id="cargando">Abriendo Mis vídeos…</p>
+
+<div class="contenedor" id="pantallaApp" hidden>
+  <div class="barra">
+    <div>
+      <h1 class="titulo">Mis vídeos</h1>
+      <p class="sub">Pon tus logos y fotos encima de un vídeo y déjalo listo para las redes sociales.</p>
+    </div>
+    <div class="pestanas" role="tablist">
+      <button role="tab" id="tabEditor" aria-selected="true">Poner logos a un vídeo</button>
+      <button role="tab" id="tabBiblioteca" aria-selected="false">Mis imágenes</button>
+    </div>
+  </div>
+
+  <div class="aviso" id="avisoNavegador" hidden style="margin-bottom:18px">
+    Este navegador no puede preparar vídeos. Ábrelo con <b>Google Chrome</b>, <b>Microsoft Edge</b> o <b>Safari</b> actualizados
+    (en el móvil o en el ordenador). Tus imágenes sí puedes verlas y ordenarlas desde aquí.
+  </div>
+  <div class="ok" id="avisoOk" hidden style="margin-bottom:18px"></div>
+
+  <!-- ============ EDITOR ============ -->
+  <div id="vistaEditor" class="editor">
+    <section class="tarjeta">
+      <div class="tarjeta__cab">
+        <h2><span class="paso">1</span>El vídeo</h2>
+        <button class="btn btn--mini" id="btnOtroVideo" hidden>Elegir otro vídeo</button>
+      </div>
+      <div class="soltar" id="zonaSoltar" tabindex="0" role="button">
+        <p class="grande">Elige el vídeo</p>
+        <p class="gris">Pulsa aquí o arrastra el vídeo encima. Sirven los vídeos del móvil (MP4 o MOV).</p>
+        <p class="gris">El vídeo no se sube a internet: se prepara en este mismo aparato.</p>
+      </div>
+      <input type="file" id="archivoVideo" accept="video/*,.mp4,.mov,.m4v,.webm" hidden>
+      <div id="zonaVideo" hidden>
+        <div class="escenario"><div class="escena" id="escena"><video id="video" controls playsinline preload="metadata"></video><div id="capasVista"></div></div></div>
+        <div class="info-video" id="infoVideo"></div>
+      </div>
+    </section>
+
+    <div style="display:grid;gap:22px">
+      <section class="tarjeta">
+        <div class="tarjeta__cab">
+          <h2><span class="paso">2</span>Logos y fotos</h2>
+          <span class="cuenta" id="cuentaCapas"></span>
+        </div>
+        <ul class="capas" id="listaCapas"></ul>
+        <div class="pie">
+          <button class="btn btn--solido" id="btnAnadirCapa" style="flex:1">+ Añadir un logo o una foto</button>
+        </div>
+      </section>
+
+      <section class="tarjeta">
+        <div class="tarjeta__cab"><h2><span class="paso">3</span>Dejarlo listo para redes</h2></div>
+        <div class="exportar">
+          <div class="rejilla2">
+            <div class="campo"><label for="selTamano">Tamaño del vídeo</label>
+              <select id="selTamano">
+                <option value="1920">Full HD (recomendado)</option>
+                <option value="1280">HD, más ligero</option>
+                <option value="0">Igual que el original</option>
+              </select></div>
+            <div class="campo"><label for="selCalidad">Calidad</label>
+              <select id="selCalidad">
+                <option value="alta">Alta (recomendada)</option>
+                <option value="muyalta">Máxima, pesa más</option>
+                <option value="media">Normal, pesa menos</option>
+              </select></div>
+          </div>
+          <button class="btn btn--morado btn--grande" id="btnPreparar" disabled>Preparar el vídeo</button>
+          <div id="zonaProgreso" hidden>
+            <div class="carril"><span id="barraProgreso"></span></div>
+            <p class="progreso-txt" id="textoProgreso" style="margin-top:8px">Empezando…</p>
+            <button class="btn btn--mini" id="btnCancelar" style="margin-top:8px">Cancelar</button>
+          </div>
+          <div class="error" id="errorExportar" hidden></div>
+          <div class="resultado" id="zonaResultado" hidden>
+            <p class="ok" style="margin:0" id="textoResultado"></p>
+            <video id="videoResultado" controls playsinline></video>
+            <div class="botonera">
+              <button class="btn btn--solido" id="btnDescargar">Descargar el vídeo</button>
+              <button class="btn" id="btnCompartir" hidden>Compartir en redes</button>
+            </div>
+          </div>
+          <p class="nota-peq">Sale en MP4, el formato que aceptan Instagram, TikTok, Facebook, YouTube, X y WhatsApp.
+            Tarda más o menos lo que dura el vídeo; no cierres ni cambies de pantalla mientras se prepara.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ============ BIBLIOTECA ============ -->
+  <section class="tarjeta" id="vistaBiblioteca" hidden style="margin-bottom:60px">
+    <div class="tarjeta__cab">
+      <h2>Mis imágenes</h2>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <span class="cuenta" id="cuentaImagenes"></span>
+        <button class="btn btn--solido" id="btnSubirImagenes">+ Subir imágenes</button>
+      </div>
+    </div>
+    <div class="herramientas">
+      <input type="search" id="buscar" placeholder="Buscar por nombre…" aria-label="Buscar imagen">
+      <div class="chips" id="chipsGrupos"></div>
+    </div>
+    <div id="galeria"></div>
+  </section>
+  <input type="file" id="archivoImagenes" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
+</div>
+
+<!-- ventana genérica -->
+<div class="velo" id="velo" hidden>
+  <div class="ventana" id="ventana" role="dialog" aria-modal="true" aria-labelledby="ventanaTitulo">
+    <div class="ventana__cab"><h2 id="ventanaTitulo"></h2><button class="cerrar" id="ventanaCerrar" aria-label="Cerrar">&times;</button></div>
+    <div id="ventanaCuerpo"></div>
+  </div>
+</div>
+
+<script>
+/* ==================================================================
+   MIS VÍDEOS — dentro de Apps Mendoza
+   Las imágenes se guardan en el servidor (misma cuenta que el calendario).
+   El vídeo se prepara en el propio navegador: nunca se sube a internet.
+================================================================== */
+
+const POSICIONES = [
+  { id:'ai', nombre:'Arriba a la izquierda', fila:0, col:0 },
+  { id:'ac', nombre:'Arriba en el centro',   fila:0, col:1 },
+  { id:'ad', nombre:'Arriba a la derecha',   fila:0, col:2 },
+  { id:'ci', nombre:'En medio a la izquierda', fila:1, col:0 },
+  { id:'cc', nombre:'En el centro',          fila:1, col:1 },
+  { id:'cd', nombre:'En medio a la derecha', fila:1, col:2 },
+  { id:'bi', nombre:'Abajo a la izquierda',  fila:2, col:0 },
+  { id:'bc', nombre:'Abajo en el centro',    fila:2, col:1 },
+  { id:'bd', nombre:'Abajo a la derecha',    fila:2, col:2 }
+];
+const MAX_IMG = 3 * 1024 * 1024;
+const $ = function(id){ return document.getElementById(id); };
+function ver(id, si){ $(id).hidden = !si; }
+function escapar(t){
+  return String(t).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+}
+function mostrarError(id, t){ const c = $(id); c.textContent = t || ''; c.hidden = !t; }
+let tOk = null;
+function avisar(t){ const c = $('avisoOk'); c.textContent = t; c.hidden = false; clearTimeout(tOk); tOk = setTimeout(function(){ c.hidden = true; }, 4500); }
+function pesoBonito(b){ return b >= 1048576 ? (b/1048576).toFixed(1).replace('.',',') + ' MB' : Math.max(1, Math.round(b/1024)) + ' KB'; }
+function duracionBonita(s){
+  s = Math.round(s || 0); const m = Math.floor(s/60), r = s % 60;
+  return m ? m + ' min ' + (r ? r + ' s' : '') : r + ' s';
+}
+
+/* ---------- sesión ---------- */
+function guardarPase(p){ try{ p ? localStorage.setItem('apps_pase', p) : (localStorage.removeItem('apps_pase'), localStorage.removeItem('calendario_pase')); }catch(e){} }
+function leerPase(){ try{ return localStorage.getItem('apps_pase') || localStorage.getItem('calendario_pase') || ''; }catch(e){ return ''; } }
+
+async function respuesta(r){
+  let d = {}; try{ d = await r.json(); }catch(e){}
+  if (r.status === 401){ cerrarSesion(); throw new Error(d.error || 'Hay que volver a entrar.'); }
+  if (r.status === 413) throw new Error(d.error || 'La imagen es demasiado grande.');
+  if (!r.ok) throw new Error(d.error || 'Algo ha fallado en el servidor.');
+  return d;
+}
+async function api(ruta, metodo, cuerpo){
+  const cab = { 'Content-Type':'application/json' };
+  const pase = leerPase(); if (pase) cab['Authorization'] = 'Bearer ' + pase;
+  let r;
+  try{ r = await fetch(ruta, { method: metodo || 'GET', headers: cab, body: cuerpo ? JSON.stringify(cuerpo) : undefined }); }
+  catch(e){ throw new Error('No hay conexión con el servidor. Comprueba internet y vuelve a probar.'); }
+  return respuesta(r);
+}
+
+function cerrarSesion(){
+  guardarPase('');
+  ver('pantallaApp', false); ver('cargando', false); ver('pantallaEntrada', true); ver('btnSalir', false);
+  $('quien').textContent = '';
+}
+async function arrancar(){
+  if (leerPase()){
+    try{
+      const info = JSON.parse(decodeURIComponent(escape(atob(leerPase().split('.')[0].replace(/-/g,'+').replace(/_/g,'/')))));
+      $('quien').textContent = info.nombre || '';
+    }catch(e){}
+    try{ await cargar(); ver('btnSalir', true); return; }catch(e){}
+  }
+  ver('cargando', false); ver('pantallaEntrada', true);
+}
+$('btnEntrar').addEventListener('click', async function(){
+  const b = this; mostrarError('entradaError', '');
+  const correo = $('eCorreo').value.trim(), clave = $('eClave').value;
+  if (!correo || !clave){ mostrarError('entradaError', 'Pon tu correo y tu contraseña.'); return; }
+  b.disabled = true;
+  try{
+    const d = await api('/api/acceso', 'POST', { accion:'entrar', correo: correo, clave: clave });
+    guardarPase(d.pase); $('quien').textContent = d.usuario.nombre;
+    ver('pantallaEntrada', false); ver('btnSalir', true);
+    await cargar();
+  }catch(e){ mostrarError('entradaError', e.message); }
+  b.disabled = false;
+});
+['eCorreo','eClave'].forEach(function(id){
+  $(id).addEventListener('keydown', function(e){ if (e.key === 'Enter') $('btnEntrar').click(); });
+});
+$('btnSalir').addEventListener('click', cerrarSesion);
+
+const PUEDE_VIDEO = typeof window.VideoEncoder === 'function' && typeof window.VideoDecoder === 'function' && typeof window.OffscreenCanvas === 'function';
+
+async function cargar(){
+  const d = await api('/api/imagenes');
+  IMAGENES = d.imagenes;
+  ver('cargando', false); ver('pantallaEntrada', false); ver('pantallaApp', true);
+  ver('avisoNavegador', !PUEDE_VIDEO);
+  recuperarCapas();
+  pintarBiblioteca(); pintarCapas();
+}
+
+/* ---------- pestañas ---------- */
+function pestana(cual){
+  $('tabEditor').setAttribute('aria-selected', String(cual === 'editor'));
+  $('tabBiblioteca').setAttribute('aria-selected', String(cual === 'biblioteca'));
+  ver('vistaEditor', cual === 'editor'); ver('vistaBiblioteca', cual === 'biblioteca');
+}
+$('tabEditor').addEventListener('click', function(){ pestana('editor'); });
+$('tabBiblioteca').addEventListener('click', function(){ pestana('biblioteca'); });
+
+/* ---------- ventana genérica ---------- */
+let alCerrar = null;
+function abrirVentana(titulo, html, ancha){
+  $('ventana').className = 'ventana' + (ancha ? ' ventana--ancha' : '');
+  $('ventanaTitulo').textContent = titulo; $('ventanaCuerpo').innerHTML = html; ver('velo', true);
+}
+function cerrarVentana(){ ver('velo', false); $('ventanaCuerpo').innerHTML = ''; if (alCerrar){ const f = alCerrar; alCerrar = null; f(); } }
+$('ventanaCerrar').addEventListener('click', cerrarVentana);
+$('velo').addEventListener('click', function(e){ if (e.target.id === 'velo') cerrarVentana(); });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !$('velo').hidden) cerrarVentana(); });
+
+/* ==================================================================
+   BIBLIOTECA DE IMÁGENES
+================================================================== */
+let IMAGENES = [];
+let grupoVisible = '';            // '' = todas
+const URLS = {};                  // id -> dirección local de la imagen ya descargada
+const BLOBS = {};                 // id -> la imagen descargada
+
+async function traerImagen(id){
+  if (BLOBS[id]) return BLOBS[id];
+  const r = await fetch('/api/imagenes?id=' + id, { headers: { 'Authorization':'Bearer ' + leerPase() } });
+  if (r.status === 401){ cerrarSesion(); throw new Error('Hay que volver a entrar.'); }
+  if (!r.ok) throw new Error('No se ha podido traer una imagen.');
+  const b = await r.blob(); BLOBS[id] = b; URLS[id] = URL.createObjectURL(b);
+  return b;
+}
+function ponerImagen(el, id){
+  if (URLS[id]){ el.src = URLS[id]; return; }
+  traerImagen(id).then(function(){ el.src = URLS[id]; }).catch(function(){});
+}
+function grupos(){
+  const g = {}; IMAGENES.forEach(function(i){ if (i.grupo) g[i.grupo] = true; });
+  return Object.keys(g).sort(function(a, b){ return a.localeCompare(b, 'es'); });
+}
+function imagenesFiltradas(texto){
+  texto = (texto || '').trim().toLowerCase();
+  return IMAGENES.filter(function(i){
+    return (!grupoVisible || i.grupo === grupoVisible) && (!texto || i.nombre.toLowerCase().indexOf(texto) >= 0);
+  });
+}
+function htmlChips(){
+  const g = grupos();
+  if (grupoVisible && g.indexOf(grupoVisible) < 0) grupoVisible = '';
+  return '<button type="button" data-grupo="" aria-pressed="' + (!grupoVisible) + '">Todas</button>' +
+    g.map(function(n){ return '<button type="button" data-grupo="' + escapar(n) + '" aria-pressed="' + (grupoVisible === n) + '">' + escapar(n) + '</button>'; }).join('');
+}
+
+function pintarBiblioteca(){
+  $('cuentaImagenes').textContent = IMAGENES.length === 1 ? '1 imagen' : IMAGENES.length + ' imágenes';
+  $('chipsGrupos').innerHTML = htmlChips();
+  $('chipsGrupos').querySelectorAll('button').forEach(function(b){
+    b.addEventListener('click', function(){ grupoVisible = b.dataset.grupo; pintarBiblioteca(); });
+  });
+  const lista = imagenesFiltradas($('buscar').value);
+  if (!IMAGENES.length){
+    $('galeria').innerHTML = '<p class="vacio">Todavía no tienes imágenes. Pulsa «+ Subir imágenes» y elige tus logos, escudos, patrocinadores o fotos. Se quedan guardadas aquí para usarlas en todos tus vídeos.</p>';
+    return;
+  }
+  if (!lista.length){ $('galeria').innerHTML = '<p class="vacio">No hay ninguna imagen con ese nombre.</p>'; return; }
+  $('galeria').innerHTML = '<div class="galeria">' + lista.map(function(i){
+    return '<div class="pieza"><div class="pieza__img"><img data-id="' + i.id + '" alt="' + escapar(i.nombre) + '"></div>' +
+      '<div class="pieza__pie"><p class="pieza__nombre" title="' + escapar(i.nombre) + '">' + escapar(i.nombre) + '</p>' +
+      '<p class="pieza__grupo">' + (i.grupo ? escapar(i.grupo) + ' · ' : '') + pesoBonito(i.tamano) + '</p>' +
+      '<div class="pieza__acc"><button class="enlace" data-usar="' + i.id + '">Usar en el vídeo</button>' +
+      '<button class="enlace" data-cambiar="' + i.id + '">Cambiar</button>' +
+      '<button class="enlace enlace--rojo" data-borrar="' + i.id + '">Borrar</button></div></div></div>';
+  }).join('') + '</div>';
+  $('galeria').querySelectorAll('img[data-id]').forEach(function(img){ ponerImagen(img, Number(img.dataset.id)); });
+  $('galeria').querySelectorAll('[data-usar]').forEach(function(b){
+    b.addEventListener('click', function(){ anadirCapa(Number(b.dataset.usar)); pestana('editor'); avisar('Imagen añadida al vídeo. Elige dónde quieres que salga.'); });
+  });
+  $('galeria').querySelectorAll('[data-cambiar]').forEach(function(b){
+    b.addEventListener('click', function(){ cambiarImagen(Number(b.dataset.cambiar)); });
+  });
+  $('galeria').querySelectorAll('[data-borrar]').forEach(function(b){
+    b.addEventListener('click', async function(){
+      const i = IMAGENES.filter(function(x){ return x.id === Number(b.dataset.borrar); })[0];
+      if (!i || !confirm('¿Borrar «' + i.nombre + '» de tus imágenes? No se puede deshacer.')) return;
+      try{
+        const d = await api('/api/imagenes?id=' + i.id, 'DELETE');
+        IMAGENES = d.imagenes;
+        CAPAS = CAPAS.filter(function(c){ return c.imagen !== i.id; });
+        guardarCapas(); pintarBiblioteca(); pintarCapas();
+      }catch(e){ alert(e.message); }
+    });
+  });
+}
+$('buscar').addEventListener('input', pintarBiblioteca);
+
+function cambiarImagen(id){
+  const i = IMAGENES.filter(function(x){ return x.id === id; })[0]; if (!i) return;
+  abrirVentana('Cambiar la imagen',
+    '<div class="ventana__cuerpo"><div class="error" id="errCambiar" hidden></div>' +
+    '<div class="campo"><label for="cNombre">Nombre</label><input type="text" id="cNombre" maxlength="120" value="' + escapar(i.nombre) + '"></div>' +
+    '<div class="campo"><label for="cGrupo">Grupo</label><input type="text" id="cGrupo" maxlength="40" list="listaGrupos" value="' + escapar(i.grupo) + '" placeholder="Logos, Patrocinadores, Fotos…">' +
+    '<datalist id="listaGrupos">' + grupos().map(function(g){ return '<option value="' + escapar(g) + '">'; }).join('') + '</datalist></div>' +
+    '<p class="nota-peq">El grupo sirve para encontrarlas antes: por ejemplo «Logos», «Patrocinadores» o «Fotos del equipo».</p>' +
+    '<div class="ventana__pie"><button class="btn" id="cCancelar">Cancelar</button><button class="btn btn--solido" id="cGuardar">Guardar</button></div></div>');
+  $('cCancelar').addEventListener('click', cerrarVentana);
+  $('cGuardar').addEventListener('click', async function(){
+    this.disabled = true;
+    try{
+      const d = await api('/api/imagenes', 'POST', { accion:'cambiar', id: id, nombre: $('cNombre').value, grupo: $('cGrupo').value });
+      IMAGENES = d.imagenes; cerrarVentana(); pintarBiblioteca(); pintarCapas();
+    }catch(e){ mostrarError('errCambiar', e.message); this.disabled = false; }
+  });
+  $('cNombre').focus();
+}
+
+/* --- subir imágenes --- */
+let trasSubir = null;   // qué hacer con la primera imagen subida (p. ej. añadirla al vídeo)
+$('btnSubirImagenes').addEventListener('click', function(){ trasSubir = null; $('archivoImagenes').click(); });
+
+function cargarImg(blob){
+  return new Promise(function(ok, mal){
+    const url = URL.createObjectURL(blob), img = new Image();
+    img.onload = function(){ ok({ img: img, url: url }); };
+    img.onerror = function(){ URL.revokeObjectURL(url); mal(new Error('No se ha podido abrir la imagen.')); };
+    img.src = url;
+  });
+}
+function aBlob(canvas, tipo, calidad){
+  return new Promise(function(ok){ canvas.toBlob(function(b){ ok(b); }, tipo, calidad); });
+}
+/* Deja la imagen en un tamaño razonable: hasta 2000 px por el lado largo y menos de 3 MB.
+   Mantiene la transparencia de los logos (PNG o WEBP). */
+async function prepararImagen(archivo){
+  const { img, url } = await cargarImg(archivo);
+  let w = img.naturalWidth, h = img.naturalHeight;
+  URL.revokeObjectURL(url);
+  const tipoOk = ['image/png','image/jpeg','image/webp','image/gif'].indexOf(archivo.type) >= 0;
+  if (tipoOk && archivo.size <= 2.5 * 1024 * 1024 && Math.max(w, h) <= 2000){
+    return { blob: archivo, tipo: archivo.type, ancho: w, alto: h };
+  }
+  const k = Math.min(1, 2000 / Math.max(w, h));
+  w = Math.max(1, Math.round(w * k)); h = Math.max(1, Math.round(h * k));
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  c.getContext('2d').drawImage(img, 0, 0, w, h);
+  let b = await aBlob(c, 'image/webp', 0.92);
+  if (!b || (b.type !== 'image/webp' && b.type !== 'image/png')) b = await aBlob(c, 'image/png');
+  if (b.size > MAX_IMG) b = await aBlob(c, 'image/jpeg', 0.9);   // sin transparencia, pero cabe
+  return { blob: b, tipo: b.type, ancho: w, alto: h };
+}
+
+$('archivoImagenes').addEventListener('change', async function(){
+  const archivos = Array.prototype.slice.call(this.files); this.value = '';
+  if (!archivos.length) return;
+  const boton = $('btnSubirImagenes'); boton.disabled = true;
+  const grupo = grupoVisible;
+  let hechas = 0, fallos = [], primera = null;
+  for (const a of archivos){
+    boton.textContent = 'Subiendo ' + (hechas + fallos.length + 1) + ' de ' + archivos.length + '…';
+    try{
+      const p = await prepararImagen(a);
+      if (p.blob.size > MAX_IMG) throw new Error('pesa demasiado');
+      const nombre = a.name.replace(/\.[a-z0-9]+$/i, '').replace(/[_-]+/g, ' ').trim() || 'Imagen';
+      const q = 'tipo=' + encodeURIComponent(p.tipo) + '&nombre=' + encodeURIComponent(nombre) +
+                '&grupo=' + encodeURIComponent(grupo) + '&ancho=' + p.ancho + '&alto=' + p.alto;
+      let r;
+      try{
+        r = await fetch('/api/imagenes?' + q, { method:'POST', body: p.blob,
+          headers: { 'Content-Type':'application/octet-stream', 'Authorization':'Bearer ' + leerPase() } });
+      }catch(e){ throw new Error('sin conexión'); }
+      const d = await respuesta(r);
+      IMAGENES = d.imagenes; hechas++;
+      if (primera === null) primera = d.nueva;
+      BLOBS[d.nueva] = p.blob; URLS[d.nueva] = URL.createObjectURL(p.blob);
+    }catch(e){ fallos.push(a.name + ' (' + e.message + ')'); }
+  }
+  boton.disabled = false; boton.textContent = '+ Subir imágenes';
+  pintarBiblioteca();
+  if (trasSubir && primera !== null){ const f = trasSubir; trasSubir = null; f(primera); }
+  if (fallos.length) alert('No se han podido subir:\n' + fallos.join('\n'));
+  else if (hechas) avisar(hechas === 1 ? 'Imagen guardada en Mis imágenes.' : hechas + ' imágenes guardadas en Mis imágenes.');
+});
+
+/* --- elegir imagen desde el editor --- */
+function elegirImagen(){
+  let texto = '';
+  const pintar = function(){
+    const lista = imagenesFiltradas(texto);
+    $('selChips').innerHTML = htmlChips();
+    $('selChips').querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click', function(){ grupoVisible = b.dataset.grupo; pintar(); });
+    });
+    $('selGaleria').innerHTML = !IMAGENES.length
+      ? '<p class="vacio">Todavía no tienes imágenes guardadas. Pulsa «Subir una imagen nueva».</p>'
+      : !lista.length ? '<p class="vacio">No hay ninguna imagen con ese nombre.</p>'
+      : '<div class="galeria" style="padding:0">' + lista.map(function(i){
+          return '<div class="pieza"><button type="button" class="pieza__img" data-elegir="' + i.id + '" title="Usar «' + escapar(i.nombre) + '»">' +
+            '<img data-id="' + i.id + '" alt="' + escapar(i.nombre) + '"></button>' +
+            '<div class="pieza__pie"><p class="pieza__nombre">' + escapar(i.nombre) + '</p>' +
+            (i.grupo ? '<p class="pieza__grupo">' + escapar(i.grupo) + '</p>' : '') + '</div></div>';
+        }).join('') + '</div>';
+    $('selGaleria').querySelectorAll('img[data-id]').forEach(function(img){ ponerImagen(img, Number(img.dataset.id)); });
+    $('selGaleria').querySelectorAll('[data-elegir]').forEach(function(b){
+      b.addEventListener('click', function(){ cerrarVentana(); anadirCapa(Number(b.dataset.elegir)); });
+    });
+  };
+  abrirVentana('Elige un logo o una foto',
+    '<div class="ventana__cuerpo">' +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap"><input type="search" id="selBuscar" placeholder="Buscar por nombre…" ' +
+    'style="font:inherit;font-size:14.5px;padding:8px 11px;border:1px solid var(--linea-fuerte);border-radius:6px;flex:1;min-width:180px">' +
+    '<button class="btn btn--solido" id="selSubir">Subir una imagen nueva</button></div>' +
+    '<div class="chips" id="selChips"></div><div id="selGaleria"></div></div>', true);
+  $('selBuscar').addEventListener('input', function(){ texto = this.value; pintar(); });
+  $('selSubir').addEventListener('click', function(){
+    trasSubir = function(id){ anadirCapa(id); };
+    cerrarVentana(); $('archivoImagenes').click();
+  });
+  pintar();
+}
+$('btnAnadirCapa').addEventListener('click', elegirImagen);
+
+/* ==================================================================
+   CAPAS (lo que va encima del vídeo)
+================================================================== */
+let CAPAS = [];
+let siguienteCapa = 1;
+const POS_NUEVAS = ['ad','ai','bd','bi','ac','bc'];
+
+function guardarCapas(){
+  try{ localStorage.setItem('videos_capas', JSON.stringify(CAPAS)); }catch(e){}
+}
+function recuperarCapas(){
+  try{
+    const g = JSON.parse(localStorage.getItem('videos_capas') || '[]');
+    const ids = IMAGENES.map(function(i){ return i.id; });
+    CAPAS = (Array.isArray(g) ? g : []).filter(function(c){ return c && ids.indexOf(c.imagen) >= 0; });
+    CAPAS.forEach(function(c){ c.uid = siguienteCapa++; });
+  }catch(e){ CAPAS = []; }
+}
+function imagenDe(id){ return IMAGENES.filter(function(i){ return i.id === id; })[0] || null; }
+
+function anadirCapa(idImagen){
+  const usadas = CAPAS.map(function(c){ return c.pos; });
+  const pos = POS_NUEVAS.filter(function(p){ return usadas.indexOf(p) < 0; })[0] || 'ad';
+  CAPAS.push({ uid: siguienteCapa++, imagen: idImagen, pos: pos, tam: 18, margen: 4, opac: 100, cuando: 'todo', desde: 0, hasta: 5 });
+  guardarCapas(); pintarCapas();
+}
+
+/* La misma cuenta para la vista previa y para el vídeo final: así sale exactamente donde se ve. */
+function caja(c, W, H, iw, ih){
+  const p = POSICIONES.filter(function(x){ return x.id === c.pos; })[0] || POSICIONES[2];
+  const m = (c.margen / 100) * Math.min(W, H);
+  let w = (c.tam / 100) * W, h = w * (ih / iw);
+  const maxH = H - 2 * m;
+  if (h > maxH){ h = maxH; w = h * (iw / ih); }
+  const x = p.col === 0 ? m : p.col === 1 ? (W - w) / 2 : W - m - w;
+  const y = p.fila === 0 ? m : p.fila === 1 ? (H - h) / 2 : H - m - h;
+  return { x: x, y: y, w: w, h: h };
+}
+function visibleEn(c, t){
+  if (c.cuando !== 'rato') return true;
+  const d = Number(c.desde) || 0, h = Number(c.hasta);
+  return t >= d && (!isFinite(h) || h <= d || t < h);
+}
+
+function opcionesPos(sel){
+  return POSICIONES.map(function(p){ return '<option value="' + p.id + '"' + (p.id === sel ? ' selected' : '') + '>' + p.nombre + '</option>'; }).join('');
+}
+function pintarCapas(){
+  $('cuentaCapas').textContent = CAPAS.length ? (CAPAS.length === 1 ? '1 imagen' : CAPAS.length + ' imágenes') : '';
+  if (!CAPAS.length){
+    $('listaCapas').innerHTML = '<li class="vacio">Todavía no has puesto ninguna. Pulsa el botón de abajo y elige un logo o una foto de tus imágenes (o sube una nueva).</li>';
+  } else {
+    $('listaCapas').innerHTML = CAPAS.map(function(c){
+      const i = imagenDe(c.imagen);
+      return '<li data-uid="' + c.uid + '"><div class="capa-cab"><img class="miniatura" data-id="' + c.imagen + '" alt="">' +
+        '<span class="nombre">' + escapar(i ? i.nombre : 'Imagen') + '</span>' +
+        '<button class="btn btn--mini btn--peligro" data-quitar>Quitar</button></div>' +
+        '<div class="rejilla2">' +
+        '<div class="campo campo--todo"><label>Dónde sale</label><select data-campo="pos">' + opcionesPos(c.pos) + '</select></div>' +
+        '<div class="campo"><span class="lbl">Tamaño <span class="valor" data-ver="tam">' + c.tam + ' %</span></span>' +
+          '<input type="range" min="4" max="80" step="1" value="' + c.tam + '" data-campo="tam" aria-label="Tamaño"></div>' +
+        '<div class="campo"><span class="lbl">Separación del borde <span class="valor" data-ver="margen">' + c.margen + ' %</span></span>' +
+          '<input type="range" min="0" max="15" step="0.5" value="' + c.margen + '" data-campo="margen" aria-label="Separación del borde"></div>' +
+        '<div class="campo"><span class="lbl">Se ve <span class="valor" data-ver="opac">' + c.opac + ' %</span></span>' +
+          '<input type="range" min="15" max="100" step="5" value="' + c.opac + '" data-campo="opac" aria-label="Cuánto se ve"></div>' +
+        '<div class="campo"><label>Cuándo sale</label><select data-campo="cuando">' +
+          '<option value="todo"' + (c.cuando !== 'rato' ? ' selected' : '') + '>Todo el vídeo</option>' +
+          '<option value="rato"' + (c.cuando === 'rato' ? ' selected' : '') + '>Solo un rato</option></select></div>' +
+        '<div class="campo" data-rato' + (c.cuando === 'rato' ? '' : ' hidden') + '><label>Desde el segundo</label>' +
+          '<input type="number" min="0" step="0.5" value="' + c.desde + '" data-campo="desde"></div>' +
+        '<div class="campo" data-rato' + (c.cuando === 'rato' ? '' : ' hidden') + '><label>Hasta el segundo</label>' +
+          '<input type="number" min="0" step="0.5" value="' + c.hasta + '" data-campo="hasta"></div>' +
+        '</div></li>';
+    }).join('');
+    $('listaCapas').querySelectorAll('img[data-id]').forEach(function(img){ ponerImagen(img, Number(img.dataset.id)); });
+    $('listaCapas').querySelectorAll('li[data-uid]').forEach(function(li){
+      const c = CAPAS.filter(function(x){ return x.uid === Number(li.dataset.uid); })[0];
+      li.querySelector('[data-quitar]').addEventListener('click', function(){
+        CAPAS = CAPAS.filter(function(x){ return x !== c; }); guardarCapas(); pintarCapas();
+      });
+      li.querySelectorAll('[data-campo]').forEach(function(el){
+        el.addEventListener('input', function(){
+          const k = el.dataset.campo;
+          c[k] = (k === 'pos' || k === 'cuando') ? el.value : Number(el.value);
+          const v = li.querySelector('[data-ver="' + k + '"]'); if (v) v.textContent = el.value + ' %';
+          if (k === 'cuando') li.querySelectorAll('[data-rato]').forEach(function(x){ x.hidden = el.value !== 'rato'; });
+          guardarCapas(); pintarVista();
+        });
+      });
+    });
+  }
+  pintarVista();
+  $('btnPreparar').disabled = !ARCHIVO || !PUEDE_VIDEO;
+}
+
+/* ==================================================================
+   EL VÍDEO
+================================================================== */
+let ARCHIVO = null;
+let ANCHO = 0, ALTO = 0;
+const video = $('video');
+
+function elegirVideo(){ $('archivoVideo').click(); }
+$('zonaSoltar').addEventListener('click', elegirVideo);
+$('zonaSoltar').addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); elegirVideo(); } });
+$('btnOtroVideo').addEventListener('click', elegirVideo);
+['dragenter','dragover'].forEach(function(t){
+  $('zonaSoltar').addEventListener(t, function(e){ e.preventDefault(); this.classList.add('encima'); });
+});
+['dragleave','drop'].forEach(function(t){
+  $('zonaSoltar').addEventListener(t, function(e){ e.preventDefault(); this.classList.remove('encima'); });
+});
+$('zonaSoltar').addEventListener('drop', function(e){
+  const f = e.dataTransfer && e.dataTransfer.files[0]; if (f) abrirVideo(f);
+});
+$('archivoVideo').addEventListener('change', function(){ const f = this.files[0]; this.value = ''; if (f) abrirVideo(f); });
+
+let urlVideo = null;
+function abrirVideo(f){
+  if (!/^video\//.test(f.type) && !/\.(mp4|mov|m4v|webm|mkv)$/i.test(f.name)){ alert('Elige un archivo de vídeo.'); return; }
+  if (EN_MARCHA){ alert('Espera a que termine de prepararse el vídeo anterior, o cancélalo.'); return; }
+  ARCHIVO = f; limpiarResultado();
+  if (urlVideo) URL.revokeObjectURL(urlVideo);
+  urlVideo = URL.createObjectURL(f);
+  video.src = urlVideo;
+  ver('zonaSoltar', false); ver('zonaVideo', true); ver('btnOtroVideo', true);
+  $('infoVideo').innerHTML = '<span><b>' + escapar(f.name) + '</b></span><span>' + pesoBonito(f.size) + '</span>';
+  $('btnPreparar').disabled = !PUEDE_VIDEO;
+}
+video.addEventListener('loadedmetadata', function(){
+  ANCHO = video.videoWidth; ALTO = video.videoHeight;
+  ajustarEscena();
+  $('infoVideo').innerHTML = '<span><b>' + escapar(ARCHIVO.name) + '</b></span><span>' +
+    (ANCHO > ALTO ? 'Horizontal' : ANCHO < ALTO ? 'Vertical' : 'Cuadrado') + ' · ' + ANCHO + '×' + ALTO + ' · ' +
+    duracionBonita(video.duration) + ' · ' + pesoBonito(ARCHIVO.size) + '</span>';
+  pintarVista();
+});
+video.addEventListener('error', function(){
+  $('infoVideo').innerHTML = '<span>Este navegador no puede enseñar la vista previa de este vídeo, pero puedes probar a prepararlo igualmente.</span>';
+});
+
+function ajustarEscena(){
+  if (!ANCHO || !ALTO) return;
+  const esc = $('escena');
+  const maxAlto = window.innerHeight * 0.7, disponible = esc.parentElement.clientWidth - 32;
+  const ancho = Math.min(disponible, maxAlto * ANCHO / ALTO);
+  esc.style.width = Math.max(120, ancho) + 'px';
+  esc.style.aspectRatio = ANCHO + ' / ' + ALTO;
+}
+window.addEventListener('resize', ajustarEscena);
+
+function pintarVista(){
+  const capa = $('capasVista');
+  if (!ANCHO || !ALTO){ capa.innerHTML = ''; return; }
+  const t = video.currentTime || 0;
+  const existentes = {};
+  capa.querySelectorAll('img').forEach(function(img){ existentes[img.dataset.uid] = img; });
+  CAPAS.forEach(function(c){
+    const i = imagenDe(c.imagen); if (!i) return;
+    let img = existentes[c.uid];
+    if (!img){
+      img = document.createElement('img'); img.className = 'capa'; img.alt = ''; img.dataset.uid = c.uid;
+      capa.appendChild(img);
+      img.addEventListener('load', pintarVista);
+    }
+    delete existentes[c.uid];
+    if (img.dataset.id !== String(c.imagen)){ img.dataset.id = c.imagen; ponerImagen(img, c.imagen); }
+    const iw = img.naturalWidth || i.ancho || 1, ih = img.naturalHeight || i.alto || 1;
+    const b = caja(c, ANCHO, ALTO, iw, ih);
+    img.style.left = (b.x / ANCHO * 100) + '%'; img.style.top = (b.y / ALTO * 100) + '%';
+    img.style.width = (b.w / ANCHO * 100) + '%'; img.style.height = (b.h / ALTO * 100) + '%';
+    img.style.opacity = c.opac / 100;
+    img.style.visibility = visibleEn(c, t) ? 'visible' : 'hidden';
+  });
+  // el orden de la lista es el orden de dibujo: lo de abajo de la lista queda encima
+  CAPAS.forEach(function(c){ const img = capa.querySelector('img[data-uid="' + c.uid + '"]'); if (img) capa.appendChild(img); });
+  Object.keys(existentes).forEach(function(k){ existentes[k].remove(); });
+}
+video.addEventListener('timeupdate', pintarVista);
+video.addEventListener('seeked', pintarVista);
+
+/* ==================================================================
+   PREPARAR EL VÍDEO FINAL (MP4)
+================================================================== */
+let EN_MARCHA = null;     // la conversión en curso
+let RESULTADO = null;     // { blob, nombre, url }
+let MB = null;
+
+function limpiarResultado(){
+  if (RESULTADO && RESULTADO.url) URL.revokeObjectURL(RESULTADO.url);
+  RESULTADO = null; $('videoResultado').removeAttribute('src'); ver('zonaResultado', false); mostrarError('errorExportar', '');
+}
+function par(n){ n = Math.round(n); return n % 2 ? n - 1 : n; }
+
+$('btnPreparar').addEventListener('click', async function(){
+  if (!ARCHIVO || EN_MARCHA) return;
+  limpiarResultado();
+  const boton = this; boton.disabled = true;
+  ver('zonaProgreso', true); $('barraProgreso').style.width = '0%'; $('textoProgreso').textContent = 'Preparando…';
+  let entrada = null;
+  try{
+    if (!MB) MB = await import('./lib/mediabunny.min.mjs');
+
+    /* las imágenes, listas para dibujar */
+    const dibujos = [];
+    for (const c of CAPAS){
+      const i = imagenDe(c.imagen); if (!i) continue;
+      const bmp = await createImageBitmap(await traerImagen(c.imagen));
+      dibujos.push({ c: JSON.parse(JSON.stringify(c)), bmp: bmp });
+    }
+
+    entrada = new MB.Input({ source: new MB.BlobSource(ARCHIVO), formats: MB.ALL_FORMATS });
+    const pista = await entrada.getPrimaryVideoTrack();
+    if (!pista) throw new Error('Ese archivo no tiene imagen de vídeo.');
+    if (!(await pista.canDecode())) throw new Error('Este navegador no sabe leer este vídeo. Prueba con Google Chrome o con Safari actualizados.');
+    if (!(await MB.canEncode('avc'))) throw new Error('Este navegador no puede crear vídeos MP4. Prueba con Google Chrome, Edge o Safari actualizados.');
+
+    const dw = pista.displayWidth, dh = pista.displayHeight;
+    const tope = Number($('selTamano').value);
+    const k = tope ? Math.min(1, tope / Math.max(dw, dh)) : 1;
+    const W = par(dw * k), H = par(dh * k);
+    const calidad = { alta: MB.QUALITY_HIGH, muyalta: MB.QUALITY_VERY_HIGH, media: MB.QUALITY_MEDIUM }[$('selCalidad').value] || MB.QUALITY_HIGH;
+
+    const lienzo = new OffscreenCanvas(W, H), ctx = lienzo.getContext('2d');
+    const salida = new MB.Output({ format: new MB.Mp4OutputFormat({ fastStart: 'in-memory' }), target: new MB.BufferTarget() });
+    const conv = await MB.Conversion.init({
+      input: entrada, output: salida,
+      video: {
+        codec: 'avc', width: W, height: H, fit: 'fill', quality: calidad, forceTranscode: true,
+        allowTransformationMetadata: false,     // los vídeos girados del móvil se enderezan antes de poner los logos
+        processedWidth: W, processedHeight: H,
+        process: function(muestra){
+          ctx.clearRect(0, 0, W, H);
+          muestra.draw(ctx, 0, 0, W, H);
+          const t = muestra.timestamp;
+          for (const d of dibujos){
+            if (!visibleEn(d.c, t)) continue;
+            const b = caja(d.c, W, H, d.bmp.width, d.bmp.height);
+            ctx.globalAlpha = d.c.opac / 100;
+            ctx.drawImage(d.bmp, b.x, b.y, b.w, b.h);
+          }
+          ctx.globalAlpha = 1;
+          return lienzo;
+        }
+      },
+      audio: { codec: 'aac' }
+    });
+    if (!conv.isValid) throw new Error('No se ha podido preparar este vídeo en este navegador. Prueba con Google Chrome actualizado.');
+    const sinSonido = conv.discardedTracks.some(function(d){ return d.track && d.track.type === 'audio'; });
+
+    EN_MARCHA = conv;
+    const inicio = Date.now();
+    conv.onProgress = function(p){
+      const pc = Math.max(0, Math.min(1, p));
+      $('barraProgreso').style.width = (pc * 100).toFixed(1) + '%';
+      let txt = 'Preparando… ' + Math.round(pc * 100) + ' %';
+      const pasado = (Date.now() - inicio) / 1000;
+      if (pc > 0.05 && pasado > 3){
+        const resto = pasado / pc - pasado;
+        txt += ' · falta ' + (resto < 60 ? 'menos de un minuto' : 'unos ' + Math.round(resto / 60) + ' minutos');
+      }
+      $('textoProgreso').textContent = txt;
+    };
+    await conv.execute();
+
+    const blob = new Blob([salida.target.buffer], { type: 'video/mp4' });
+    const nombre = ARCHIVO.name.replace(/\.[a-z0-9]+$/i, '') + '_con_logos.mp4';
+    RESULTADO = { blob: blob, nombre: nombre, url: URL.createObjectURL(blob) };
+    $('videoResultado').src = RESULTADO.url;
+    $('textoResultado').textContent = 'Vídeo listo (' + W + '×' + H + ', ' + pesoBonito(blob.size) + ').' +
+      (sinSonido ? ' Ojo: este navegador no ha podido copiar el sonido; prueba con Google Chrome si lo necesitas.' : '');
+    let puedeCompartir = false;
+    try{ puedeCompartir = !!(navigator.canShare && navigator.canShare({ files: [ new File([blob], nombre, { type:'video/mp4' }) ] })); }catch(e){}
+    ver('btnCompartir', puedeCompartir);
+    ver('zonaResultado', true);
+    dibujos.forEach(function(d){ try{ d.bmp.close(); }catch(e){} });
+  }catch(e){
+    if (e && e.name === 'ConversionCanceledError') mostrarError('errorExportar', 'Cancelado.');
+    else { console.error(e); mostrarError('errorExportar', (e && e.message && /[áéíóúñ]|navegador|vídeo/.test(e.message)) ? e.message : 'No se ha podido preparar el vídeo. Prueba con Google Chrome actualizado, o con un vídeo más corto.'); }
+  }finally{
+    EN_MARCHA = null; ver('zonaProgreso', false); boton.disabled = !ARCHIVO || !PUEDE_VIDEO;
+    if (entrada){ try{ entrada.dispose && entrada.dispose(); }catch(e){} }
+  }
+});
+$('btnCancelar').addEventListener('click', function(){ if (EN_MARCHA) EN_MARCHA.cancel(); });
+window.addEventListener('beforeunload', function(e){ if (EN_MARCHA){ e.preventDefault(); e.returnValue = ''; } });
+
+$('btnDescargar').addEventListener('click', function(){
+  if (!RESULTADO) return;
+  const a = document.createElement('a'); a.href = RESULTADO.url; a.download = RESULTADO.nombre;
+  document.body.appendChild(a); a.click(); a.remove();
+});
+$('btnCompartir').addEventListener('click', async function(){
+  if (!RESULTADO) return;
+  try{ await navigator.share({ files: [ new File([RESULTADO.blob], RESULTADO.nombre, { type:'video/mp4' }) ] }); }
+  catch(e){ if (e && e.name !== 'AbortError') alert('No se ha podido compartir. Descárgalo y súbelo desde la app de la red social.'); }
+});
+
+arrancar();
+</script>
+</body>
+</html>
