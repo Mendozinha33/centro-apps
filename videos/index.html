@@ -207,6 +207,11 @@
     Este navegador no puede preparar vídeos. Ábrelo con <b>Google Chrome</b>, <b>Microsoft Edge</b> o <b>Safari</b> actualizados
     (en el móvil o en el ordenador). Tus imágenes sí puedes verlas y ordenarlas desde aquí.
   </div>
+  <div class="aviso" id="avisoDentroApp" hidden style="margin-bottom:18px">
+    Has abierto esta página desde dentro de otra aplicación (WhatsApp, Instagram, Facebook…), y ahí los vídeos
+    <b>no se pueden descargar</b>. Pulsa los tres puntos <b>⋮</b> o el botón de compartir y elige
+    <b>«Abrir en Chrome»</b> o <b>«Abrir en Safari»</b>.
+  </div>
   <div class="ok" id="avisoOk" hidden style="margin-bottom:18px"></div>
 
   <!-- ============ EDITOR ============ -->
@@ -268,9 +273,11 @@
             <p class="ok" style="margin:0" id="textoResultado"></p>
             <video id="videoResultado" controls playsinline></video>
             <div class="botonera">
-              <button class="btn btn--solido" id="btnDescargar">Descargar el vídeo</button>
-              <button class="btn" id="btnCompartir" hidden>Compartir en redes</button>
+              <button class="btn btn--morado btn--grande" id="btnDescargar">⬇ Descargar el vídeo</button>
+              <button class="btn btn--grande" id="btnCompartir" hidden>Guardar en el móvil o compartir</button>
             </div>
+            <p class="nota-peq" id="notaDescarga">En el ordenador queda en la carpeta «Descargas». En el iPhone, pulsa
+              «Guardar en el móvil o compartir» y después «Guardar vídeo» para tenerlo en la galería de fotos.</p>
           </div>
           <p class="nota-peq">Sale en MP4, el formato que aceptan Instagram, TikTok, Facebook, YouTube, X y WhatsApp.
             Tarda más o menos lo que dura el vídeo; no cierres ni cambies de pantalla mientras se prepara.</p>
@@ -321,7 +328,9 @@ const POSICIONES = [
   { id:'cd', nombre:'En medio a la derecha', fila:1, col:2 },
   { id:'bi', nombre:'Abajo a la izquierda',  fila:2, col:0 },
   { id:'bc', nombre:'Abajo en el centro',    fila:2, col:1 },
-  { id:'bd', nombre:'Abajo a la derecha',    fila:2, col:2 }
+  { id:'bd', nombre:'Abajo a la derecha',    fila:2, col:2 },
+  { id:'ba', nombre:'Abajo, todo el ancho',  fila:2, col:1, ancho:true },
+  { id:'aa', nombre:'Arriba, todo el ancho', fila:0, col:1, ancho:true }
 ];
 const MAX_IMG = 3 * 1024 * 1024;
 const $ = function(id){ return document.getElementById(id); };
@@ -391,6 +400,7 @@ $('btnEntrar').addEventListener('click', async function(){
 });
 $('btnSalir').addEventListener('click', cerrarSesion);
 
+const DENTRO_DE_APP = /Instagram|FBAN|FBAV|FB_IAB|WhatsApp|Line\/|MicroMessenger|TikTok|musical_ly|Snapchat|; wv\)/i.test(navigator.userAgent);
 const PUEDE_VIDEO = typeof window.VideoEncoder === 'function' && typeof window.VideoDecoder === 'function' && typeof window.OffscreenCanvas === 'function';
 
 async function cargar(){
@@ -398,6 +408,7 @@ async function cargar(){
   IMAGENES = d.imagenes;
   ver('cargando', false); ver('pantallaEntrada', false); ver('pantallaApp', true);
   ver('avisoNavegador', !PUEDE_VIDEO);
+  ver('avisoDentroApp', DENTRO_DE_APP);
   recuperarCapas();
   pintarBiblioteca(); pintarCapas();
 }
@@ -657,6 +668,11 @@ function anadirCapa(idImagen){
 function caja(c, W, H, iw, ih){
   const p = POSICIONES.filter(function(x){ return x.id === c.pos; })[0] || POSICIONES[2];
   const m = (c.margen / 100) * Math.min(W, H);
+  if (p.ancho){
+    /* banda de lado a lado: ocupa todo el ancho y la altura sale sola, sin deformar la imagen */
+    let h = W * (ih / iw); if (h > H) h = H;
+    return { x: 0, y: p.fila === 0 ? m : H - m - h, w: W, h: h };
+  }
   let w = (c.tam / 100) * W, h = w * (ih / iw);
   const maxH = H - 2 * m;
   if (h > maxH){ h = maxH; w = h * (iw / ih); }
@@ -670,6 +686,7 @@ function visibleEn(c, t){
   return t >= d && (!isFinite(h) || h <= d || t < h);
 }
 
+function esAncho(pos){ const p = POSICIONES.filter(function(x){ return x.id === pos; })[0]; return !!(p && p.ancho); }
 function opcionesPos(sel){
   return POSICIONES.map(function(p){ return '<option value="' + p.id + '"' + (p.id === sel ? ' selected' : '') + '>' + p.nombre + '</option>'; }).join('');
 }
@@ -685,7 +702,7 @@ function pintarCapas(){
         '<button class="btn btn--mini btn--peligro" data-quitar>Quitar</button></div>' +
         '<div class="rejilla2">' +
         '<div class="campo campo--todo"><label>Dónde sale</label><select data-campo="pos">' + opcionesPos(c.pos) + '</select></div>' +
-        '<div class="campo"><span class="lbl">Tamaño <span class="valor" data-ver="tam">' + c.tam + ' %</span></span>' +
+        '<div class="campo" data-tam' + (esAncho(c.pos) ? ' hidden' : '') + '><span class="lbl">Tamaño <span class="valor" data-ver="tam">' + c.tam + ' %</span></span>' +
           '<input type="range" min="4" max="80" step="1" value="' + c.tam + '" data-campo="tam" aria-label="Tamaño"></div>' +
         '<div class="campo"><span class="lbl">Separación del borde <span class="valor" data-ver="margen">' + c.margen + ' %</span></span>' +
           '<input type="range" min="0" max="15" step="0.5" value="' + c.margen + '" data-campo="margen" aria-label="Separación del borde"></div>' +
@@ -712,6 +729,15 @@ function pintarCapas(){
           c[k] = (k === 'pos' || k === 'cuando') ? el.value : Number(el.value);
           const v = li.querySelector('[data-ver="' + k + '"]'); if (v) v.textContent = el.value + ' %';
           if (k === 'cuando') li.querySelectorAll('[data-rato]').forEach(function(x){ x.hidden = el.value !== 'rato'; });
+          if (k === 'pos'){
+            const ancho = esAncho(el.value);
+            li.querySelector('[data-tam]').hidden = ancho;
+            if (ancho){   // pegada al borde de abajo (o de arriba) al elegir todo el ancho
+              c.margen = 0;
+              const r = li.querySelector('[data-campo="margen"]'); r.value = 0;
+              li.querySelector('[data-ver="margen"]').textContent = '0 %';
+            }
+          }
           guardarCapas(); pintarVista();
         });
       });
@@ -901,6 +927,7 @@ $('btnPreparar').addEventListener('click', async function(){
     try{ puedeCompartir = !!(navigator.canShare && navigator.canShare({ files: [ new File([blob], nombre, { type:'video/mp4' }) ] })); }catch(e){}
     ver('btnCompartir', puedeCompartir);
     ver('zonaResultado', true);
+    $('zonaResultado').scrollIntoView({ behavior:'smooth', block:'center' });
     dibujos.forEach(function(d){ try{ d.bmp.close(); }catch(e){} });
   }catch(e){
     if (e && e.name === 'ConversionCanceledError') mostrarError('errorExportar', 'Cancelado.');
@@ -913,10 +940,21 @@ $('btnPreparar').addEventListener('click', async function(){
 $('btnCancelar').addEventListener('click', function(){ if (EN_MARCHA) EN_MARCHA.cancel(); });
 window.addEventListener('beforeunload', function(e){ if (EN_MARCHA){ e.preventDefault(); e.returnValue = ''; } });
 
-$('btnDescargar').addEventListener('click', function(){
+$('btnDescargar').addEventListener('click', async function(){
   if (!RESULTADO) return;
-  const a = document.createElement('a'); a.href = RESULTADO.url; a.download = RESULTADO.nombre;
-  document.body.appendChild(a); a.click(); a.remove();
+  /* ordenador o Android con Chrome: se descarga sin preguntar */
+  if ('download' in HTMLAnchorElement.prototype && !DENTRO_DE_APP){
+    const a = document.createElement('a'); a.href = RESULTADO.url; a.download = RESULTADO.nombre;
+    a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove();
+    avisar('Descargando «' + RESULTADO.nombre + '»…');
+    return;
+  }
+  /* si el navegador no descarga, se intenta guardar con el menú de compartir, y si no, se abre el vídeo aparte */
+  try{
+    const f = new File([RESULTADO.blob], RESULTADO.nombre, { type:'video/mp4' });
+    if (navigator.canShare && navigator.canShare({ files:[f] })){ await navigator.share({ files:[f] }); return; }
+  }catch(e){ if (e && e.name === 'AbortError') return; }
+  window.open(RESULTADO.url, '_blank');
 });
 $('btnCompartir').addEventListener('click', async function(){
   if (!RESULTADO) return;
