@@ -407,7 +407,7 @@ async function cargar(){
   const d = await api('/api/imagenes');
   IMAGENES = d.imagenes;
   ver('cargando', false); ver('pantallaEntrada', false); ver('pantallaApp', true);
-  ver('avisoNavegador', !PUEDE_VIDEO);
+  ver('avisoNavegador', !PUEDE_VIDEO && !tipoGrabacion());
   ver('avisoDentroApp', DENTRO_DE_APP);
   recuperarCapas();
   pintarBiblioteca(); pintarCapas();
@@ -744,7 +744,7 @@ function pintarCapas(){
     });
   }
   pintarVista();
-  $('btnPreparar').disabled = !ARCHIVO || !PUEDE_VIDEO;
+  $('btnPreparar').disabled = !ARCHIVO;
 }
 
 /* ==================================================================
@@ -779,7 +779,7 @@ function abrirVideo(f){
   video.src = urlVideo;
   ver('zonaSoltar', false); ver('zonaVideo', true); ver('btnOtroVideo', true);
   $('infoVideo').innerHTML = '<span><b>' + escapar(f.name) + '</b></span><span>' + pesoBonito(f.size) + '</span>';
-  $('btnPreparar').disabled = !PUEDE_VIDEO;
+  $('btnPreparar').disabled = false;
 }
 video.addEventListener('loadedmetadata', function(){
   ANCHO = video.videoWidth; ALTO = video.videoHeight;
@@ -845,96 +845,214 @@ function limpiarResultado(){
   RESULTADO = null; $('videoResultado').removeAttribute('src'); ver('zonaResultado', false); mostrarError('errorExportar', '');
 }
 function par(n){ n = Math.round(n); return n % 2 ? n - 1 : n; }
+function medidas(dw, dh, tope){
+  const k = tope ? Math.min(1, tope / Math.max(dw, dh)) : 1;
+  return { W: Math.max(2, par(dw * k)), H: Math.max(2, par(dh * k)) };
+}
+function progreso(pc, txt){
+  pc = Math.max(0, Math.min(1, pc || 0));
+  $('barraProgreso').style.width = (pc * 100).toFixed(1) + '%';
+  $('textoProgreso').textContent = txt;
+}
+function textoProgreso(inicio, pc, prefijo){
+  let txt = prefijo + ' ' + Math.round(pc * 100) + ' %';
+  const pasado = (Date.now() - inicio) / 1000;
+  if (pc > 0.05 && pasado > 3){
+    const resto = pasado / pc - pasado;
+    txt += ' · falta ' + (resto < 60 ? 'menos de un minuto' : 'unos ' + Math.round(resto / 60) + ' minutos');
+  }
+  return txt;
+}
+function pintarEncima(ctx, dibujos, W, H, t){
+  for (const d of dibujos){
+    if (!visibleEn(d.c, t)) continue;
+    const b = caja(d.c, W, H, d.bmp.width, d.bmp.height);
+    ctx.globalAlpha = d.c.opac / 100;
+    ctx.drawImage(d.bmp, b.x, b.y, b.w, b.h);
+  }
+  ctx.globalAlpha = 1;
+}
+function Cancelado(){ const e = new Error('Cancelado'); e.name = 'Cancelado'; return e; }
+
+/* ---------- forma 1: rápida (lee el vídeo fotograma a fotograma y crea un MP4) ---------- */
+async function formaRapida(dibujos, seguro){
+  if (!PUEDE_VIDEO) throw new Error('sin WebCodecs');
+  if (!MB) MB = await import('./lib/mediabunny.min.mjs');
+  const entrada = new MB.Input({ source: new MB.BlobSource(ARCHIVO), formats: MB.ALL_FORMATS });
+  try{
+    const pista = await entrada.getPrimaryVideoTrack();
+    if (!pista) throw new Error('el archivo no tiene imagen de vídeo');
+    if (!(await pista.canDecode())) throw new Error('no sabe leer el formato de este vídeo (' + (pista.codec || '?') + ')');
+    if (!(await MB.canEncode('avc'))) throw new Error('no puede crear vídeo H.264');
+    const { W, H } = medidas(pista.displayWidth, pista.displayHeight, seguro ? Math.min(1280, Number($('selTamano').value) || 1280) : Number($('selTamano').value));
+    const calidad = { alta: MB.QUALITY_HIGH, muyalta: MB.QUALITY_VERY_HIGH, media: MB.QUALITY_MEDIUM }[$('selCalidad').value] || MB.QUALITY_HIGH;
+    const lienzo = new OffscreenCanvas(W, H), ctx = lienzo.getContext('2d');
+    const salida = new MB.Output({ format: new MB.Mp4OutputFormat({ fastStart: 'in-memory' }), target: new MB.BufferTarget() });
+    const video = {
+      codec: 'avc', width: W, height: H, fit: 'fill', quality: calidad, forceTranscode: true,
+      allowTransformationMetadata: false,
+      processedWidth: W, processedHeight: H,
+      process: function(m){
+        ctx.clearRect(0, 0, W, H);
+        m.draw(ctx, 0, 0, W, H);
+        pintarEncima(ctx, dibujos, W, H, m.timestamp);
+        return lienzo;
+      }
+    };
+    if (seguro){ video.hardwareAcceleration = 'prefer-software'; video.frameRate = 30; }
+    const conv = await MB.Conversion.init({ input: entrada, output: salida, video: video, audio: { codec: 'aac' } });
+    if (!conv.isValid) throw new Error('la conversión no es posible (' + conv.discardedTracks.map(function(d){ return d.track.type + ':' + d.reason; }).join(', ') + ')');
+    const pistasSonido = await entrada.getAudioTracks();
+    const sinSonido = pistasSonido.length > 0 && conv.discardedTracks.some(function(d){ return d.track && d.track.type === 'audio'; });
+    EN_MARCHA = { cancel: function(){ return conv.cancel(); } };
+    const inicio = Date.now();
+    conv.onProgress = function(p){ progreso(p, textoProgreso(inicio, Math.max(0, Math.min(1, p)), 'Preparando…')); };
+    try{ await conv.execute(); }
+    catch(e){ if (e && e.name === 'ConversionCanceledError') throw Cancelado(); throw e; }
+    return { blob: new Blob([salida.target.buffer], { type: 'video/mp4' }), W: W, H: H, ext: 'mp4', sinSonido: sinSonido };
+  } finally {
+    try{ entrada.dispose(); }catch(e){}
+  }
+}
+
+/* ---------- forma 2: en directo (reproduce el vídeo y lo graba con los logos encima) ----------
+   Va más despacio (tarda lo que dura el vídeo), pero sirve para casi cualquier vídeo que se pueda ver. */
+function tipoGrabacion(){
+  const lista = ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a.40.2',
+    'video/mp4;codecs=avc1,opus', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+  if (typeof MediaRecorder !== 'function') return '';
+  for (const t of lista){ try{ if (MediaRecorder.isTypeSupported(t)) return t; }catch(e){} }
+  return '';
+}
+async function formaDirecto(dibujos, audioCtx){
+  const tipo = tipoGrabacion();
+  if (!tipo) throw new Error('este navegador no puede grabar vídeo');
+  const v = document.createElement('video');
+  v.playsInline = true; v.preload = 'auto'; v.src = urlVideo;
+  await new Promise(function(ok, mal){
+    v.onloadedmetadata = ok;
+    v.onerror = function(){ mal(new Error('el navegador no sabe reproducir este vídeo')); };
+  });
+  if (!v.videoWidth) throw new Error('el navegador no sabe abrir la imagen de este vídeo');
+  const { W, H } = medidas(v.videoWidth, v.videoHeight, Math.min(1920, Number($('selTamano').value) || 1920));
+  const lienzo = document.createElement('canvas'); lienzo.width = W; lienzo.height = H;
+  const ctx = lienzo.getContext('2d');
+  ctx.drawImage(v, 0, 0, W, H);
+  const flujo = lienzo.captureStream(30);
+  /* el sonido: se saca del vídeo sin que suene por los altavoces */
+  let fuente = null;
+  if (audioCtx){
+    try{
+      fuente = audioCtx.createMediaElementSource(v);
+      const destino = audioCtx.createMediaStreamDestination();
+      fuente.connect(destino);
+      destino.stream.getAudioTracks().forEach(function(t){ flujo.addTrack(t); });
+      await audioCtx.resume();
+    }catch(e){ console.warn('sonido:', e); }
+  } else { v.muted = true; }
+  const bits = { alta: 8e6, muyalta: 14e6, media: 4e6 }[$('selCalidad').value] || 8e6;
+  const grabadora = new MediaRecorder(flujo, { mimeType: tipo, videoBitsPerSecond: Math.round(bits * Math.min(1, (W * H) / (1920 * 1080)) + 1e6), audioBitsPerSecond: 160000 });
+  const trozos = [];
+  grabadora.ondataavailable = function(e){ if (e.data && e.data.size) trozos.push(e.data); };
+  let cancelado = false, terminar = null;
+  const fin = new Promise(function(ok){ terminar = ok; });
+  grabadora.onstop = function(){ terminar(); };
+  EN_MARCHA = { cancel: function(){ cancelado = true; try{ v.pause(); }catch(e){} if (grabadora.state !== 'inactive') grabadora.stop(); } };
+
+  const dibujar = function(){
+    ctx.drawImage(v, 0, 0, W, H);
+    pintarEncima(ctx, dibujos, W, H, v.currentTime);
+  };
+  const usarRVFC = typeof v.requestVideoFrameCallback === 'function';
+  const bucle = function(){
+    if (cancelado || v.ended) return;
+    dibujar();
+    if (usarRVFC) v.requestVideoFrameCallback(bucle); else requestAnimationFrame(bucle);
+  };
+  const inicio = Date.now(), dur = v.duration;
+  v.ontimeupdate = function(){ if (isFinite(dur) && dur > 0) progreso(v.currentTime / dur, textoProgreso(inicio, v.currentTime / dur, 'Grabando…')); };
+  v.onended = function(){ dibujar(); setTimeout(function(){ if (grabadora.state !== 'inactive') grabadora.stop(); }, 150); };
+  grabadora.start(1000);
+  if (usarRVFC) v.requestVideoFrameCallback(bucle); else requestAnimationFrame(bucle);
+  try{ await v.play(); }
+  catch(e){
+    // si el navegador no deja reproducir con sonido, se graba sin él
+    v.muted = true;
+    try{ await v.play(); }catch(e2){ grabadora.stop(); throw new Error('el navegador no deja reproducir el vídeo'); }
+  }
+  await fin;
+  flujo.getTracks().forEach(function(t){ t.stop(); });
+  try{ fuente && fuente.disconnect(); }catch(e){}
+  v.removeAttribute('src'); v.load();
+  if (cancelado) throw Cancelado();
+  const blob = new Blob(trozos, { type: tipo.split(';')[0] });
+  if (blob.size < 1000) throw new Error('la grabación ha salido vacía');
+  return { blob: blob, W: W, H: H, ext: /mp4/.test(tipo) ? 'mp4' : 'webm', sinSonido: v.muted };
+}
 
 $('btnPreparar').addEventListener('click', async function(){
   if (!ARCHIVO || EN_MARCHA) return;
   limpiarResultado();
+  /* el sonido para la forma en directo hay que pedirlo justo al pulsar */
+  let audioCtx = null;
+  try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){}
   const boton = this; boton.disabled = true;
-  ver('zonaProgreso', true); $('barraProgreso').style.width = '0%'; $('textoProgreso').textContent = 'Preparando…';
-  let entrada = null;
+  ver('zonaProgreso', true); progreso(0, 'Preparando…');
+  const fallos = [];
+  let hecho = null, dibujos = [];
   try{
-    if (!MB) MB = await import('./lib/mediabunny.min.mjs');
-
-    /* las imágenes, listas para dibujar */
-    const dibujos = [];
     for (const c of CAPAS){
-      const i = imagenDe(c.imagen); if (!i) continue;
+      if (!imagenDe(c.imagen)) continue;
       const bmp = await createImageBitmap(await traerImagen(c.imagen));
       dibujos.push({ c: JSON.parse(JSON.stringify(c)), bmp: bmp });
     }
+    const intentos = [
+      { nombre: 'rápida', hacer: function(){ return formaRapida(dibujos, false); } },
+      { nombre: 'rápida segura', hacer: function(){ progreso(0, 'Probando otra forma de prepararlo…'); return formaRapida(dibujos, true); } },
+      { nombre: 'en directo', hacer: function(){ progreso(0, 'Probando otra forma: se reproduce el vídeo y se graba (no cambies de pantalla)…'); return formaDirecto(dibujos, audioCtx); } }
+    ];
+    for (let n = 0; n < intentos.length; n++){
+      const it = intentos[n];
+      // si la forma rápida no sabe leer el vídeo, la segura tampoco: se pasa directamente a la grabación
+      if (it.nombre === 'rápida segura' && fallos.length && /no sabe leer|sin WebCodecs|no puede crear/.test(fallos[fallos.length - 1])) continue;
+      try{
+        const r = await it.hacer();
+        if (r.sinSonido && !hecho){ hecho = r; fallos.push(it.nombre + ': sin sonido'); if (it.nombre === 'rápida') n++; continue; }
+        if (r.sinSonido && hecho) continue;
+        hecho = r; break;
+      }catch(e){
+        if (e && e.name === 'Cancelado') throw e;
+        console.error('Forma ' + it.nombre + ':', e);
+        fallos.push(it.nombre + ': ' + ((e && (e.message || e.name)) || String(e)));
+      }finally{ EN_MARCHA = null; }
+    }
+    if (!hecho) throw new Error('ninguna forma ha funcionado');
 
-    entrada = new MB.Input({ source: new MB.BlobSource(ARCHIVO), formats: MB.ALL_FORMATS });
-    const pista = await entrada.getPrimaryVideoTrack();
-    if (!pista) throw new Error('Ese archivo no tiene imagen de vídeo.');
-    if (!(await pista.canDecode())) throw new Error('Este navegador no sabe leer este vídeo. Prueba con Google Chrome o con Safari actualizados.');
-    if (!(await MB.canEncode('avc'))) throw new Error('Este navegador no puede crear vídeos MP4. Prueba con Google Chrome, Edge o Safari actualizados.');
-
-    const dw = pista.displayWidth, dh = pista.displayHeight;
-    const tope = Number($('selTamano').value);
-    const k = tope ? Math.min(1, tope / Math.max(dw, dh)) : 1;
-    const W = par(dw * k), H = par(dh * k);
-    const calidad = { alta: MB.QUALITY_HIGH, muyalta: MB.QUALITY_VERY_HIGH, media: MB.QUALITY_MEDIUM }[$('selCalidad').value] || MB.QUALITY_HIGH;
-
-    const lienzo = new OffscreenCanvas(W, H), ctx = lienzo.getContext('2d');
-    const salida = new MB.Output({ format: new MB.Mp4OutputFormat({ fastStart: 'in-memory' }), target: new MB.BufferTarget() });
-    const conv = await MB.Conversion.init({
-      input: entrada, output: salida,
-      video: {
-        codec: 'avc', width: W, height: H, fit: 'fill', quality: calidad, forceTranscode: true,
-        allowTransformationMetadata: false,     // los vídeos girados del móvil se enderezan antes de poner los logos
-        processedWidth: W, processedHeight: H,
-        process: function(muestra){
-          ctx.clearRect(0, 0, W, H);
-          muestra.draw(ctx, 0, 0, W, H);
-          const t = muestra.timestamp;
-          for (const d of dibujos){
-            if (!visibleEn(d.c, t)) continue;
-            const b = caja(d.c, W, H, d.bmp.width, d.bmp.height);
-            ctx.globalAlpha = d.c.opac / 100;
-            ctx.drawImage(d.bmp, b.x, b.y, b.w, b.h);
-          }
-          ctx.globalAlpha = 1;
-          return lienzo;
-        }
-      },
-      audio: { codec: 'aac' }
-    });
-    if (!conv.isValid) throw new Error('No se ha podido preparar este vídeo en este navegador. Prueba con Google Chrome actualizado.');
-    const sinSonido = conv.discardedTracks.some(function(d){ return d.track && d.track.type === 'audio'; });
-
-    EN_MARCHA = conv;
-    const inicio = Date.now();
-    conv.onProgress = function(p){
-      const pc = Math.max(0, Math.min(1, p));
-      $('barraProgreso').style.width = (pc * 100).toFixed(1) + '%';
-      let txt = 'Preparando… ' + Math.round(pc * 100) + ' %';
-      const pasado = (Date.now() - inicio) / 1000;
-      if (pc > 0.05 && pasado > 3){
-        const resto = pasado / pc - pasado;
-        txt += ' · falta ' + (resto < 60 ? 'menos de un minuto' : 'unos ' + Math.round(resto / 60) + ' minutos');
-      }
-      $('textoProgreso').textContent = txt;
-    };
-    await conv.execute();
-
-    const blob = new Blob([salida.target.buffer], { type: 'video/mp4' });
-    const nombre = ARCHIVO.name.replace(/\.[a-z0-9]+$/i, '') + '_con_logos.mp4';
-    RESULTADO = { blob: blob, nombre: nombre, url: URL.createObjectURL(blob) };
+    const nombre = ARCHIVO.name.replace(/\.[a-z0-9]+$/i, '') + '_con_logos.' + hecho.ext;
+    RESULTADO = { blob: hecho.blob, nombre: nombre, url: URL.createObjectURL(hecho.blob) };
     $('videoResultado').src = RESULTADO.url;
-    $('textoResultado').textContent = 'Vídeo listo (' + W + '×' + H + ', ' + pesoBonito(blob.size) + ').' +
-      (sinSonido ? ' Ojo: este navegador no ha podido copiar el sonido; prueba con Google Chrome si lo necesitas.' : '');
+    $('textoResultado').textContent = 'Vídeo listo (' + hecho.W + '×' + hecho.H + ', ' + pesoBonito(hecho.blob.size) + ').' +
+      (hecho.sinSonido ? ' Ojo: no se ha podido copiar el sonido de este vídeo.' : '') +
+      (hecho.ext === 'webm' ? ' Ha salido en formato WEBM; YouTube, Facebook y WhatsApp lo admiten, pero Instagram y TikTok quizá no.' : '');
     let puedeCompartir = false;
-    try{ puedeCompartir = !!(navigator.canShare && navigator.canShare({ files: [ new File([blob], nombre, { type:'video/mp4' }) ] })); }catch(e){}
+    try{ puedeCompartir = !!(navigator.canShare && navigator.canShare({ files: [ new File([hecho.blob], nombre, { type: hecho.blob.type }) ] })); }catch(e){}
     ver('btnCompartir', puedeCompartir);
     ver('zonaResultado', true);
     $('zonaResultado').scrollIntoView({ behavior:'smooth', block:'center' });
-    dibujos.forEach(function(d){ try{ d.bmp.close(); }catch(e){} });
   }catch(e){
-    if (e && e.name === 'ConversionCanceledError') mostrarError('errorExportar', 'Cancelado.');
-    else { console.error(e); mostrarError('errorExportar', (e && e.message && /[áéíóúñ]|navegador|vídeo/.test(e.message)) ? e.message : 'No se ha podido preparar el vídeo. Prueba con Google Chrome actualizado, o con un vídeo más corto.'); }
+    if (e && e.name === 'Cancelado') mostrarError('errorExportar', 'Cancelado.');
+    else {
+      console.error(e);
+      const detalle = fallos.join(' · ') || (e && e.message) || String(e);
+      const hevc = /hevc|hvc1|hev1/i.test(detalle);
+      mostrarError('errorExportar', (hevc
+        ? 'Este vídeo está grabado en el formato del iPhone (HEVC), y este navegador no sabe abrirlo. Ábrelo en Safari (iPhone o Mac), o en el iPhone ve a Ajustes › Cámara › Formatos y elige «Más compatible» para los próximos vídeos.'
+        : 'No se ha podido preparar el vídeo en este aparato.') + ' Detalle para Claude: ' + detalle);
+    }
   }finally{
-    EN_MARCHA = null; ver('zonaProgreso', false); boton.disabled = !ARCHIVO || !PUEDE_VIDEO;
-    if (entrada){ try{ entrada.dispose && entrada.dispose(); }catch(e){} }
+    EN_MARCHA = null; ver('zonaProgreso', false); boton.disabled = !ARCHIVO;
+    dibujos.forEach(function(d){ try{ d.bmp.close(); }catch(e){} });
+    if (audioCtx){ try{ audioCtx.close(); }catch(e){} }
   }
 });
 $('btnCancelar').addEventListener('click', function(){ if (EN_MARCHA) EN_MARCHA.cancel(); });
