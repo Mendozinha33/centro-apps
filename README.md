@@ -51,3 +51,17 @@ Poner logos y fotos encima de un vídeo para subirlo a redes sociales, con la mi
   (@mediabunny/aac-encoder 1.66.0, MPL 2.0, basado en el codificador AAC de FFmpeg, LGPL 2.1;
   licencias en `videos/lib/licencias/`). Mediabunny actualizado a 1.66.0; se carga con un importmap.
 - Arreglo: la librería se cargaba con una ruta relativa que fallaba al entrar por `/videos` sin barra final.
+
+## Usuarios (`/usuarios`)
+
+Botón «Usuarios» en la cabecera del centro. El titular (la primera cuenta, la que tiene la columna
+`titular` vacía) da de alta a otras personas con su correo y una contraseña provisional, les pone una
+contraseña nueva o las da de baja. Cualquiera puede cambiar su propia contraseña.
+
+- Los usuarios dados de alta **comparten los datos del titular** en todas las apps: su pase de sesión
+  lleva `id` = id del titular (con el que trabajan todas las funciones de `/api`) y `persona` = su propio id.
+- `lib/comun.js`: `prepararUsuarios()` añade las columnas `titular` y `alta` a `usuarios` (se hace solo);
+  `quienEsVivo()` comprueba que la persona sigue existiendo (con una memoria de 60 s), así que una baja
+  corta el acceso en menos de un minuto. Todas las funciones de `/api` lo usan.
+- `api/acceso.js`: acciones `usuarios`, `alta`, `baja` y `nuevaClave` (solo el titular).
+- El Archivo de nóminas tiene su propio acceso y no cambia.

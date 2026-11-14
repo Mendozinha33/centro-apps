@@ -1,6 +1,6 @@
 /* Mi dieta: el PDF de la dieta, los menús de la semana y el control de peso.
    Misma cuenta que el calendario. Las tablas se crean solas la primera vez. */
-import { bd, faltanAjustes, quienEs } from '../lib/comun.js'
+import { bd, faltanAjustes, quienEsVivo } from '../lib/comun.js'
 
 const COMIDAS = ['desayuno', 'media', 'comida', 'merienda', 'cena']
 const MAX_PDF = 3 * 1024 * 1024   // 3 MB: el límite de subida del servidor es algo más de 4
@@ -64,7 +64,7 @@ async function todo(sql, uid){
 
 export default async function handler(req, res){
   if (faltanAjustes()) return res.status(500).json({ error: 'El servidor todavía no tiene puestos sus dos ajustes.' })
-  const yo = quienEs(req)
+  const yo = await quienEsVivo(req)
   if (!yo) return res.status(401).json({ error: 'Vuelve a entrar.' })
   const uid = String(yo.id)
   const sql = bd()

@@ -1,5 +1,5 @@
 /* Mis gastos: listar, crear, modificar y borrar movimientos de un mes. */
-import { bd, faltanAjustes, quienEs } from '../lib/comun.js'
+import { bd, faltanAjustes, quienEsVivo } from '../lib/comun.js'
 
 const CATEGORIAS_GASTO = ['casa','comida','coche','ocio','salud','compras','recibos','otros']
 const CATEGORIAS_INGRESO = ['nomina','extra','otros']
@@ -22,7 +22,7 @@ function limpiar(m){
 
 export default async function handler(req, res){
   if (faltanAjustes()) return res.status(500).json({ error: 'El servidor todavía no tiene puestos sus dos ajustes.' })
-  const yo = quienEs(req)
+  const yo = await quienEsVivo(req)
   if (!yo) return res.status(401).json({ error: 'Vuelve a entrar.' })
   const sql = bd()
 

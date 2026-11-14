@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Usuarios · Apps Mendoza</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%231B2A33'/%3E%3Ctext x='32' y='45' font-family='Georgia,serif' font-size='38' fill='%23F4F6F5' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --tinta:#1B2A33; --tinta-honda:#122029; --papel:#F1F4F3; --superficie:#FFFFFF;
+    --linea:#D6DEDC; --linea-fuerte:#B9C5C2; --acento:#3E8C76; --acento-hondo:#2F6F5E;
+    --apagado:#657678; --rojo:#A33B34; --oro:#B08A3E;
+    --sans:"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --serif:"Newsreader", Georgia, "Times New Roman", serif;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;background:var(--papel);color:var(--tinta);font-family:var(--sans);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  :focus-visible{outline:2px solid var(--acento);outline-offset:2px;border-radius:3px;}
+  [hidden]{display:none !important;}
+  .contenedor{max-width:880px;margin:0 auto;padding:0 24px;}
+
+  .cabecera{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--linea-fuerte);}
+  .cabecera .contenedor{max-width:1180px;height:68px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .marca{display:flex;align-items:center;gap:14px;text-decoration:none;min-width:0;color:inherit;}
+  .marca__logo{flex:none;display:block;height:52px;width:auto;border-radius:6px;}
+  .marca__t{padding-left:14px;border-left:1px solid var(--linea-fuerte);font-family:var(--serif);font-size:20px;font-weight:500;white-space:nowrap;}
+  .acciones-cab{display:flex;align-items:center;gap:8px;}
+  .quien{font-size:13.5px;color:var(--apagado);white-space:nowrap;}
+
+  .btn{font:inherit;font-size:14.5px;background:var(--superficie);border:1px solid var(--linea-fuerte);border-radius:6px;padding:9px 15px;
+    color:var(--tinta);cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:7px;text-decoration:none;}
+  .btn:hover{border-color:var(--tinta);}
+  .btn:disabled{opacity:.55;cursor:default;}
+  .btn--solido{background:var(--tinta);border-color:var(--tinta);color:var(--papel);font-weight:500;}
+  .btn--solido:hover{background:var(--tinta-honda);}
+  .btn--peligro{color:var(--rojo);}
+  .btn--peligro:hover{border-color:var(--rojo);}
+  .btn--mini{font-size:13px;padding:7px 12px;}
+  .btn--verde{background:#1F8F55;border-color:#1F8F55;color:#fff;font-weight:500;}
+
+  .tarjeta{background:var(--superficie);border:1px solid var(--linea);border-radius:8px;margin-bottom:22px;}
+  .tarjeta__cab{padding:16px 22px;border-bottom:1px solid var(--linea);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+  .tarjeta__cab h2{font-family:var(--serif);font-size:21px;font-weight:500;margin:0;}
+  .tarjeta__cuerpo{padding:18px 22px 22px;display:grid;gap:14px;}
+
+  .barra{padding:28px 0 18px;}
+  .titulo{font-family:var(--serif);font-size:clamp(28px,4vw,38px);font-weight:500;letter-spacing:-.02em;margin:0;}
+  .sub{margin:4px 0 0;font-size:14.5px;color:var(--apagado);max-width:640px;}
+
+  .campo{display:grid;gap:5px;}
+  .campo label{font-size:12.5px;font-weight:600;color:var(--apagado);}
+  .campo input{font:inherit;font-size:15px;padding:9px 11px;border:1px solid var(--linea-fuerte);border-radius:6px;background:#fff;color:inherit;width:100%;}
+  .fila{display:flex;gap:8px;}
+  .fila input{flex:1;min-width:0;}
+  .rejilla2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+
+  .error{background:#FCF3F2;border:1px solid #E7CBC8;color:#8C3A33;border-radius:6px;padding:11px 13px;font-size:14px;}
+  .ok{background:#F1F8F5;border:1px solid #BEDCCF;color:#2A6B54;border-radius:6px;padding:11px 13px;font-size:14px;}
+  .aviso{background:#FBF6EA;border:1px solid #E8D9B4;color:#7A5D1E;border-radius:6px;padding:12px 14px;font-size:14px;}
+  .cargando{padding:40px 0;text-align:center;color:var(--apagado);}
+  .nota{margin:0;font-size:13.5px;color:var(--apagado);}
+
+  .entrada{max-width:430px;margin:8vh auto 40px;padding:0 20px;}
+  .entrada .tarjeta__cuerpo{padding:28px 26px 30px;}
+  .entrada h1{font-family:var(--serif);font-size:30px;font-weight:500;margin:0;}
+
+  .lista{list-style:none;margin:0;padding:0;}
+  .lista li{display:flex;gap:14px;align-items:center;padding:14px 22px;border-top:1px solid var(--linea);flex-wrap:wrap;}
+  .lista li:first-child{border-top:0;}
+  .inicial{flex:none;width:40px;height:40px;border-radius:50%;background:#E3E9E7;display:grid;place-items:center;
+    font-family:var(--serif);font-size:19px;color:var(--tinta);}
+  .persona{flex:1;min-width:180px;}
+  .persona b{display:block;font-weight:600;}
+  .persona span{font-size:13.5px;color:var(--apagado);word-break:break-all;}
+  .etiqueta{display:inline-block;font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+    background:var(--tinta);color:#fff;border-radius:4px;padding:2px 7px;margin-left:6px;vertical-align:2px;}
+  .persona .etiqueta{color:#fff;font-size:11px;}
+  .acc{display:flex;gap:8px;flex-wrap:wrap;}
+
+  .velo{position:fixed;inset:0;background:rgba(18,32,41,.5);z-index:80;display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px;overflow:auto;}
+  .ventana{background:var(--superficie);border-radius:10px;width:100%;max-width:480px;overflow:hidden;}
+  .ventana__cab{padding:16px 22px;border-bottom:1px solid var(--linea);display:flex;justify-content:space-between;align-items:center;}
+  .ventana__cab h2{font-family:var(--serif);font-size:21px;font-weight:500;margin:0;}
+  .cerrar{background:none;border:0;font-size:24px;line-height:1;cursor:pointer;color:var(--apagado);padding:2px 6px;}
+  .ventana__cuerpo{padding:20px 22px 24px;display:grid;gap:14px;}
+  .ventana__pie{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;}
+  .mensaje{white-space:pre-wrap;background:#F6F8F7;border:1px solid var(--linea);border-radius:6px;padding:12px 14px;font-size:14px;margin:0;}
+
+  @media (max-width:600px){
+    .contenedor{padding:0 14px;}
+    .marca__logo{height:40px;}
+    .marca__t{font-size:17px;padding-left:10px;}
+    .quien{display:none;}
+    .rejilla2{grid-template-columns:1fr;}
+    .lista li{padding:14px 16px;}
+    .acc{width:100%;}
+    .acc .btn{flex:1;}
+  }
+</style>
+</head>
+<body>
+
+<header class="cabecera">
+  <div class="contenedor">
+    <a class="marca" href="/" title="Volver a Apps Mendoza"><img class="marca__logo" src="/logo-app-mendoza.png" width="119" height="52" alt="App Mendoza"><span class="marca__t">Usuarios</span></a>
+    <div class="acciones-cab">
+      <span class="quien" id="quien"></span>
+      <button class="btn btn--mini" id="btnSalir" hidden>Salir</button>
+      <a class="btn btn--mini" href="/">Apps Mendoza</a>
+    </div>
+  </div>
+</header>
+
+<section class="entrada" id="pantallaEntrada" hidden>
+  <div class="tarjeta"><div class="tarjeta__cuerpo">
+    <h1>Usuarios</h1>
+    <p class="nota">Entra con tu correo y tu contraseña de Apps Mendoza.</p>
+    <div class="error" id="entradaError" hidden></div>
+    <div class="campo"><label for="eCorreo">Correo</label><input id="eCorreo" type="email" autocomplete="username"></div>
+    <div class="campo"><label for="eClave">Contraseña</label><input id="eClave" type="password" autocomplete="current-password"></div>
+    <button class="btn btn--solido" id="btnEntrar" style="padding:12px">Entrar</button>
+  </div></div>
+</section>
+
+<p class="cargando" id="cargando">Abriendo…</p>
+
+<main class="contenedor" id="pantallaApp" hidden>
+  <div class="barra">
+    <h1 class="titulo">Usuarios</h1>
+    <p class="sub" id="subtitulo">Da de alta a otras personas para que entren en Apps Mendoza con su propio correo y contraseña.</p>
+  </div>
+
+  <div class="ok" id="avisoOk" hidden style="margin-bottom:18px"></div>
+
+  <section class="tarjeta" id="tarjetaUsuarios" hidden>
+    <div class="tarjeta__cab">
+      <h2>Quién tiene acceso</h2>
+      <button class="btn btn--solido" id="btnAlta">+ Dar de alta a un usuario</button>
+    </div>
+    <ul class="lista" id="lista"></ul>
+    <div class="tarjeta__cuerpo" style="border-top:1px solid var(--linea);padding-top:16px">
+      <p class="aviso" style="margin:0">Las personas que des de alta <b>ven y pueden cambiar tus mismos datos</b> en todas las apps:
+        calendario, gastos, dieta, Excel, imágenes de vídeos y torneos. El Archivo de nóminas tiene su propio acceso y no cambia.
+        Si das de baja a alguien, deja de poder entrar en menos de un minuto.</p>
+    </div>
+  </section>
+
+  <div class="aviso" id="avisoNoTitular" hidden style="margin-bottom:22px">
+    Solo el titular de la cuenta puede dar de alta o de baja a otros usuarios. Aquí puedes cambiar tu contraseña.
+  </div>
+
+  <section class="tarjeta">
+    <div class="tarjeta__cab"><h2>Mi contraseña</h2></div>
+    <div class="tarjeta__cuerpo">
+      <div class="error" id="claveError" hidden></div>
+      <div class="rejilla2">
+        <div class="campo"><label for="cActual">Contraseña actual</label><input id="cActual" type="password" autocomplete="current-password"></div>
+        <div class="campo"><label for="cNueva">Contraseña nueva (8 caracteres o más)</label><input id="cNueva" type="password" autocomplete="new-password"></div>
+      </div>
+      <div><button class="btn btn--solido" id="btnCambiarClave">Cambiar mi contraseña</button></div>
+    </div>
+  </section>
+</main>
+
+<div class="velo" id="velo" hidden>
+  <div class="ventana" role="dialog" aria-modal="true" aria-labelledby="ventanaTitulo">
+    <div class="ventana__cab"><h2 id="ventanaTitulo"></h2><button class="cerrar" id="ventanaCerrar" aria-label="Cerrar">&times;</button></div>
+    <div class="ventana__cuerpo" id="ventanaCuerpo"></div>
+  </div>
+</div>
+
+<script>
+const $ = function(id){ return document.getElementById(id); };
+function ver(id, si){ $(id).hidden = !si; }
+function escapar(t){ return String(t).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function mostrarError(id, t){ const c = $(id); c.textContent = t || ''; c.hidden = !t; }
+let tOk = null;
+function avisar(t){ const c = $('avisoOk'); c.textContent = t; c.hidden = false; clearTimeout(tOk); tOk = setTimeout(function(){ c.hidden = true; }, 5000); }
+const DIRECCION = 'https://centro-apps.vercel.app';
+
+/* ---------- sesión (la misma que el resto de apps) ---------- */
+function guardarPase(p){ try{ p ? localStorage.setItem('apps_pase', p) : (localStorage.removeItem('apps_pase'), localStorage.removeItem('calendario_pase')); }catch(e){} }
+function leerPase(){ try{ return localStorage.getItem('apps_pase') || localStorage.getItem('calendario_pase') || ''; }catch(e){ return ''; } }
+async function api(cuerpo){
+  const cab = { 'Content-Type':'application/json' };
+  const pase = leerPase(); if (pase) cab['Authorization'] = 'Bearer ' + pase;
+  let r;
+  try{ r = await fetch('/api/acceso', { method:'POST', headers: cab, body: JSON.stringify(cuerpo) }); }
+  catch(e){ throw new Error('No hay conexión con el servidor. Comprueba internet y vuelve a probar.'); }
+  let d = {}; try{ d = await r.json(); }catch(e){}
+  if (r.status === 401 && cuerpo.accion !== 'entrar' && cuerpo.accion !== 'cambiar'){ cerrarSesion(); throw new Error(d.error || 'Hay que volver a entrar.'); }
+  if (!r.ok){ const e = new Error(d.error || 'Algo ha fallado en el servidor.'); e.datos = d; throw e; }
+  return d;
+}
+function cerrarSesion(){
+  guardarPase(''); ver('pantallaApp', false); ver('cargando', false); ver('pantallaEntrada', true); ver('btnSalir', false); $('quien').textContent = '';
+}
+function datosPase(){
+  try{ return JSON.parse(decodeURIComponent(escape(atob(leerPase().split('.')[0].replace(/-/g,'+').replace(/_/g,'/'))))); }catch(e){ return {}; }
+}
+async function arrancar(){
+  if (leerPase()){
+    $('quien').textContent = datosPase().nombre || '';
+    try{ await cargar(); ver('btnSalir', true); return; }catch(e){}
+  }
+  ver('cargando', false); ver('pantallaEntrada', true);
+}
+$('btnEntrar').addEventListener('click', async function(){
+  const b = this; mostrarError('entradaError', '');
+  const correo = $('eCorreo').value.trim(), clave = $('eClave').value;
+  if (!correo || !clave){ mostrarError('entradaError', 'Pon tu correo y tu contraseña.'); return; }
+  b.disabled = true;
+  try{
+    const d = await api({ accion:'entrar', correo: correo, clave: clave });
+    guardarPase(d.pase); $('quien').textContent = d.usuario.nombre;
+    ver('pantallaEntrada', false); ver('btnSalir', true);
+    await cargar();
+  }catch(e){ mostrarError('entradaError', e.message); }
+  b.disabled = false;
+});
+['eCorreo','eClave'].forEach(function(id){ $(id).addEventListener('keydown', function(e){ if (e.key === 'Enter') $('btnEntrar').click(); }); });
+$('btnSalir').addEventListener('click', cerrarSesion);
+
+/* ---------- lista de usuarios ---------- */
+let USUARIOS = [];
+async function cargar(){
+  try{
+    const d = await api({ accion:'usuarios' });
+    USUARIOS = d.usuarios;
+    ver('tarjetaUsuarios', true); ver('avisoNoTitular', false);
+    pintar();
+  }catch(e){
+    if (!(e.datos && e.datos.noTitular)) throw e;
+    ver('tarjetaUsuarios', false); ver('avisoNoTitular', true);
+    $('subtitulo').textContent = 'Tu acceso a Apps Mendoza.';
+  }
+  ver('cargando', false); ver('pantallaEntrada', false); ver('pantallaApp', true);
+}
+function pintar(){
+  $('lista').innerHTML = USUARIOS.map(function(u){
+    return '<li><span class="inicial">' + escapar((u.nombre || '?').trim().charAt(0).toUpperCase()) + '</span>' +
+      '<div class="persona"><b>' + escapar(u.nombre) + (u.es_titular ? '<span class="etiqueta">Titular</span>' : '') + '</b>' +
+      '<span>' + escapar(u.correo) + (u.es_titular ? '' : (u.alta ? ' · dado de alta el ' + escapar(u.alta) : '')) + '</span></div>' +
+      (u.es_titular ? '' : '<div class="acc"><button class="btn btn--mini" data-clave="' + escapar(u.id) + '">Nueva contraseña</button>' +
+        '<button class="btn btn--mini btn--peligro" data-baja="' + escapar(u.id) + '">Dar de baja</button></div>') +
+      '</li>';
+  }).join('');
+  if (USUARIOS.length === 1){
+    $('lista').insertAdjacentHTML('beforeend', '<li><p class="nota">Todavía no has dado de alta a nadie. Pulsa «+ Dar de alta a un usuario».</p></li>');
+  }
+  $('lista').querySelectorAll('[data-baja]').forEach(function(b){ b.addEventListener('click', function(){ darDeBaja(b.dataset.baja); }); });
+  $('lista').querySelectorAll('[data-clave]').forEach(function(b){ b.addEventListener('click', function(){ nuevaClave(b.dataset.clave); }); });
+}
+function usuario(id){ return USUARIOS.filter(function(u){ return u.id === id; })[0]; }
+
+/* ---------- ventana ---------- */
+function abrir(titulo, html){ $('ventanaTitulo').textContent = titulo; $('ventanaCuerpo').innerHTML = html; ver('velo', true); }
+function cerrar(){ ver('velo', false); $('ventanaCuerpo').innerHTML = ''; }
+$('ventanaCerrar').addEventListener('click', cerrar);
+$('velo').addEventListener('click', function(e){ if (e.target.id === 'velo') cerrar(); });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !$('velo').hidden) cerrar(); });
+
+function claveAlAzar(){
+  const letras = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  const n = new Uint32Array(10); crypto.getRandomValues(n);
+  return Array.prototype.map.call(n, function(x){ return letras[x % letras.length]; }).join('');
+}
+function mensajeAcceso(nombre, correo, clave, nueva){
+  return 'Hola ' + nombre + (nueva ? ', te he puesto una contraseña nueva para Apps Mendoza.' : ', ya tienes acceso a Apps Mendoza.') + '\n\n' +
+    'Entra en: ' + DIRECCION + '\n' +
+    'Correo: ' + correo + '\n' +
+    'Contraseña: ' + clave + '\n\n' +
+    'Cuando entres, cámbiala en el botón «Usuarios» › «Mi contraseña».';
+}
+function mostrarMensaje(titulo, texto){
+  abrir(titulo,
+    '<p class="ok" style="margin:0">Hecho. Envíale estos datos para que pueda entrar:</p>' +
+    '<p class="mensaje" id="textoMensaje">' + escapar(texto) + '</p>' +
+    '<div class="ventana__pie">' +
+    '<button class="btn" id="mCopiar">Copiar</button>' +
+    '<a class="btn btn--verde" id="mWhatsapp" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(texto) + '">Enviar por WhatsApp</a>' +
+    '<button class="btn btn--solido" id="mListo">Listo</button></div>');
+  $('mListo').addEventListener('click', cerrar);
+  $('mCopiar').addEventListener('click', async function(){
+    try{ await navigator.clipboard.writeText(texto); this.textContent = '¡Copiado!'; }
+    catch(e){ const r = document.createRange(); r.selectNodeContents($('textoMensaje')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); this.textContent = 'Selecciona y copia'; }
+  });
+}
+
+$('btnAlta').addEventListener('click', function(){
+  abrir('Dar de alta a un usuario',
+    '<div class="error" id="altaError" hidden></div>' +
+    '<div class="campo"><label for="aNombre">Nombre</label><input id="aNombre" type="text" maxlength="80" autocomplete="off"></div>' +
+    '<div class="campo"><label for="aCorreo">Correo</label><input id="aCorreo" type="email" maxlength="160" autocomplete="off"></div>' +
+    '<div class="campo"><label for="aClave">Contraseña para su primera entrada</label>' +
+    '<div class="fila"><input id="aClave" type="text" autocomplete="off" value="' + claveAlAzar() + '"><button class="btn" id="aOtra" type="button">Otra</button></div></div>' +
+    '<p class="nota">Podrá cambiarla él mismo al entrar. Verá y podrá cambiar tus mismos datos en todas las apps.</p>' +
+    '<div class="ventana__pie"><button class="btn" id="aCancelar">Cancelar</button><button class="btn btn--solido" id="aGuardar">Dar de alta</button></div>');
+  $('aOtra').addEventListener('click', function(){ $('aClave').value = claveAlAzar(); });
+  $('aCancelar').addEventListener('click', cerrar);
+  $('aGuardar').addEventListener('click', async function(){
+    const nombre = $('aNombre').value.trim(), correo = $('aCorreo').value.trim().toLowerCase(), clave = $('aClave').value;
+    mostrarError('altaError', '');
+    if (!nombre){ mostrarError('altaError', 'Pon el nombre de la persona.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)){ mostrarError('altaError', 'El correo no parece correcto.'); return; }
+    if (clave.length < 8){ mostrarError('altaError', 'La contraseña debe tener 8 caracteres o más.'); return; }
+    this.disabled = true;
+    try{
+      const d = await api({ accion:'alta', nombre: nombre, correo: correo, clave: clave });
+      USUARIOS = d.usuarios; pintar();
+      mostrarMensaje(nombre + ' ya tiene acceso', mensajeAcceso(nombre, correo, clave, false));
+    }catch(e){ mostrarError('altaError', e.message); this.disabled = false; }
+  });
+  $('aNombre').focus();
+});
+
+async function darDeBaja(id){
+  const u = usuario(id); if (!u) return;
+  if (!confirm('¿Dar de baja a ' + u.nombre + '? Dejará de poder entrar en Apps Mendoza en menos de un minuto. Tus datos no se tocan.')) return;
+  try{ const d = await api({ accion:'baja', id: id }); USUARIOS = d.usuarios; pintar(); avisar(u.nombre + ' ya no tiene acceso.'); }
+  catch(e){ alert(e.message); }
+}
+function nuevaClave(id){
+  const u = usuario(id); if (!u) return;
+  abrir('Nueva contraseña para ' + u.nombre,
+    '<div class="error" id="ncError" hidden></div>' +
+    '<div class="campo"><label for="ncClave">Contraseña nueva</label>' +
+    '<div class="fila"><input id="ncClave" type="text" autocomplete="off" value="' + claveAlAzar() + '"><button class="btn" id="ncOtra" type="button">Otra</button></div></div>' +
+    '<p class="nota">Úsalo si se le ha olvidado. La anterior dejará de valer.</p>' +
+    '<div class="ventana__pie"><button class="btn" id="ncCancelar">Cancelar</button><button class="btn btn--solido" id="ncGuardar">Poner esta contraseña</button></div>');
+  $('ncOtra').addEventListener('click', function(){ $('ncClave').value = claveAlAzar(); });
+  $('ncCancelar').addEventListener('click', cerrar);
+  $('ncGuardar').addEventListener('click', async function(){
+    const clave = $('ncClave').value;
+    if (clave.length < 8){ mostrarError('ncError', 'La contraseña debe tener 8 caracteres o más.'); return; }
+    this.disabled = true;
+    try{
+      const d = await api({ accion:'nuevaClave', id: id, clave: clave }); USUARIOS = d.usuarios; pintar();
+      mostrarMensaje('Contraseña cambiada', mensajeAcceso(u.nombre, u.correo, clave, true));
+    }catch(e){ mostrarError('ncError', e.message); this.disabled = false; }
+  });
+}
+
+/* ---------- mi contraseña ---------- */
+$('btnCambiarClave').addEventListener('click', async function(){
+  mostrarError('claveError', '');
+  const actual = $('cActual').value, nueva = $('cNueva').value;
+  if (!actual || !nueva){ mostrarError('claveError', 'Rellena las dos contraseñas.'); return; }
+  if (nueva.length < 8){ mostrarError('claveError', 'La nueva debe tener 8 caracteres o más.'); return; }
+  this.disabled = true;
+  try{
+    await api({ accion:'cambiar', actual: actual, nueva: nueva });
+    $('cActual').value = ''; $('cNueva').value = '';
+    avisar('Contraseña cambiada. La próxima vez entra con la nueva.');
+  }catch(e){ mostrarError('claveError', e.message); }
+  this.disabled = false;
+});
+
+arrancar();
+</script>
+</body>
+</html>

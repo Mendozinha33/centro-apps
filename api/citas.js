@@ -1,5 +1,5 @@
 /* Las citas del calendario: listar, crear, modificar y borrar. */
-import { bd, faltanAjustes, quienEs } from '../lib/comun.js'
+import { bd, faltanAjustes, quienEsVivo } from '../lib/comun.js'
 
 const TIPOS = ['salud','cumple','casa','papeleo','plan','trabajo']
 const REPITES = ['no','anual','mensual']
@@ -20,7 +20,7 @@ function limpiar(c){
 
 export default async function handler(req, res){
   if (faltanAjustes()) return res.status(500).json({ error: 'El servidor todavía no tiene puestos sus dos ajustes.' })
-  const yo = quienEs(req)
+  const yo = await quienEsVivo(req)
   if (!yo) return res.status(401).json({ error: 'Vuelve a entrar.' })
   const sql = bd()
 

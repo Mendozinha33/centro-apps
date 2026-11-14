@@ -2,7 +2,7 @@
    Misma cuenta que el calendario. La tabla se crea sola la primera vez.
    Cada torneo se guarda entero (equipos, grupos, normas y partidos) en un solo registro;
    las clasificaciones no se guardan: se calculan en pantalla a partir de los resultados. */
-import { bd, faltanAjustes, quienEs } from '../lib/comun.js'
+import { bd, faltanAjustes, quienEsVivo } from '../lib/comun.js'
 
 const MAX_BYTES = 3 * 1024 * 1024   // el servidor no admite envíos de más de ~4,5 MB
 
@@ -34,7 +34,7 @@ async function lista(sql, uid){
 
 export default async function handler(req, res){
   if (faltanAjustes()) return res.status(500).json({ error: 'El servidor todavía no tiene puestos sus dos ajustes.' })
-  const yo = quienEs(req)
+  const yo = await quienEsVivo(req)
   if (!yo) return res.status(401).json({ error: 'Vuelve a entrar.' })
   const uid = String(yo.id)
   const sql = bd()

@@ -2,7 +2,7 @@
    Misma cuenta que el calendario. Las tablas se crean solas la primera vez.
    Cada vez que un fichero cambia se guarda como versión nueva y se conservan las anteriores
    (hasta MAX_VERSIONES), para poder volver atrás si un cambio sale mal. */
-import { bd, faltanAjustes, quienEs } from '../lib/comun.js'
+import { bd, faltanAjustes, quienEsVivo } from '../lib/comun.js'
 
 const MAX_BYTES = 4 * 1024 * 1024      // el servidor no admite envíos de más de ~4,5 MB
 const MAX_VERSIONES = 10               // la actual y las 9 anteriores
@@ -96,7 +96,7 @@ async function nuevaVersion(sql, uid, ficheroId, bytes, motivo){
 
 export default async function handler(req, res){
   if (faltanAjustes()) return res.status(500).json({ error: 'El servidor todavía no tiene puestos sus dos ajustes.' })
-  const yo = quienEs(req)
+  const yo = await quienEsVivo(req)
   if (!yo) return res.status(401).json({ error: 'Vuelve a entrar.' })
   const uid = String(yo.id)
   const sql = bd()
