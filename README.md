@@ -38,3 +38,16 @@ Poner logos y fotos encima de un vídeo para subirlo a redes sociales, con la mi
   enderezan antes de poner los logos. La vista previa usa la misma cuenta de posiciones (`caja()`) que el
   vídeo final. Lo último que se puso en el vídeo se recuerda en ese navegador para el siguiente.
 - Necesita Chrome, Edge o Safari actualizados (WebCodecs).
+
+### Mis vídeos: música de fondo y varias imágenes (noviembre 2026)
+
+- Varias imágenes a la vez: en «Añadir logos o fotos» se tocan las que se quieran y «Añadir las N».
+- Música de fondo: 6 canciones propias en `videos/musica/*.mp3`, creadas por programa para esta app
+  (sin grabaciones ni muestras de terceros), y canciones subidas por el usuario, que se guardan solo en
+  el navegador de ese aparato (IndexedDB `mis_videos`). Volumen de la música, volumen del sonido del
+  vídeo, segundo de inicio y entrada/salida suave. La canción se repite si el vídeo es más largo.
+- Al preparar el vídeo, el sonido se mezcla aparte (OfflineAudioContext) y se añade como pista AAC.
+  Si el navegador no sabe crear AAC se usa `videos/lib/mediabunny-aac-encoder.min.mjs`
+  (@mediabunny/aac-encoder 1.66.0, MPL 2.0, basado en el codificador AAC de FFmpeg, LGPL 2.1;
+  licencias en `videos/lib/licencias/`). Mediabunny actualizado a 1.66.0; se carga con un importmap.
+- Arreglo: la librería se cargaba con una ruta relativa que fallaba al entrar por `/videos` sin barra final.

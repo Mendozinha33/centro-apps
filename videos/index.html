@@ -6,6 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Mis vídeos · Apps Mendoza</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%231B2A33'/%3E%3Ctext x='32' y='45' font-family='Georgia,serif' font-size='38' fill='%23F4F6F5' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
+<script type="importmap">{ "imports": { "mediabunny": "/videos/lib/mediabunny.min.mjs" } }</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -140,6 +141,17 @@
   .enlace{background:none;border:0;padding:0;font:inherit;font-size:12.5px;color:var(--acento-hondo);cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
   .enlace--rojo{color:var(--rojo);}
 
+  .pieza.elegida{outline:3px solid var(--morado);outline-offset:-1px;}
+  .pieza{position:relative;}
+  .pieza .marca-ok{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;background:var(--morado);color:#fff;
+    display:none;place-items:center;font-weight:700;font-size:15px;pointer-events:none;}
+  .pieza.elegida .marca-ok{display:grid;}
+  .pie-selector{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--linea);padding:12px 22px;
+    display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;}
+  .fila-cancion{display:flex;gap:8px;}
+  .fila-cancion select{flex:1;min-width:0;}
+  .casilla{display:flex;gap:9px;align-items:center;font-size:14.5px;cursor:pointer;}
+  .casilla input{width:18px;height:18px;accent-color:var(--morado);}
   .velo{position:fixed;inset:0;background:rgba(18,32,41,.5);z-index:80;
     display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;overflow:auto;}
   .ventana{background:var(--superficie);border-radius:10px;width:100%;max-width:460px;overflow:hidden;}
@@ -241,12 +253,39 @@
         </div>
         <ul class="capas" id="listaCapas"></ul>
         <div class="pie">
-          <button class="btn btn--solido" id="btnAnadirCapa" style="flex:1">+ Añadir un logo o una foto</button>
+          <button class="btn btn--solido" id="btnAnadirCapa" style="flex:1">+ Añadir logos o fotos</button>
         </div>
       </section>
 
       <section class="tarjeta">
-        <div class="tarjeta__cab"><h2><span class="paso">3</span>Dejarlo listo para redes</h2></div>
+        <div class="tarjeta__cab"><h2><span class="paso">3</span>Música de fondo</h2></div>
+        <div class="exportar">
+          <div class="campo"><label for="selCancion">Canción</label>
+            <div class="fila-cancion"><select id="selCancion"></select>
+              <button class="btn" id="btnEscuchar" type="button">▶ Escuchar</button></div></div>
+          <div class="botonera">
+            <button class="btn" id="btnSubirCancion" type="button">+ Subir mi canción</button>
+            <button class="btn btn--peligro" id="btnQuitarCancion" type="button" hidden>Quitar esta canción</button>
+          </div>
+          <div class="rejilla2">
+            <div class="campo" data-con-musica><span class="lbl">Volumen de la música <span class="valor" id="verVolMusica">70 %</span></span>
+              <input type="range" id="volMusica" min="0" max="100" step="5" value="70" aria-label="Volumen de la música"></div>
+            <div class="campo"><span class="lbl">Sonido del vídeo <span class="valor" id="verVolVideo">100 %</span></span>
+              <input type="range" id="volVideo" min="0" max="100" step="5" value="100" aria-label="Volumen del sonido original del vídeo"></div>
+            <div class="campo" data-con-musica><label for="desdeMusica">Empezar la canción en el segundo</label>
+              <input type="number" id="desdeMusica" min="0" step="1" value="0"></div>
+            <div class="campo" data-con-musica style="align-self:end;padding-bottom:8px">
+              <label class="casilla"><input type="checkbox" id="musicaSuave" checked> Que entre y salga suave</label></div>
+          </div>
+          <p class="nota-peq" id="notaMusica">Las canciones de la app están hechas para ella: puedes usarlas en redes sin problemas de derechos.
+            Si subes una canción comercial, Instagram, TikTok o Facebook pueden silenciar el vídeo.</p>
+        </div>
+        <input type="file" id="archivoCancion" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.opus,.flac" hidden>
+        <audio id="musicaVista" loop preload="auto"></audio>
+      </section>
+
+      <section class="tarjeta">
+        <div class="tarjeta__cab"><h2><span class="paso">4</span>Dejarlo listo para redes</h2></div>
         <div class="exportar">
           <div class="rejilla2">
             <div class="campo"><label for="selTamano">Tamaño del vídeo</label>
@@ -411,6 +450,7 @@ async function cargar(){
   ver('avisoDentroApp', DENTRO_DE_APP);
   recuperarCapas();
   pintarBiblioteca(); pintarCapas();
+  cargarMusica();
 }
 
 /* ---------- pestañas ---------- */
@@ -492,7 +532,7 @@ function pintarBiblioteca(){
   }).join('') + '</div>';
   $('galeria').querySelectorAll('img[data-id]').forEach(function(img){ ponerImagen(img, Number(img.dataset.id)); });
   $('galeria').querySelectorAll('[data-usar]').forEach(function(b){
-    b.addEventListener('click', function(){ anadirCapa(Number(b.dataset.usar)); pestana('editor'); avisar('Imagen añadida al vídeo. Elige dónde quieres que salga.'); });
+    b.addEventListener('click', function(){ anadirCapas([Number(b.dataset.usar)]); pestana('editor'); avisar('Imagen añadida al vídeo. Elige dónde quieres que salga.'); });
   });
   $('galeria').querySelectorAll('[data-cambiar]').forEach(function(b){
     b.addEventListener('click', function(){ cambiarImagen(Number(b.dataset.cambiar)); });
@@ -533,7 +573,7 @@ function cambiarImagen(id){
 }
 
 /* --- subir imágenes --- */
-let trasSubir = null;   // qué hacer con la primera imagen subida (p. ej. añadirla al vídeo)
+let trasSubir = null;   // qué hacer con las imágenes recién subidas (p. ej. añadirlas al vídeo)
 $('btnSubirImagenes').addEventListener('click', function(){ trasSubir = null; $('archivoImagenes').click(); });
 
 function cargarImg(blob){
@@ -572,7 +612,7 @@ $('archivoImagenes').addEventListener('change', async function(){
   if (!archivos.length) return;
   const boton = $('btnSubirImagenes'); boton.disabled = true;
   const grupo = grupoVisible;
-  let hechas = 0, fallos = [], primera = null;
+  let hechas = 0, fallos = [], nuevas = [];
   for (const a of archivos){
     boton.textContent = 'Subiendo ' + (hechas + fallos.length + 1) + ' de ' + archivos.length + '…';
     try{
@@ -588,20 +628,27 @@ $('archivoImagenes').addEventListener('change', async function(){
       }catch(e){ throw new Error('sin conexión'); }
       const d = await respuesta(r);
       IMAGENES = d.imagenes; hechas++;
-      if (primera === null) primera = d.nueva;
+      nuevas.push(d.nueva);
       BLOBS[d.nueva] = p.blob; URLS[d.nueva] = URL.createObjectURL(p.blob);
     }catch(e){ fallos.push(a.name + ' (' + e.message + ')'); }
   }
   boton.disabled = false; boton.textContent = '+ Subir imágenes';
   pintarBiblioteca();
-  if (trasSubir && primera !== null){ const f = trasSubir; trasSubir = null; f(primera); }
+  if (trasSubir && nuevas.length){ const f = trasSubir; trasSubir = null; f(nuevas); }
   if (fallos.length) alert('No se han podido subir:\n' + fallos.join('\n'));
   else if (hechas) avisar(hechas === 1 ? 'Imagen guardada en Mis imágenes.' : hechas + ' imágenes guardadas en Mis imágenes.');
 });
 
-/* --- elegir imagen desde el editor --- */
+/* --- elegir imágenes desde el editor (una o varias a la vez) --- */
 function elegirImagen(){
   let texto = '';
+  const elegidas = [];
+  const pie = function(){
+    const n = elegidas.length;
+    $('selCuenta').textContent = n ? (n === 1 ? '1 elegida' : n + ' elegidas') : 'Toca las que quieras poner (puedes elegir varias)';
+    $('selAnadir').disabled = !n;
+    $('selAnadir').textContent = n > 1 ? 'Añadir las ' + n : 'Añadir';
+  };
   const pintar = function(){
     const lista = imagenesFiltradas(texto);
     $('selChips').innerHTML = htmlChips();
@@ -609,31 +656,39 @@ function elegirImagen(){
       b.addEventListener('click', function(){ grupoVisible = b.dataset.grupo; pintar(); });
     });
     $('selGaleria').innerHTML = !IMAGENES.length
-      ? '<p class="vacio">Todavía no tienes imágenes guardadas. Pulsa «Subir una imagen nueva».</p>'
+      ? '<p class="vacio">Todavía no tienes imágenes guardadas. Pulsa «Subir imágenes nuevas».</p>'
       : !lista.length ? '<p class="vacio">No hay ninguna imagen con ese nombre.</p>'
       : '<div class="galeria" style="padding:0">' + lista.map(function(i){
-          return '<div class="pieza"><button type="button" class="pieza__img" data-elegir="' + i.id + '" title="Usar «' + escapar(i.nombre) + '»">' +
-            '<img data-id="' + i.id + '" alt="' + escapar(i.nombre) + '"></button>' +
+          return '<div class="pieza' + (elegidas.indexOf(i.id) >= 0 ? ' elegida' : '') + '"><button type="button" class="pieza__img" data-elegir="' + i.id + '" aria-pressed="' + (elegidas.indexOf(i.id) >= 0) + '" title="Elegir «' + escapar(i.nombre) + '»">' +
+            '<img data-id="' + i.id + '" alt="' + escapar(i.nombre) + '"></button><span class="marca-ok">✓</span>' +
             '<div class="pieza__pie"><p class="pieza__nombre">' + escapar(i.nombre) + '</p>' +
             (i.grupo ? '<p class="pieza__grupo">' + escapar(i.grupo) + '</p>' : '') + '</div></div>';
         }).join('') + '</div>';
     $('selGaleria').querySelectorAll('img[data-id]').forEach(function(img){ ponerImagen(img, Number(img.dataset.id)); });
     $('selGaleria').querySelectorAll('[data-elegir]').forEach(function(b){
-      b.addEventListener('click', function(){ cerrarVentana(); anadirCapa(Number(b.dataset.elegir)); });
+      b.addEventListener('click', function(){
+        const id = Number(b.dataset.elegir), k = elegidas.indexOf(id);
+        if (k >= 0) elegidas.splice(k, 1); else elegidas.push(id);
+        b.parentElement.classList.toggle('elegida', k < 0); b.setAttribute('aria-pressed', String(k < 0));
+        pie();
+      });
     });
   };
-  abrirVentana('Elige un logo o una foto',
+  abrirVentana('Elige logos o fotos',
     '<div class="ventana__cuerpo">' +
     '<div style="display:flex;gap:10px;flex-wrap:wrap"><input type="search" id="selBuscar" placeholder="Buscar por nombre…" ' +
     'style="font:inherit;font-size:14.5px;padding:8px 11px;border:1px solid var(--linea-fuerte);border-radius:6px;flex:1;min-width:180px">' +
-    '<button class="btn btn--solido" id="selSubir">Subir una imagen nueva</button></div>' +
-    '<div class="chips" id="selChips"></div><div id="selGaleria"></div></div>', true);
+    '<button class="btn" id="selSubir">Subir imágenes nuevas</button></div>' +
+    '<div class="chips" id="selChips"></div><div id="selGaleria"></div></div>' +
+    '<div class="pie-selector"><span class="nota-peq" id="selCuenta"></span>' +
+    '<button class="btn btn--morado" id="selAnadir" disabled>Añadir</button></div>', true);
   $('selBuscar').addEventListener('input', function(){ texto = this.value; pintar(); });
   $('selSubir').addEventListener('click', function(){
-    trasSubir = function(id){ anadirCapa(id); };
+    trasSubir = function(ids){ anadirCapas(ids); };
     cerrarVentana(); $('archivoImagenes').click();
   });
-  pintar();
+  $('selAnadir').addEventListener('click', function(){ const ids = elegidas.slice(); cerrarVentana(); anadirCapas(ids); });
+  pintar(); pie();
 }
 $('btnAnadirCapa').addEventListener('click', elegirImagen);
 
@@ -657,11 +712,14 @@ function recuperarCapas(){
 }
 function imagenDe(id){ return IMAGENES.filter(function(i){ return i.id === id; })[0] || null; }
 
-function anadirCapa(idImagen){
-  const usadas = CAPAS.map(function(c){ return c.pos; });
-  const pos = POS_NUEVAS.filter(function(p){ return usadas.indexOf(p) < 0; })[0] || 'ad';
-  CAPAS.push({ uid: siguienteCapa++, imagen: idImagen, pos: pos, tam: 18, margen: 4, opac: 100, cuando: 'todo', desde: 0, hasta: 5 });
+function anadirCapas(ids){
+  ids.forEach(function(idImagen){
+    const usadas = CAPAS.map(function(c){ return c.pos; });
+    const pos = POS_NUEVAS.filter(function(p){ return usadas.indexOf(p) < 0; })[0] || 'ad';
+    CAPAS.push({ uid: siguienteCapa++, imagen: idImagen, pos: pos, tam: 18, margen: 4, opac: 100, cuando: 'todo', desde: 0, hasta: 5 });
+  });
   guardarCapas(); pintarCapas();
+  if (ids.length > 1) avisar(ids.length + ' imágenes añadidas. Elige dónde sale cada una.');
 }
 
 /* La misma cuenta para la vista previa y para el vídeo final: así sale exactamente donde se ve. */
@@ -834,6 +892,244 @@ video.addEventListener('timeupdate', pintarVista);
 video.addEventListener('seeked', pintarVista);
 
 /* ==================================================================
+   MÚSICA DE FONDO
+   Canciones de la app (en /videos/musica, hechas para la app, sin derechos de terceros)
+   y canciones propias, que se guardan solo en este aparato (no se suben a internet).
+================================================================== */
+const CANCIONES_APP = [
+  { id:'app:calentamiento',   nombre:'Calentamiento · con energía',      url:'/videos/musica/calentamiento.mp3' },
+  { id:'app:a-por-ellos',     nombre:'A por ellos · rock con guitarras',  url:'/videos/musica/a-por-ellos.mp3' },
+  { id:'app:gran-final',      nombre:'Gran final · épica',                url:'/videos/musica/gran-final.mp3' },
+  { id:'app:buen-rollo',      nombre:'Buen rollo · alegre',               url:'/videos/musica/buen-rollo.mp3' },
+  { id:'app:vestuario',       nombre:'Vestuario · hip hop',               url:'/videos/musica/vestuario.mp3' },
+  { id:'app:tarde-tranquila', nombre:'Tarde tranquila · relajada',        url:'/videos/musica/tarde-tranquila.mp3' }
+];
+let MIAS = [];                 // canciones propias guardadas en este aparato: { id, nombre }
+let MUSICA = { cancion:'', volMusica:70, volVideo:100, desde:0, suave:true };
+const musica = $('musicaVista');
+let urlMusica = null, cancionCargada = '';
+
+/* --- canciones propias: se guardan en el almacén del navegador --- */
+function almacen(){
+  return new Promise(function(ok, mal){
+    try{
+      const pet = indexedDB.open('mis_videos', 1);
+      pet.onupgradeneeded = function(){ pet.result.createObjectStore('canciones', { keyPath:'id' }); };
+      pet.onsuccess = function(){ ok(pet.result); };
+      pet.onerror = function(){ mal(pet.error); };
+    }catch(e){ mal(e); }
+  });
+}
+async function almacenHacer(modo, fn){
+  const bdl = await almacen();
+  return new Promise(function(ok, mal){
+    const tx = bdl.transaction('canciones', modo), st = tx.objectStore('canciones');
+    const pet = fn(st);
+    tx.oncomplete = function(){ ok(pet ? pet.result : undefined); bdl.close(); };
+    tx.onerror = function(){ mal(tx.error); bdl.close(); };
+  });
+}
+async function leerMias(){
+  try{
+    const todas = await almacenHacer('readonly', function(st){ return st.getAll(); });
+    MIAS = (todas || []).map(function(c){ return { id: c.id, nombre: c.nombre }; })
+                        .sort(function(a, b){ return a.nombre.localeCompare(b.nombre, 'es'); });
+  }catch(e){ MIAS = []; }
+}
+async function blobDeCancion(id){
+  if (!id) return null;
+  if (id.indexOf('app:') === 0){
+    const c = CANCIONES_APP.filter(function(x){ return x.id === id; })[0]; if (!c) return null;
+    const r = await fetch(c.url); if (!r.ok) throw new Error('no se ha podido traer la canción');
+    return await r.blob();
+  }
+  const fila = await almacenHacer('readonly', function(st){ return st.get(id); });
+  return fila ? fila.blob : null;
+}
+
+function guardarMusica(){ try{ localStorage.setItem('videos_musica', JSON.stringify(MUSICA)); }catch(e){} }
+function recuperarMusica(){
+  try{ Object.assign(MUSICA, JSON.parse(localStorage.getItem('videos_musica') || '{}')); }catch(e){}
+}
+function pintarMusica(){
+  const sel = $('selCancion');
+  const existe = MUSICA.cancion === '' || CANCIONES_APP.some(function(c){ return c.id === MUSICA.cancion; }) ||
+                 MIAS.some(function(c){ return c.id === MUSICA.cancion; });
+  if (!existe) MUSICA.cancion = '';
+  sel.innerHTML = '<option value="">Sin música</option>' +
+    '<optgroup label="Canciones de la app">' + CANCIONES_APP.map(function(c){ return '<option value="' + c.id + '">' + escapar(c.nombre) + '</option>'; }).join('') + '</optgroup>' +
+    (MIAS.length ? '<optgroup label="Mis canciones (en este aparato)">' + MIAS.map(function(c){ return '<option value="' + escapar(c.id) + '">' + escapar(c.nombre) + '</option>'; }).join('') + '</optgroup>' : '');
+  sel.value = MUSICA.cancion;
+  $('volMusica').value = MUSICA.volMusica; $('verVolMusica').textContent = MUSICA.volMusica + ' %';
+  $('volVideo').value = MUSICA.volVideo; $('verVolVideo').textContent = MUSICA.volVideo + ' %';
+  $('desdeMusica').value = MUSICA.desde; $('musicaSuave').checked = !!MUSICA.suave;
+  document.querySelectorAll('[data-con-musica]').forEach(function(x){ x.hidden = !MUSICA.cancion; });
+  ver('btnEscuchar', !!MUSICA.cancion);
+  ver('btnQuitarCancion', MUSICA.cancion.indexOf('mia:') === 0);
+}
+async function cargarMusica(){
+  recuperarMusica(); await leerMias(); pintarMusica(); await prepararMusicaVista();
+}
+
+/* --- vista previa: la música suena a la vez que el vídeo --- */
+const VOLUMEN_OK = (function(){ try{ const a = document.createElement('audio'); a.volume = 0.5; return Math.abs(a.volume - 0.5) < 0.01; }catch(e){ return false; } })();
+let ctxVista = null, ganMusica = null, ganVideo = null;
+function prepararSonidoVista(){
+  // en el iPhone el volumen de la página no se puede cambiar: se hace con el mezclador del navegador
+  if (VOLUMEN_OK || ctxVista) return;
+  try{
+    ctxVista = new (window.AudioContext || window.webkitAudioContext)();
+    ganMusica = ctxVista.createGain(); ganMusica.connect(ctxVista.destination);
+    ctxVista.createMediaElementSource(musica).connect(ganMusica);
+    ganVideo = ctxVista.createGain(); ganVideo.connect(ctxVista.destination);
+    ctxVista.createMediaElementSource(video).connect(ganVideo);
+  }catch(e){ console.warn(e); }
+}
+function despertarSonido(){ prepararSonidoVista(); if (ctxVista && ctxVista.state === 'suspended') ctxVista.resume(); }
+['pointerdown','keydown','touchstart'].forEach(function(t){ document.addEventListener(t, despertarSonido, { passive:true }); });
+
+function fundido(t, dur){
+  if (!MUSICA.suave || !isFinite(dur) || dur <= 0) return 1;
+  const ent = Math.min(1.5, dur / 4), sal = Math.min(2.5, dur / 4);
+  return Math.max(0, Math.min(1, t / ent, (dur - t) / sal));
+}
+function aplicarVolumenes(soloCancion){
+  const vm = (MUSICA.volMusica / 100) * (soloCancion ? 1 : fundido(video.currentTime || 0, video.duration));
+  const vv = MUSICA.volVideo / 100;
+  if (ctxVista){ ganMusica.gain.value = vm; ganVideo.gain.value = vv; }
+  else { try{ musica.volume = vm; video.volume = vv; }catch(e){} }
+}
+async function prepararMusicaVista(){
+  if (cancionCargada === MUSICA.cancion) return;
+  musica.pause();
+  if (urlMusica){ URL.revokeObjectURL(urlMusica); urlMusica = null; }
+  cancionCargada = MUSICA.cancion;
+  if (!MUSICA.cancion){ musica.removeAttribute('src'); musica.load(); return; }
+  try{
+    const b = await blobDeCancion(MUSICA.cancion);
+    if (cancionCargada !== MUSICA.cancion) return;
+    urlMusica = URL.createObjectURL(b); musica.src = urlMusica;
+  }catch(e){ console.warn(e); }
+}
+let escuchandoSola = false;
+function sincronizarMusica(){
+  if (escuchandoSola) return;
+  aplicarVolumenes(false);
+  if (!MUSICA.cancion || !musica.src || video.paused || video.ended){ musica.pause(); return; }
+  const dur = musica.duration;
+  let t = (Number(MUSICA.desde) || 0) + (video.currentTime || 0);
+  if (isFinite(dur) && dur > 0) t = t % dur;
+  if (Math.abs((musica.currentTime || 0) - t) > 0.35){ try{ musica.currentTime = t; }catch(e){} }
+  if (musica.paused) musica.play().catch(function(){});
+}
+['play','playing','seeked','timeupdate'].forEach(function(t){ video.addEventListener(t, sincronizarMusica); });
+['pause','ended','waiting'].forEach(function(t){ video.addEventListener(t, function(){ if (!escuchandoSola) musica.pause(); }); });
+musica.addEventListener('loadedmetadata', sincronizarMusica);
+
+function pararEscucha(){
+  escuchandoSola = false; musica.pause(); $('btnEscuchar').textContent = '▶ Escuchar';
+}
+$('btnEscuchar').addEventListener('click', async function(){
+  if (escuchandoSola){ pararEscucha(); return; }
+  despertarSonido();
+  if (!video.paused) video.pause();
+  await prepararMusicaVista();
+  if (!musica.src) return;
+  escuchandoSola = true; this.textContent = '■ Parar';
+  try{ musica.currentTime = Number(MUSICA.desde) || 0; }catch(e){}
+  aplicarVolumenes(true);
+  musica.play().catch(function(){ pararEscucha(); });
+});
+video.addEventListener('play', function(){ if (escuchandoSola) pararEscucha(); });
+
+$('selCancion').addEventListener('change', async function(){
+  pararEscucha();
+  MUSICA.cancion = this.value; guardarMusica(); pintarMusica();
+  await prepararMusicaVista(); sincronizarMusica();
+});
+$('volMusica').addEventListener('input', function(){ MUSICA.volMusica = Number(this.value); $('verVolMusica').textContent = this.value + ' %'; guardarMusica(); aplicarVolumenes(escuchandoSola); });
+$('volVideo').addEventListener('input', function(){ MUSICA.volVideo = Number(this.value); $('verVolVideo').textContent = this.value + ' %'; guardarMusica(); aplicarVolumenes(escuchandoSola); });
+$('desdeMusica').addEventListener('change', function(){ MUSICA.desde = Math.max(0, Number(this.value) || 0); this.value = MUSICA.desde; guardarMusica(); try{ musica.currentTime = MUSICA.desde; }catch(e){} sincronizarMusica(); });
+$('musicaSuave').addEventListener('change', function(){ MUSICA.suave = this.checked; guardarMusica(); aplicarVolumenes(escuchandoSola); });
+
+/* --- subir una canción propia --- */
+$('btnSubirCancion').addEventListener('click', function(){ $('archivoCancion').click(); });
+$('archivoCancion').addEventListener('change', async function(){
+  const f = this.files[0]; this.value = '';
+  if (!f) return;
+  if (!/^audio\//.test(f.type) && !/\.(mp3|m4a|aac|wav|ogg|opus|flac)$/i.test(f.name)){ alert('Elige un archivo de música (MP3, M4A, WAV…).'); return; }
+  // se comprueba que el navegador sabe reproducirla
+  const prueba = new Audio(); const u = URL.createObjectURL(f);
+  const valida = await new Promise(function(ok){ prueba.onloadedmetadata = function(){ ok(true); }; prueba.onerror = function(){ ok(false); }; prueba.src = u; setTimeout(function(){ ok(false); }, 8000); });
+  URL.revokeObjectURL(u);
+  if (!valida){ alert('Este navegador no sabe reproducir esa canción. Prueba con un MP3.'); return; }
+  const id = 'mia:' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+  const nombre = f.name.replace(/\.[a-z0-9]+$/i, '').replace(/[_]+/g, ' ').trim() || 'Mi canción';
+  try{
+    await almacenHacer('readwrite', function(st){ return st.put({ id: id, nombre: nombre, blob: f }); });
+    await leerMias();
+    avisar('Canción guardada en este aparato: la tendrás en la lista para los próximos vídeos.');
+  }catch(e){
+    // si el navegador no deja guardarla (modo incógnito…), se usa solo para este vídeo
+    MIAS.push({ id: id, nombre: nombre + ' (solo para este vídeo)' });
+    const viejo = blobDeCancion;
+    blobDeCancion = async function(x){ return x === id ? f : viejo(x); };
+  }
+  MUSICA.cancion = id; guardarMusica(); pintarMusica();
+  await prepararMusicaVista(); sincronizarMusica();
+});
+$('btnQuitarCancion').addEventListener('click', async function(){
+  const c = MIAS.filter(function(x){ return x.id === MUSICA.cancion; })[0]; if (!c) return;
+  if (!confirm('¿Quitar «' + c.nombre + '» de tus canciones?')) return;
+  try{ await almacenHacer('readwrite', function(st){ return st.delete(c.id); }); }catch(e){}
+  await leerMias(); MUSICA.cancion = ''; guardarMusica(); pintarMusica(); await prepararMusicaVista();
+});
+
+/* --- el sonido final: la música (y el sonido del vídeo) mezclados para el vídeo terminado --- */
+function hayQueMezclar(){ return !!MUSICA.cancion || MUSICA.volVideo !== 100; }
+function automatizarMusica(gan, inicio, dur){
+  const v = MUSICA.volMusica / 100;
+  if (MUSICA.suave && dur > 1){
+    const ent = Math.min(1.5, dur / 4), sal = Math.min(2.5, dur / 4);
+    gan.gain.setValueAtTime(0.0001, inicio);
+    gan.gain.linearRampToValueAtTime(v, inicio + ent);
+    gan.gain.setValueAtTime(v, inicio + dur - sal);
+    gan.gain.linearRampToValueAtTime(0.0001, inicio + dur);
+  } else gan.gain.setValueAtTime(v, inicio);
+}
+async function decodificar(blob){
+  const ctx = new OfflineAudioContext(2, 48000, 48000);
+  const datos = await blob.arrayBuffer();
+  return await new Promise(function(ok, mal){
+    const p = ctx.decodeAudioData(datos, ok, mal);
+    if (p && p.then) p.then(ok, mal);
+  });
+}
+/* devuelve { buffer, conOriginal } con el sonido ya mezclado para toda la duración del vídeo */
+async function mezclarSonido(dur){
+  const FS = 48000;
+  const ctx = new OfflineAudioContext(2, Math.max(1, Math.ceil(dur * FS)), FS);
+  let conOriginal = false;
+  if (MUSICA.volVideo > 0){
+    try{
+      const orig = await decodificar(ARCHIVO);
+      const s = ctx.createBufferSource(); s.buffer = orig;
+      const g = ctx.createGain(); g.gain.value = MUSICA.volVideo / 100;
+      s.connect(g); g.connect(ctx.destination); s.start(0);
+      conOriginal = true;
+    }catch(e){ console.warn('sonido original:', e); }
+  }
+  if (MUSICA.cancion){
+    const cancion = await decodificar(await blobDeCancion(MUSICA.cancion));
+    const s = ctx.createBufferSource(); s.buffer = cancion; s.loop = true;
+    const g = ctx.createGain(); automatizarMusica(g, 0, dur);
+    s.connect(g); g.connect(ctx.destination);
+    s.start(0, (Number(MUSICA.desde) || 0) % cancion.duration);
+  }
+  return { buffer: await ctx.startRendering(), conOriginal: conOriginal };
+}
+
+/* ==================================================================
    PREPARAR EL VÍDEO FINAL (MP4)
 ================================================================== */
 let EN_MARCHA = null;     // la conversión en curso
@@ -877,7 +1173,16 @@ function Cancelado(){ const e = new Error('Cancelado'); e.name = 'Cancelado'; re
 /* ---------- forma 1: rápida (lee el vídeo fotograma a fotograma y crea un MP4) ---------- */
 async function formaRapida(dibujos, seguro){
   if (!PUEDE_VIDEO) throw new Error('sin WebCodecs');
-  if (!MB) MB = await import('./lib/mediabunny.min.mjs');
+  if (!MB){
+    MB = await import('/videos/lib/mediabunny.min.mjs');
+    /* si el navegador no sabe crear sonido AAC (el que piden Instagram y TikTok), se usa uno propio */
+    try{
+      if (!(await MB.canEncodeAudio('aac'))){
+        const aac = await import('/videos/lib/mediabunny-aac-encoder.min.mjs');
+        aac.registerAacEncoder();
+      }
+    }catch(e){ console.warn('codificador AAC:', e); }
+  }
   const entrada = new MB.Input({ source: new MB.BlobSource(ARCHIVO), formats: MB.ALL_FORMATS });
   try{
     const pista = await entrada.getPrimaryVideoTrack();
@@ -900,14 +1205,42 @@ async function formaRapida(dibujos, seguro){
       }
     };
     if (seguro){ video.hardwareAcceleration = 'prefer-software'; video.frameRate = 30; }
-    const conv = await MB.Conversion.init({ input: entrada, output: salida, video: video, audio: { codec: 'aac' } });
-    if (!conv.isValid) throw new Error('la conversión no es posible (' + conv.discardedTracks.map(function(d){ return d.track.type + ':' + d.reason; }).join(', ') + ')');
+    /* con música (o con el sonido del vídeo cambiado) el sonido se mezcla aparte y se pone como pista nueva */
+    const mezclar = hayQueMezclar();
+    let mezcla = null, codecAudio = null;
+    if (mezclar){
+      progreso(0, 'Preparando la música…');
+      mezcla = await mezclarSonido(await entrada.computeDuration());
+      codecAudio = await MB.getFirstEncodableAudioCodec(['aac', 'opus']);
+      if (!codecAudio) throw new Error('no puede crear el sonido');
+    }
+    const conv = await MB.Conversion.init({ input: entrada, output: salida, video: video,
+      audio: mezclar ? { discard: true } : { codec: 'aac' }, composable: mezclar, showWarnings: false });
+    if (!conv.isValid || !conv.utilizedTracks.some(function(t){ return t.type === 'video'; }))
+      throw new Error('la conversión no es posible (' + conv.discardedTracks.map(function(d){ return d.track.type + ':' + d.reason; }).join(', ') + ')');
     const pistasSonido = await entrada.getAudioTracks();
-    const sinSonido = pistasSonido.length > 0 && conv.discardedTracks.some(function(d){ return d.track && d.track.type === 'audio'; });
+    const sinSonido = mezclar
+      ? (pistasSonido.length > 0 && MUSICA.volVideo > 0 && !mezcla.conOriginal)
+      : (pistasSonido.length > 0 && conv.discardedTracks.some(function(d){ return d.track && d.track.type === 'audio'; }));
     EN_MARCHA = { cancel: function(){ return conv.cancel(); } };
     const inicio = Date.now();
     conv.onProgress = function(p){ progreso(p, textoProgreso(inicio, Math.max(0, Math.min(1, p)), 'Preparando…')); };
-    try{ await conv.execute(); }
+    try{
+      if (mezclar){
+        const fuenteAudio = new MB.AudioBufferSource({ codec: codecAudio, quality: MB.QUALITY_HIGH });
+        salida.addAudioTrack(fuenteAudio);
+        await salida.start();
+        try{
+          await Promise.all([
+            conv.execute(),
+            (async function(){ await fuenteAudio.add(mezcla.buffer); fuenteAudio.close(); })()
+          ]);
+        }catch(e){ try{ await salida.cancel(); }catch(e2){} throw e; }
+        await salida.finalize();
+      } else {
+        await conv.execute();
+      }
+    }
     catch(e){ if (e && e.name === 'ConversionCanceledError') throw Cancelado(); throw e; }
     return { blob: new Blob([salida.target.buffer], { type: 'video/mp4' }), W: W, H: H, ext: 'mp4', sinSonido: sinSonido };
   } finally {
@@ -940,12 +1273,24 @@ async function formaDirecto(dibujos, audioCtx){
   ctx.drawImage(v, 0, 0, W, H);
   const flujo = lienzo.captureStream(30);
   /* el sonido: se saca del vídeo sin que suene por los altavoces */
-  let fuente = null;
+  let fuente = null, cancionLista = null, ponerCancion = null;
   if (audioCtx){
     try{
       fuente = audioCtx.createMediaElementSource(v);
       const destino = audioCtx.createMediaStreamDestination();
-      fuente.connect(destino);
+      const gv = audioCtx.createGain(); gv.gain.value = MUSICA.volVideo / 100;
+      fuente.connect(gv); gv.connect(destino);
+      if (MUSICA.cancion){
+        cancionLista = await decodificar(await blobDeCancion(MUSICA.cancion));
+        const sc = audioCtx.createBufferSource(); sc.buffer = cancionLista; sc.loop = true;
+        const gm = audioCtx.createGain(); sc.connect(gm); gm.connect(destino);
+        ponerCancion = function(){
+          const t0 = audioCtx.currentTime;
+          automatizarMusica(gm, t0, isFinite(v.duration) ? v.duration : 600);
+          sc.start(t0, (Number(MUSICA.desde) || 0) % cancionLista.duration);
+          return sc;
+        };
+      }
       destino.stream.getAudioTracks().forEach(function(t){ flujo.addTrack(t); });
       await audioCtx.resume();
     }catch(e){ console.warn('sonido:', e); }
@@ -980,19 +1325,23 @@ async function formaDirecto(dibujos, audioCtx){
     v.muted = true;
     try{ await v.play(); }catch(e2){ grabadora.stop(); throw new Error('el navegador no deja reproducir el vídeo'); }
   }
+  let sonando = null;
+  if (ponerCancion){ try{ sonando = ponerCancion(); }catch(e){ console.warn(e); } }
   await fin;
+  try{ sonando && sonando.stop(); }catch(e){}
   flujo.getTracks().forEach(function(t){ t.stop(); });
   try{ fuente && fuente.disconnect(); }catch(e){}
   v.removeAttribute('src'); v.load();
   if (cancelado) throw Cancelado();
   const blob = new Blob(trozos, { type: tipo.split(';')[0] });
   if (blob.size < 1000) throw new Error('la grabación ha salido vacía');
-  return { blob: blob, W: W, H: H, ext: /mp4/.test(tipo) ? 'mp4' : 'webm', sinSonido: v.muted };
+  return { blob: blob, W: W, H: H, ext: /mp4/.test(tipo) ? 'mp4' : 'webm', sinSonido: v.muted && !(MUSICA.cancion && MUSICA.volVideo === 0) };
 }
 
 $('btnPreparar').addEventListener('click', async function(){
   if (!ARCHIVO || EN_MARCHA) return;
   limpiarResultado();
+  try{ video.pause(); pararEscucha(); }catch(e){}
   /* el sonido para la forma en directo hay que pedirlo justo al pulsar */
   let audioCtx = null;
   try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){}
@@ -1028,7 +1377,7 @@ $('btnPreparar').addEventListener('click', async function(){
     }
     if (!hecho) throw new Error('ninguna forma ha funcionado');
 
-    const nombre = ARCHIVO.name.replace(/\.[a-z0-9]+$/i, '') + '_con_logos.' + hecho.ext;
+    const nombre = ARCHIVO.name.replace(/\.[a-z0-9]+$/i, '') + (CAPAS.length ? '_con_logos' : '') + (MUSICA.cancion ? '_con_musica' : '') + (CAPAS.length || MUSICA.cancion ? '' : '_listo') + '.' + hecho.ext;
     RESULTADO = { blob: hecho.blob, nombre: nombre, url: URL.createObjectURL(hecho.blob) };
     $('videoResultado').src = RESULTADO.url;
     $('textoResultado').textContent = 'Vídeo listo (' + hecho.W + '×' + hecho.H + ', ' + pesoBonito(hecho.blob.size) + ').' +
