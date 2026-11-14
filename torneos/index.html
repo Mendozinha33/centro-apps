@@ -242,6 +242,13 @@
   .partido__arriba{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center;}
   .partido__abajo{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:12.5px;color:var(--apagado);}
   .partido__abajo .num{font-weight:700;color:var(--tinta);min-width:22px;}
+  .elegir-eq{font:inherit;font-size:15px;max-width:100%;min-width:0;padding:5px 26px 5px 8px;border:1px solid var(--linea);
+    border-radius:6px;background:#fff;color:var(--tinta);cursor:pointer;text-overflow:ellipsis;}
+  .elegir-eq:hover,.elegir-eq:focus{border-color:var(--linea-fuerte);}
+  .elegir-eq.vacio-eq{border-color:var(--ambar);background:var(--ambar-suave);}
+  .partido .local .elegir-eq{text-align:right;}
+  .pie-partidos{padding:12px 16px;border-top:1px solid var(--linea);display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .pie-partidos select{font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--linea-fuerte);border-radius:6px;background:#fff;}
   .partido__abajo input.pos{width:54px;text-align:center;font-weight:700;}
   .partido__abajo label{display:inline-flex;align-items:center;gap:5px;}
   .partido__abajo input,.partido__abajo select{font:inherit;font-size:13px;padding:4px 6px;border:1px solid var(--linea-fuerte);
@@ -372,6 +379,8 @@
     .lista-equipos li{padding:10px 14px;flex-wrap:wrap;}
     .partido{padding:10px 10px;gap:6px;}
     .partido .equipo-celda{gap:6px;font-size:13.5px;}
+    .partido .equipo-celda .escudo{display:none;}
+    .elegir-eq{font-size:13.5px;padding:5px 20px 5px 6px;width:100%;}
     .marcador input{width:40px;height:38px;font-size:17px;}
     table.clasif{font-size:13.5px;}
     table.clasif th.eq, table.clasif td.eq{min-width:140px;}
@@ -1313,13 +1322,16 @@ function vistaPartidos(){
   }
   let html = '';
   const cambiados = gruposCambiados();
-  if (!d.partidos.length){
+  if (!d.partidos.length && !d.manual){
     return pasos() + '<section class="tarjeta"><div class="tarjeta__cuerpo" style="text-align:center;padding:34px 20px">' +
       '<p style="margin:0 0 6px;font-family:var(--serif);font-size:22px">Prepara los partidos de los grupos</p>' +
       '<p class="nota-peq" style="margin:0 0 18px">Se crean solos todos los cruces, todos contra todos' + (d.reglas.idaVuelta ? ', a ida y vuelta' : '') + ', ordenados por jornadas.</p>' +
-      '<button class="btn btn--cesped" data-accion="prepararPartidos">Preparar los partidos</button></div></section>';
+      '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">' +
+      '<button class="btn btn--cesped" data-accion="prepararPartidos">Que la app prepare los partidos</button>' +
+      '<button class="btn" data-accion="partidosAMano">Los pongo yo a mano</button></div>' +
+      '<p class="nota-peq" style="margin:14px 0 0">«A mano»: añades cada partido y eliges en los desplegables qué equipo juega contra cuál.</p></div></section>';
   }
-  if (cambiados.length){
+  if (cambiados.length && !d.manual){
     html += '<p class="aviso">Los equipos de ' + cambiados.map(function(g){ return escapar(g.nombre); }).join(', ') +
       ' han cambiado desde que se prepararon los partidos. <button class="enlace" data-accion="prepararPartidos">Ponerlos al día</button> (los resultados ya puestos se conservan).</p>';
   }
@@ -1334,7 +1346,7 @@ function vistaPartidos(){
         const n = d.partidos.filter(function(p){ return p.grupo === x.id; }), j = n.filter(jugado).length;
         return '<button data-vergrupo="' + x.id + '" aria-pressed="' + (!todos && x.id === g.id) + '">' + escapar(x.nombre) + ' · <span data-cuentagrupo="' + x.id + '">' + j + '/' + n.length + '</span></button>';
       }).join('') + '</div>' +
-    '<button class="btn btn--mini" data-accion="rehacerPartidos">Volver a preparar los partidos</button></div>';
+    '<button class="btn btn--mini" data-accion="rehacerPartidos">Que la app prepare todos los partidos</button></div>';
 
   if (todos) return html + vistaHorario();
 
@@ -1354,7 +1366,9 @@ function vistaPartidos(){
           puedeBajar: k < LISTA_VISTA.length - 1 && LISTA_VISTA[k+1].jornada === p.jornada
         });
       }).join('') + '</div>';
-    }).join('') : '<p class="vacio">Este grupo no tiene partidos. Pulsa «Volver a preparar los partidos».</p>') +
+    }).join('') : '<p class="vacio">Este grupo todavía no tiene partidos. Pulsa «+ Añadir partido».</p>') +
+    '<div class="pie-partidos"><button class="btn btn--cesped" data-accion="anadirPartido">+ Añadir partido</button>' +
+    '<span class="nota-peq">Elige en los desplegables qué equipo juega contra cuál.</span></div>' +
     '</section>' +
     '<section class="tarjeta pegajosa"><div class="tarjeta__cab"><h2>Clasificación · ' + escapar(g.nombre) + '</h2><span id="chapaVivo"></span></div><div id="tablaViva"></div></section></div>';
   return html;
@@ -1379,17 +1393,36 @@ function ordenGrupo(gid){
 }
 function nombreGrupo(gid){ const g = T.datos.grupos.filter(function(x){ return x.id === gid; })[0]; return g ? g.nombre : ''; }
 
+/* desplegable con los equipos del grupo para elegir quién juega */
+function selectorEquipo(p, lado){
+  const g = T.datos.grupos.filter(function(x){ return x.id === p.grupo; })[0];
+  const ids = (g ? g.equipos.slice() : []);
+  if (p[lado] && ids.indexOf(p[lado]) < 0) ids.push(p[lado]);
+  return '<select class="elegir-eq' + (p[lado] ? '' : ' vacio-eq') + '" data-cambiaeq="' + p.id + '" data-ladoeq="' + lado + '" aria-label="' + (lado === 'local' ? 'Equipo de casa' : 'Equipo de fuera') + '">' +
+    (p[lado] ? '' : '<option value="">Elige equipo…</option>') +
+    ids.map(function(id){ return '<option value="' + id + '"' + (id === p[lado] ? ' selected' : '') + '>' + escapar(equipo(id).nombre) + '</option>'; }).join('') +
+    '</select>';
+}
+function nuevoPartido(gid){
+  const d = T.datos, delGrupo = d.partidos.filter(function(p){ return p.grupo === gid; });
+  const jornada = delGrupo.length ? Math.max.apply(null, delGrupo.map(function(p){ return p.jornada; })) : 1;
+  const p = { id: nuevoId('p'), grupo: gid, jornada: jornada, local: '', visitante: '', gl: null, gv: null, fecha: '', hora: '' };
+  d.partidos.push(p); d.manual = true; ultimoMovido = p.id; cambiado();
+  return p;
+}
+
 function filaPartido(p, o){
   const ll = jugado(p) ? ' lleno' : '';
   return '<div class="partido' + (p.id === ultimoMovido ? ' movido' : '') + '" data-fila="' + p.id + '"><div class="partido__arriba">' +
-    '<span class="equipo-celda local">' + escudo(equipo(p.local), 28) + '<span class="n">' + escapar(equipo(p.local).nombre) + '</span></span>' +
+    '<span class="equipo-celda local">' + (p.local ? escudo(equipo(p.local), 28) : '') + selectorEquipo(p, 'local') + '</span>' +
     '<span class="marcador"><input type="number" inputmode="numeric" min="0" max="99" class="' + ll + '" data-gol="' + p.id + '" data-lado="gl" value="' + (p.gl == null ? '' : p.gl) + '" aria-label="Goles de ' + escapar(equipo(p.local).nombre) + '">' +
     '<span>–</span><input type="number" inputmode="numeric" min="0" max="99" class="' + ll + '" data-gol="' + p.id + '" data-lado="gv" value="' + (p.gv == null ? '' : p.gv) + '" aria-label="Goles de ' + escapar(equipo(p.visitante).nombre) + '"></span>' +
-    '<span class="equipo-celda">' + escudo(equipo(p.visitante), 28) + '<span class="n">' + escapar(equipo(p.visitante).nombre) + '</span></span></div>' +
+    '<span class="equipo-celda">' + (p.visitante ? escudo(equipo(p.visitante), 28) : '') + selectorEquipo(p, 'visitante') + '</span></div>' +
     '<div class="partido__abajo">' + (o.numero ? '<label title="Escribe en qué lugar quieres este partido">Nº <input type="number" inputmode="numeric" class="pos" min="1" max="' + LISTA_VISTA.length + '" data-posicion="' + p.id + '" value="' + o.numero + '" aria-label="Orden del partido"></label>' : '') +
       '<label>Día <input type="date" data-fecha="' + p.id + '" value="' + (p.fecha || '') + '"></label>' +
       '<label>Hora <input type="time" data-hora="' + p.id + '" value="' + (p.hora || '') + '" step="300"></label>' +
       (o.extra || '') +
+      '<button class="enlace enlace--rojo" data-borrarp="' + p.id + '">Eliminar</button>' +
       '<span class="mover"><button class="flecha" data-subirp="' + p.id + '" aria-label="Subir este partido"' + (o.puedeSubir ? '' : ' disabled') + '>↑</button>' +
       '<button class="flecha" data-bajarp="' + p.id + '" aria-label="Bajar este partido"' + (o.puedeBajar ? '' : ' disabled') + '>↓</button></span>' +
     '</div></div>';
@@ -1429,6 +1462,10 @@ function vistaHorario(){
     });
   });
   if (abierto) html += '</div>';
+  if (!LISTA_VISTA.length) html += '<p class="vacio">Todavía no hay partidos. Añade el primero aquí abajo.</p>';
+  html += '<div class="pie-partidos"><select id="grupoNuevoPartido" aria-label="Grupo del partido nuevo">' +
+    d.grupos.map(function(g){ return '<option value="' + g.id + '">' + escapar(g.nombre) + '</option>'; }).join('') +
+    '</select><button class="btn btn--cesped" data-accion="anadirPartidoTodos">+ Añadir partido</button></div>';
   return html + '</section>';
 }
 function moverPartido(id, paso){
@@ -1523,6 +1560,17 @@ function enganchar(v){
         const sg = $('sinGrupo'); if (sg) sg.scrollIntoView({ behavior:'smooth', block:'start' });
       }
       if (a === 'repartirLibres'){ repartir(sinGrupo().map(function(e){ return e.id; })); cambiado(); pintarVista(); }
+      if (a === 'partidosAMano'){ d.manual = true; cambiado(); pintarVista(); return; }
+      if (a === 'anadirPartido' || a === 'anadirPartidoTodos'){
+        const gid = a === 'anadirPartido' ? grupoPartidos : $('grupoNuevoPartido').value;
+        if (!gid) return;
+        nuevoPartido(gid);
+        const y = window.scrollY; pintarVista(); window.scrollTo(0, y);
+        const fila = document.querySelector('[data-fila="' + ultimoMovido + '"]');
+        if (fila){ fila.scrollIntoView({ behavior:'smooth', block:'center' }); const s1 = fila.querySelector('select'); if (s1) s1.focus(); }
+        setTimeout(function(){ ultimoMovido = null; }, 1100);
+        return;
+      }
       if (a === 'anadirCrit'){ anadirCriterio($('critNombre').value, $('critSentido').value); return; }
       if (a === 'horasDeGolpe'){
         const dia = $('hDia').value, ini = $('hInicio').value, cada = Number($('hCada').value), campos = Number($('hCampos').value);
@@ -1543,12 +1591,13 @@ function enganchar(v){
         });
         cambiado(); pintarVista();
       }
-      if (a === 'prepararPartidos'){ prepararPartidos(); cambiado(); pintarVista(); }
+      if (a === 'prepararPartidos'){ prepararPartidos(); d.manual = false; cambiado(); pintarVista(); }
       if (a === 'rehacerPartidos'){
         const hay = d.partidos.some(jugado);
-        if (!confirm('Se vuelven a crear los partidos de todos los grupos con los equipos y normas de ahora.' +
+        if (!confirm('La app va a crear otra vez todos los partidos (todos contra todos) con los equipos y normas de ahora.' +
+          (d.manual ? ' Los partidos que hayas puesto a mano se sustituyen.' : '') +
           (hay ? ' Los resultados ya puestos se conservan si ese partido sigue existiendo.' : '') + ' ¿Seguir?')) return;
-        prepararPartidos(); cambiado(); pintarVista();
+        prepararPartidos(); d.manual = false; cambiado(); pintarVista();
       }
     });
   });
@@ -1679,6 +1728,24 @@ function enganchar(v){
     sel.addEventListener('change', function(){
       const p = T.datos.partidos.filter(function(x){ return x.id === sel.dataset.jornada; })[0];
       p.jornada = Number(sel.value); ultimoMovido = p.id; cambiado();
+      const y = window.scrollY; pintarVista(); window.scrollTo(0, y);
+    });
+  });
+  v.querySelectorAll('[data-cambiaeq]').forEach(function(sel){
+    sel.addEventListener('change', function(){
+      const p = T.datos.partidos.filter(function(x){ return x.id === sel.dataset.cambiaeq; })[0];
+      const lado = sel.dataset.ladoeq, otro = lado === 'local' ? 'visitante' : 'local';
+      if (sel.value && sel.value === p[otro]) p[otro] = p[lado];   // si eliges el mismo equipo, se cambian de lado
+      p[lado] = sel.value; T.datos.manual = true; cambiado();
+      const y = window.scrollY; pintarVista(); window.scrollTo(0, y);
+    });
+  });
+  v.querySelectorAll('[data-borrarp]').forEach(function(b){
+    b.addEventListener('click', function(){
+      const p = T.datos.partidos.filter(function(x){ return x.id === b.dataset.borrarp; })[0];
+      const txt = (p.local ? equipo(p.local).nombre : '¿?') + ' – ' + (p.visitante ? equipo(p.visitante).nombre : '¿?');
+      if (!confirm('¿Eliminar el partido ' + txt + (jugado(p) ? ' y su resultado' : '') + '?')) return;
+      T.datos.partidos = T.datos.partidos.filter(function(x){ return x !== p; }); T.datos.manual = true; cambiado();
       const y = window.scrollY; pintarVista(); window.scrollTo(0, y);
     });
   });
