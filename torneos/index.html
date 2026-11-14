@@ -222,9 +222,27 @@
   .jornada h3{margin:0;padding:10px 20px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--apagado);
     background:#FAFBFB;border-top:1px solid var(--linea);border-bottom:1px solid var(--linea);}
   .jornada:first-child h3{border-top:0;}
-  .partido{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center;padding:10px 16px;
-    border-top:1px solid var(--linea);}
+  .partido{padding:10px 16px 9px;border-top:1px solid var(--linea);}
   .partido:first-of-type{border-top:0;}
+  .partido__arriba{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center;}
+  .partido__abajo{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:12.5px;color:var(--apagado);}
+  .partido__abajo .num{font-weight:700;color:var(--tinta);min-width:22px;}
+  .partido__abajo label{display:inline-flex;align-items:center;gap:5px;}
+  .partido__abajo input,.partido__abajo select{font:inherit;font-size:13px;padding:4px 6px;border:1px solid var(--linea-fuerte);
+    border-radius:6px;background:#fff;color:var(--tinta);height:30px;}
+  .partido__abajo input[type=time]{width:104px;}
+  .partido__abajo .tag{font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;background:#EDF1F0;color:var(--tinta);}
+  .partido__abajo .mover{margin-left:auto;display:inline-flex;gap:4px;}
+  .partido.movido{animation:resalte 1s ease;}
+  @keyframes resalte{from{background:var(--cesped-suave);}to{background:transparent;}}
+  .dia h3{margin:0;padding:10px 20px;font-size:13px;font-weight:700;color:var(--tinta);background:var(--cesped-suave);
+    border-top:1px solid var(--linea);border-bottom:1px solid var(--linea);}
+  .dia:first-child h3{border-top:0;}
+  .horario{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;}
+  .horario .campo{width:auto;}
+  .horario .campo input{font:inherit;font-size:15px;padding:8px 10px;border:1px solid var(--linea-fuerte);border-radius:6px;
+    background:#fff;color:inherit;height:40px;}
+  .horario .campo select{height:40px;}
   .partido .local{justify-content:flex-end;text-align:right;}
   .partido .local .n{order:-1;}
   .marcador{display:flex;align-items:center;gap:6px;}
@@ -645,6 +663,10 @@ function normalizar(d){
   Object.keys(porDefecto).forEach(function(k){ r[k] = (r[k] === undefined || r[k] === null) ? porDefecto[k] : (Number(r[k]) || 0); });
   if (r.clasifican < 1) r.clasifican = 1;
   r.idaVuelta = !!r.idaVuelta;
+  d.partidos.forEach(function(p){
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(p.fecha || '')) p.fecha = '';
+    if (!/^\d{2}:\d{2}$/.test(p.hora || '')) p.hora = '';
+  });
   const dz = d.diseno = (d.diseno && typeof d.diseno === 'object') ? d.diseno : {};
   if (!/^#[0-9a-f]{6}$/i.test(dz.color || '')) dz.color = COLOR_INICIAL;
   if (dz.fondo && !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(dz.fondo)) dz.fondo = null;
@@ -1175,14 +1197,17 @@ function calendarioGrupo(ids, idaVuelta){
 }
 function prepararPartidos(){
   const d = T.datos, viejos = {};
-  d.partidos.forEach(function(p){ if (jugado(p)) viejos[p.grupo + '|' + p.local + '|' + p.visitante] = p; });
+  d.partidos.forEach(function(p){ if (jugado(p) || p.fecha || p.hora) viejos[p.grupo + '|' + p.local + '|' + p.visitante] = p; });
   const nuevos = [];
   d.grupos.forEach(function(g){
     calendarioGrupo(g.equipos, d.reglas.idaVuelta).forEach(function(p){
       const v = viejos[g.id + '|' + p.local + '|' + p.visitante] ||
                 (!d.reglas.idaVuelta ? viejos[g.id + '|' + p.visitante + '|' + p.local] : null);
-      const np = { id: nuevoId('p'), grupo: g.id, jornada: p.jornada, local: p.local, visitante: p.visitante, gl: null, gv: null };
-      if (v){ if (v.local === p.local){ np.gl = v.gl; np.gv = v.gv; } else { np.local = v.local; np.visitante = v.visitante; np.gl = v.gl; np.gv = v.gv; } }
+      const np = { id: nuevoId('p'), grupo: g.id, jornada: p.jornada, local: p.local, visitante: p.visitante, gl: null, gv: null, fecha: '', hora: '' };
+      if (v){
+        if (v.local !== p.local){ np.local = v.local; np.visitante = v.visitante; }
+        np.gl = v.gl; np.gv = v.gv; np.fecha = v.fecha || ''; np.hora = v.hora || '';
+      }
       nuevos.push(np);
     });
   });
@@ -1207,33 +1232,131 @@ function vistaPartidos(){
     html += '<p class="aviso">Los equipos de ' + cambiados.map(function(g){ return escapar(g.nombre); }).join(', ') +
       ' han cambiado desde que se prepararon los partidos. <button class="enlace" data-accion="prepararPartidos">Ponerlos al día</button> (los resultados ya puestos se conservan).</p>';
   }
-  if (!grupoPartidos || !d.grupos.some(function(g){ return g.id === grupoPartidos; })) grupoPartidos = d.grupos[0].id;
-  const g = d.grupos.filter(function(x){ return x.id === grupoPartidos; })[0];
-  const partidos = d.partidos.filter(function(p){ return p.grupo === g.id; }).sort(function(a, b){ return a.jornada - b.jornada; });
-  const jornadas = Array.from(new Set(partidos.map(function(p){ return p.jornada; })));
+  if (!grupoPartidos || (grupoPartidos !== TODOS && !d.grupos.some(function(g){ return g.id === grupoPartidos; }))) grupoPartidos = d.grupos[0].id;
+  const todos = grupoPartidos === TODOS;
+  const g = todos ? null : d.grupos.filter(function(x){ return x.id === grupoPartidos; })[0];
 
   html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">' +
-    (d.grupos.length > 1 ? '<div class="chips" role="group" aria-label="Grupo">' + d.grupos.map(function(x){
-      const n = d.partidos.filter(function(p){ return p.grupo === x.id; }), j = n.filter(jugado).length;
-      return '<button data-vergrupo="' + x.id + '" aria-pressed="' + (x.id === g.id) + '">' + escapar(x.nombre) + ' · <span data-cuentagrupo="' + x.id + '">' + j + '/' + n.length + '</span></button>';
-    }).join('') + '</div>' : '<span></span>') +
+    '<div class="chips" role="group" aria-label="Qué partidos ver">' +
+      '<button data-vergrupo="' + TODOS + '" aria-pressed="' + todos + '">Todos · horario</button>' +
+      d.grupos.map(function(x){
+        const n = d.partidos.filter(function(p){ return p.grupo === x.id; }), j = n.filter(jugado).length;
+        return '<button data-vergrupo="' + x.id + '" aria-pressed="' + (!todos && x.id === g.id) + '">' + escapar(x.nombre) + ' · <span data-cuentagrupo="' + x.id + '">' + j + '/' + n.length + '</span></button>';
+      }).join('') + '</div>' +
     '<button class="btn btn--mini" data-accion="rehacerPartidos">Volver a preparar los partidos</button></div>';
 
+  if (todos) return html + vistaHorario();
+
+  LISTA_VISTA = ordenGrupo(g.id);
+  const jornadas = Array.from(new Set(LISTA_VISTA.map(function(p){ return p.jornada; })));
+  const maxJ = Math.max.apply(null, jornadas.concat([1]));
   html += '<div class="partidos-grupo"><section class="tarjeta"><div class="tarjeta__cab"><h2>Partidos · ' + escapar(g.nombre) + '</h2>' +
     '<span class="cuenta">Escribe los goles: la clasificación se actualiza sola</span></div>' +
-    (partidos.length ? jornadas.map(function(j){
-      return '<div class="jornada"><h3>Jornada ' + j + '</h3>' + partidos.filter(function(p){ return p.jornada === j; }).map(function(p){
-        const ll = jugado(p) ? ' lleno' : '';
-        return '<div class="partido"><span class="equipo-celda local">' + escudo(equipo(p.local), 28) + '<span class="n">' + escapar(equipo(p.local).nombre) + '</span></span>' +
-          '<span class="marcador"><input type="number" inputmode="numeric" min="0" max="99" class="' + ll + '" data-gol="' + p.id + '" data-lado="gl" value="' + (p.gl == null ? '' : p.gl) + '" aria-label="Goles de ' + escapar(equipo(p.local).nombre) + '">' +
-          '<span>–</span><input type="number" inputmode="numeric" min="0" max="99" class="' + ll + '" data-gol="' + p.id + '" data-lado="gv" value="' + (p.gv == null ? '' : p.gv) + '" aria-label="Goles de ' + escapar(equipo(p.visitante).nombre) + '"></span>' +
-          '<span class="equipo-celda">' + escudo(equipo(p.visitante), 28) + '<span class="n">' + escapar(equipo(p.visitante).nombre) + '</span></span></div>';
+    (LISTA_VISTA.length ? jornadas.map(function(j){
+      return '<div class="jornada"><h3>Jornada ' + j + '</h3>' + LISTA_VISTA.filter(function(p){ return p.jornada === j; }).map(function(p){
+        const k = LISTA_VISTA.indexOf(p);
+        return filaPartido(p, {
+          extra: '<select data-jornada="' + p.id + '" aria-label="Jornada">' +
+            Array.from({ length: maxJ + 1 }, function(_, i){ return '<option value="' + (i+1) + '"' + (i+1 === p.jornada ? ' selected' : '') + '>Jornada ' + (i+1) + (i === maxJ ? ' (nueva)' : '') + '</option>'; }).join('') + '</select>',
+          puedeSubir: k > 0 && LISTA_VISTA[k-1].jornada === p.jornada,
+          puedeBajar: k < LISTA_VISTA.length - 1 && LISTA_VISTA[k+1].jornada === p.jornada
+        });
       }).join('') + '</div>';
     }).join('') : '<p class="vacio">Este grupo no tiene partidos. Pulsa «Volver a preparar los partidos».</p>') +
     '</section>' +
     '<section class="tarjeta pegajosa"><div class="tarjeta__cab"><h2>Clasificación · ' + escapar(g.nombre) + '</h2><span id="chapaVivo"></span></div><div id="tablaViva"></div></section></div>';
   return html;
 }
+
+/* ---------- orden, día y hora de los partidos ---------- */
+const TODOS = '__todos';
+let LISTA_VISTA = [];       // los partidos en el orden en que se ven ahora
+let ultimoMovido = null;
+const DIAS_SEMANA = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+function diaBonito(k){
+  if (!k) return 'Sin día puesto';
+  const p = k.split('-').map(Number), f = new Date(p[0], p[1]-1, p[2]);
+  const ds = DIAS_SEMANA[f.getDay()];
+  return ds.charAt(0).toUpperCase() + ds.slice(1) + ', ' + p[2] + ' de ' + MESES[p[1]-1] + (p[0] !== new Date().getFullYear() ? ' de ' + p[0] : '');
+}
+/* los de un grupo: por jornada y, dentro de cada jornada, en el orden que hayas puesto */
+function ordenGrupo(gid){
+  const d = T.datos;
+  return d.partidos.filter(function(p){ return p.grupo === gid; })
+    .sort(function(a, b){ return (a.jornada - b.jornada) || (d.partidos.indexOf(a) - d.partidos.indexOf(b)); });
+}
+function nombreGrupo(gid){ const g = T.datos.grupos.filter(function(x){ return x.id === gid; })[0]; return g ? g.nombre : ''; }
+
+function filaPartido(p, o){
+  const ll = jugado(p) ? ' lleno' : '';
+  return '<div class="partido' + (p.id === ultimoMovido ? ' movido' : '') + '" data-fila="' + p.id + '"><div class="partido__arriba">' +
+    '<span class="equipo-celda local">' + escudo(equipo(p.local), 28) + '<span class="n">' + escapar(equipo(p.local).nombre) + '</span></span>' +
+    '<span class="marcador"><input type="number" inputmode="numeric" min="0" max="99" class="' + ll + '" data-gol="' + p.id + '" data-lado="gl" value="' + (p.gl == null ? '' : p.gl) + '" aria-label="Goles de ' + escapar(equipo(p.local).nombre) + '">' +
+    '<span>–</span><input type="number" inputmode="numeric" min="0" max="99" class="' + ll + '" data-gol="' + p.id + '" data-lado="gv" value="' + (p.gv == null ? '' : p.gv) + '" aria-label="Goles de ' + escapar(equipo(p.visitante).nombre) + '"></span>' +
+    '<span class="equipo-celda">' + escudo(equipo(p.visitante), 28) + '<span class="n">' + escapar(equipo(p.visitante).nombre) + '</span></span></div>' +
+    '<div class="partido__abajo">' + (o.numero ? '<span class="num">' + o.numero + '.</span>' : '') +
+      '<label>Día <input type="date" data-fecha="' + p.id + '" value="' + (p.fecha || '') + '"></label>' +
+      '<label>Hora <input type="time" data-hora="' + p.id + '" value="' + (p.hora || '') + '" step="300"></label>' +
+      (o.extra || '') +
+      '<span class="mover"><button class="flecha" data-subirp="' + p.id + '" aria-label="Subir este partido"' + (o.puedeSubir ? '' : ' disabled') + '>↑</button>' +
+      '<button class="flecha" data-bajarp="' + p.id + '" aria-label="Bajar este partido"' + (o.puedeBajar ? '' : ' disabled') + '>↓</button></span>' +
+    '</div></div>';
+}
+
+/* todos los partidos del torneo en un solo horario */
+function vistaHorario(){
+  const d = T.datos, hoy = new Date();
+  LISTA_VISTA = d.partidos.slice();
+  const conDia = d.partidos.filter(function(p){ return p.fecha; }).length;
+  const primerDia = (d.partidos.filter(function(p){ return p.fecha; })[0] || {}).fecha ||
+    hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0') + '-' + String(hoy.getDate()).padStart(2,'0');
+  let html = '<section class="tarjeta hueco"><div class="tarjeta__cab"><h2>Poner las horas de golpe</h2>' +
+    '<span class="cuenta">Sigue el orden de la lista de abajo</span></div><div class="tarjeta__cuerpo"><div class="horario">' +
+      '<div class="campo"><label for="hDia">Día</label><input type="date" id="hDia" value="' + primerDia + '"></div>' +
+      '<div class="campo"><label for="hInicio">Primer partido</label><input type="time" id="hInicio" value="10:00" step="300"></div>' +
+      '<div class="campo"><label for="hCada">Un partido cada</label><select id="hCada">' +
+        [10,15,20,25,30,35,40,45,50,60,75,90,105,120].map(function(m){ return '<option value="' + m + '"' + (m === 30 ? ' selected' : '') + '>' + m + ' minutos</option>'; }).join('') + '</select></div>' +
+      '<div class="campo"><label for="hCampos">Campos a la vez</label><select id="hCampos">' +
+        [1,2,3,4,5,6].map(function(n){ return '<option value="' + n + '">' + n + (n === 1 ? ' campo' : ' campos') + '</option>'; }).join('') + '</select></div>' +
+      '<button class="btn btn--cesped" data-accion="horasDeGolpe">Poner horas</button>' +
+    '</div><p class="nota-peq" style="margin-top:10px">Pone el día y la hora a todos los partidos según el orden de abajo. Con 2 campos, los partidos 1 y 2 van a la misma hora, los 3 y 4 a la siguiente, y así. Luego puedes cambiar cualquiera a mano.</p></div></section>';
+
+  html += '<section class="tarjeta"><div class="tarjeta__cab"><h2>Orden de todos los partidos</h2>' +
+    '<span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="cuenta">Usa las flechas para cambiar el orden</span>' +
+    (conDia ? '<button class="btn btn--mini" data-accion="ordenarPorHora">Ordenar por día y hora</button>' : '') + '</span></div>';
+  let diaAnterior = null, abierto = false;
+  LISTA_VISTA.forEach(function(p, k){
+    if (conDia && p.fecha !== diaAnterior){
+      if (abierto) html += '</div>';
+      html += '<div class="dia"><h3>' + escapar(diaBonito(p.fecha)) + '</h3>'; abierto = true; diaAnterior = p.fecha;
+    }
+    html += filaPartido(p, {
+      numero: k + 1,
+      extra: '<span class="tag">' + escapar(nombreGrupo(p.grupo)) + ' · J' + p.jornada + '</span>',
+      puedeSubir: k > 0, puedeBajar: k < LISTA_VISTA.length - 1
+    });
+  });
+  if (abierto) html += '</div>';
+  return html + '</section>';
+}
+function moverPartido(id, paso){
+  const d = T.datos, k = LISTA_VISTA.findIndex(function(p){ return p.id === id; }), otro = LISTA_VISTA[k + paso];
+  if (k < 0 || !otro) return;
+  const i = d.partidos.indexOf(LISTA_VISTA[k]), j = d.partidos.indexOf(otro);
+  const t = d.partidos[i]; d.partidos[i] = d.partidos[j]; d.partidos[j] = t;
+  ultimoMovido = id; cambiado();
+  const y = window.scrollY; pintarVista(); window.scrollTo(0, y);
+  setTimeout(function(){ ultimoMovido = null; }, 1100);
+}
+function sumarMinutos(hhmm, min){
+  const p = hhmm.split(':').map(Number), t = p[0] * 60 + p[1] + min;
+  return { hora: String(Math.floor(t / 60) % 24).padStart(2,'0') + ':' + String(t % 60).padStart(2,'0'), diaMas: Math.floor(t / 1440) };
+}
+function diaMas(k, n){
+  const p = k.split('-').map(Number), f = new Date(p[0], p[1]-1, p[2] + n);
+  return f.getFullYear() + '-' + String(f.getMonth()+1).padStart(2,'0') + '-' + String(f.getDate()).padStart(2,'0');
+}
+
 function pintarTablaViva(){
   const caja = $('tablaViva'); if (!caja) return;
   const c = calcularTodo();
@@ -1294,6 +1417,25 @@ function enganchar(v){
         const sg = $('sinGrupo'); if (sg) sg.scrollIntoView({ behavior:'smooth', block:'start' });
       }
       if (a === 'repartirLibres'){ repartir(sinGrupo().map(function(e){ return e.id; })); cambiado(); pintarVista(); }
+      if (a === 'horasDeGolpe'){
+        const dia = $('hDia').value, ini = $('hInicio').value, cada = Number($('hCada').value), campos = Number($('hCampos').value);
+        if (!dia || !ini){ alert('Pon el día y la hora del primer partido.'); return; }
+        const conHora = d.partidos.some(function(p){ return p.fecha || p.hora; });
+        if (conHora && !confirm('Se van a cambiar el día y la hora de todos los partidos siguiendo el orden de la lista. ¿Seguir?')) return;
+        d.partidos.forEach(function(p, k){
+          const t = sumarMinutos(ini, Math.floor(k / campos) * cada);
+          p.hora = t.hora; p.fecha = diaMas(dia, t.diaMas);
+        });
+        cambiado(); pintarVista();
+      }
+      if (a === 'ordenarPorHora'){
+        const pos = new Map(d.partidos.map(function(p, k){ return [p, k]; }));
+        d.partidos.sort(function(x, y){
+          const a1 = (x.fecha || '9999-99-99') + (x.hora || '99:99'), b1 = (y.fecha || '9999-99-99') + (y.hora || '99:99');
+          return a1 < b1 ? -1 : a1 > b1 ? 1 : pos.get(x) - pos.get(y);
+        });
+        cambiado(); pintarVista();
+      }
       if (a === 'prepararPartidos'){ prepararPartidos(); cambiado(); pintarVista(); }
       if (a === 'rehacerPartidos'){
         const hay = d.partidos.some(jugado);
@@ -1384,6 +1526,28 @@ function enganchar(v){
   });
 
   /* partidos */
+  v.querySelectorAll('[data-fecha]').forEach(function(i){
+    i.addEventListener('change', function(){
+      const p = T.datos.partidos.filter(function(x){ return x.id === i.dataset.fecha; })[0];
+      p.fecha = /^\d{4}-\d{2}-\d{2}$/.test(i.value) ? i.value : ''; cambiado();
+      if (grupoPartidos === TODOS){ const y = window.scrollY; pintarVista(); window.scrollTo(0, y); }
+    });
+  });
+  v.querySelectorAll('[data-hora]').forEach(function(i){
+    i.addEventListener('change', function(){
+      const p = T.datos.partidos.filter(function(x){ return x.id === i.dataset.hora; })[0];
+      p.hora = /^\d{2}:\d{2}$/.test(i.value) ? i.value : ''; cambiado();
+    });
+  });
+  v.querySelectorAll('[data-jornada]').forEach(function(sel){
+    sel.addEventListener('change', function(){
+      const p = T.datos.partidos.filter(function(x){ return x.id === sel.dataset.jornada; })[0];
+      p.jornada = Number(sel.value); ultimoMovido = p.id; cambiado();
+      const y = window.scrollY; pintarVista(); window.scrollTo(0, y);
+    });
+  });
+  v.querySelectorAll('[data-subirp]').forEach(function(b){ b.addEventListener('click', function(){ moverPartido(b.dataset.subirp, -1); }); });
+  v.querySelectorAll('[data-bajarp]').forEach(function(b){ b.addEventListener('click', function(){ moverPartido(b.dataset.bajarp, 1); }); });
   v.querySelectorAll('[data-vergrupo]').forEach(function(b){
     b.addEventListener('click', function(){ grupoPartidos = b.dataset.vergrupo; pintarVista(); });
   });
