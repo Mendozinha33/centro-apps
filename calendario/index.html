@@ -380,6 +380,11 @@ function mostrarError(id, texto){
   const caja = document.getElementById(id);
   caja.textContent = texto; caja.hidden = !texto;
 }
+/* los pases antiguos no traen «titular»: entonces solo podía ser el administrador */
+function esAdministrador(){
+  try{ const i = JSON.parse(atob(leerPase().split('.')[0].replace(/-/g,'+').replace(/_/g,'/'))); return i.titular !== false; }
+  catch(e){ return false; }
+}
 function cerrarSesion(){
   guardarPase(''); usuario = null; CITAS = [];
   ver('pantallaApp', false); ver('cargando', false); ver('pantallaEntrada', true);
@@ -389,7 +394,7 @@ function cerrarSesion(){
 function entrarConPase(datos){
   guardarPase(datos.pase); usuario = datos.usuario;
   document.getElementById('quien').textContent = usuario.nombre;
-  ver('pantallaEntrada', false); ver('btnSalir', true); ver('btnClave', true);
+  ver('pantallaEntrada', false); ver('btnSalir', true); ver('btnClave', esAdministrador());
   cargarCitas();
 }
 
@@ -465,7 +470,7 @@ async function cargarCitas(desdeArranque){
       usuario = { id: info.id, nombre: info.nombre, correo: info.correo };
       document.getElementById('quien').textContent = info.nombre;
     }catch(e){}
-    ver('btnSalir', true); ver('btnClave', true);
+    ver('btnSalir', true); ver('btnClave', esAdministrador());
   }
   ver('cargando', false); ver('pantallaEntrada', false); ver('pantallaApp', true);
   pintarTodo();

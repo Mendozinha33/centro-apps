@@ -60,6 +60,9 @@ export default async function handler(req, res){
       const yo = await quienEsVivo(req)
       if (!yo) return res.status(401).json({ error: 'Vuelve a entrar.' })
       const persona = String(yo.persona || yo.id)
+      const [quien] = await sql`select titular from usuarios where id::text = ${persona}`
+      if (!quien) return res.status(401).json({ error: 'Vuelve a entrar.' })
+      if (quien.titular) return res.status(403).json({ error: 'Solo el administrador puede cambiar las contraseñas. Si necesitas una nueva, pídesela a él.', noTitular: true })
       const actual = String(cuerpo.actual || '')
       const nueva  = String(cuerpo.nueva || '')
       if (nueva.length < 8) return res.status(400).json({ error: 'La nueva contraseña debe tener 8 caracteres o más.' })
@@ -78,7 +81,7 @@ export default async function handler(req, res){
       const persona = String(yo.persona || yo.id)
       const [mia] = await sql`select id, titular from usuarios where id::text = ${persona}`
       if (!mia) return res.status(401).json({ error: 'Vuelve a entrar.' })
-      if (mia.titular) return res.status(403).json({ error: 'Solo el titular de la cuenta puede dar de alta o de baja a otros usuarios.', noTitular: true })
+      if (mia.titular) return res.status(403).json({ error: 'Solo el administrador puede crear usuarios y cambiar contraseñas.', noTitular: true })
       const titular = String(mia.id)
       const lista = async function(){
         return await sql`select id::text as id, nombre, correo, (titular is null) as es_titular,

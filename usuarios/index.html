@@ -151,10 +151,10 @@
   </section>
 
   <div class="aviso" id="avisoNoTitular" hidden style="margin-bottom:22px">
-    Solo el titular de la cuenta puede dar de alta o de baja a otros usuarios. Aquí puedes cambiar tu contraseña.
+    Los usuarios y las contraseñas solo los gestiona el administrador. Si necesitas una contraseña nueva, pídesela a él.
   </div>
 
-  <section class="tarjeta">
+  <section class="tarjeta" id="tarjetaMiClave" hidden>
     <div class="tarjeta__cab"><h2>Mi contraseña</h2></div>
     <div class="tarjeta__cuerpo">
       <div class="error" id="claveError" hidden></div>
@@ -232,11 +232,11 @@ async function cargar(){
   try{
     const d = await api({ accion:'usuarios' });
     USUARIOS = d.usuarios;
-    ver('tarjetaUsuarios', true); ver('avisoNoTitular', false);
+    ver('tarjetaUsuarios', true); ver('avisoNoTitular', false); ver('tarjetaMiClave', true);
     pintar();
   }catch(e){
     if (!(e.datos && e.datos.noTitular)) throw e;
-    ver('tarjetaUsuarios', false); ver('avisoNoTitular', true);
+    ver('tarjetaUsuarios', false); ver('avisoNoTitular', true); ver('tarjetaMiClave', false);
     $('subtitulo').textContent = 'Tu acceso a Apps Mendoza.';
   }
   ver('cargando', false); ver('pantallaEntrada', false); ver('pantallaApp', true);
@@ -244,7 +244,7 @@ async function cargar(){
 function pintar(){
   $('lista').innerHTML = USUARIOS.map(function(u){
     return '<li><span class="inicial">' + escapar((u.nombre || '?').trim().charAt(0).toUpperCase()) + '</span>' +
-      '<div class="persona"><b>' + escapar(u.nombre) + (u.es_titular ? '<span class="etiqueta">Titular</span>' : '') + '</b>' +
+      '<div class="persona"><b>' + escapar(u.nombre) + (u.es_titular ? '<span class="etiqueta">Administrador</span>' : '') + '</b>' +
       '<span>' + escapar(u.correo) + (u.es_titular ? '' : (u.alta ? ' · dado de alta el ' + escapar(u.alta) : '')) + '</span></div>' +
       (u.es_titular ? '' : '<div class="acc"><button class="btn btn--mini" data-clave="' + escapar(u.id) + '">Nueva contraseña</button>' +
         '<button class="btn btn--mini btn--peligro" data-baja="' + escapar(u.id) + '">Dar de baja</button></div>') +
@@ -275,7 +275,7 @@ function mensajeAcceso(nombre, correo, clave, nueva){
     'Entra en: ' + DIRECCION + '\n' +
     'Correo: ' + correo + '\n' +
     'Contraseña: ' + clave + '\n\n' +
-    'Cuando entres, cámbiala en el botón «Usuarios» › «Mi contraseña».';
+    'Guárdala bien: si la olvidas, pídeme una nueva.';
 }
 function mostrarMensaje(titulo, texto){
   abrir(titulo,
@@ -299,7 +299,7 @@ $('btnAlta').addEventListener('click', function(){
     '<div class="campo"><label for="aCorreo">Correo</label><input id="aCorreo" type="email" maxlength="160" autocomplete="off"></div>' +
     '<div class="campo"><label for="aClave">Contraseña para su primera entrada</label>' +
     '<div class="fila"><input id="aClave" type="text" autocomplete="off" value="' + claveAlAzar() + '"><button class="btn" id="aOtra" type="button">Otra</button></div></div>' +
-    '<p class="nota">Podrá cambiarla él mismo al entrar. Verá y podrá cambiar tus mismos datos en todas las apps.</p>' +
+    '<p class="nota">Solo tú podrás cambiarla. Verá y podrá cambiar tus mismos datos en todas las apps, pero no podrá tocar usuarios ni contraseñas.</p>' +
     '<div class="ventana__pie"><button class="btn" id="aCancelar">Cancelar</button><button class="btn btn--solido" id="aGuardar">Dar de alta</button></div>');
   $('aOtra').addEventListener('click', function(){ $('aClave').value = claveAlAzar(); });
   $('aCancelar').addEventListener('click', cerrar);
