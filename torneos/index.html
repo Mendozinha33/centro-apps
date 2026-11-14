@@ -242,6 +242,7 @@
   .partido__arriba{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center;}
   .partido__abajo{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:12.5px;color:var(--apagado);}
   .partido__abajo .num{font-weight:700;color:var(--tinta);min-width:22px;}
+  .partido__abajo input.pos{width:54px;text-align:center;font-weight:700;}
   .partido__abajo label{display:inline-flex;align-items:center;gap:5px;}
   .partido__abajo input,.partido__abajo select{font:inherit;font-size:13px;padding:4px 6px;border:1px solid var(--linea-fuerte);
     border-radius:6px;background:#fff;color:var(--tinta);height:30px;}
@@ -1341,11 +1342,12 @@ function vistaPartidos(){
   const jornadas = Array.from(new Set(LISTA_VISTA.map(function(p){ return p.jornada; })));
   const maxJ = Math.max.apply(null, jornadas.concat([1]));
   html += '<div class="partidos-grupo"><section class="tarjeta"><div class="tarjeta__cab"><h2>Partidos · ' + escapar(g.nombre) + '</h2>' +
-    '<span class="cuenta">Escribe los goles: la clasificación se actualiza sola</span></div>' +
+    '<span class="cuenta">Pon el orden (Nº o flechas), el día y la hora de cada partido</span></div>' +
     (LISTA_VISTA.length ? jornadas.map(function(j){
       return '<div class="jornada"><h3>Jornada ' + j + '</h3>' + LISTA_VISTA.filter(function(p){ return p.jornada === j; }).map(function(p){
         const k = LISTA_VISTA.indexOf(p);
         return filaPartido(p, {
+          numero: k + 1,
           extra: '<select data-jornada="' + p.id + '" aria-label="Jornada">' +
             Array.from({ length: maxJ + 1 }, function(_, i){ return '<option value="' + (i+1) + '"' + (i+1 === p.jornada ? ' selected' : '') + '>Jornada ' + (i+1) + (i === maxJ ? ' (nueva)' : '') + '</option>'; }).join('') + '</select>',
           puedeSubir: k > 0 && LISTA_VISTA[k-1].jornada === p.jornada,
@@ -1384,7 +1386,7 @@ function filaPartido(p, o){
     '<span class="marcador"><input type="number" inputmode="numeric" min="0" max="99" class="' + ll + '" data-gol="' + p.id + '" data-lado="gl" value="' + (p.gl == null ? '' : p.gl) + '" aria-label="Goles de ' + escapar(equipo(p.local).nombre) + '">' +
     '<span>–</span><input type="number" inputmode="numeric" min="0" max="99" class="' + ll + '" data-gol="' + p.id + '" data-lado="gv" value="' + (p.gv == null ? '' : p.gv) + '" aria-label="Goles de ' + escapar(equipo(p.visitante).nombre) + '"></span>' +
     '<span class="equipo-celda">' + escudo(equipo(p.visitante), 28) + '<span class="n">' + escapar(equipo(p.visitante).nombre) + '</span></span></div>' +
-    '<div class="partido__abajo">' + (o.numero ? '<span class="num">' + o.numero + '.</span>' : '') +
+    '<div class="partido__abajo">' + (o.numero ? '<label title="Escribe en qué lugar quieres este partido">Nº <input type="number" inputmode="numeric" class="pos" min="1" max="' + LISTA_VISTA.length + '" data-posicion="' + p.id + '" value="' + o.numero + '" aria-label="Orden del partido"></label>' : '') +
       '<label>Día <input type="date" data-fecha="' + p.id + '" value="' + (p.fecha || '') + '"></label>' +
       '<label>Hora <input type="time" data-hora="' + p.id + '" value="' + (p.hora || '') + '" step="300"></label>' +
       (o.extra || '') +
@@ -1412,7 +1414,7 @@ function vistaHorario(){
     '</div><p class="nota-peq" style="margin-top:10px">Pone el día y la hora a todos los partidos según el orden de abajo. Con 2 campos, los partidos 1 y 2 van a la misma hora, los 3 y 4 a la siguiente, y así. Luego puedes cambiar cualquiera a mano.</p></div></section>';
 
   html += '<section class="tarjeta"><div class="tarjeta__cab"><h2>Orden de todos los partidos</h2>' +
-    '<span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="cuenta">Usa las flechas para cambiar el orden</span>' +
+    '<span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="cuenta">Escribe el Nº de cada partido o usa las flechas</span>' +
     (conDia ? '<button class="btn btn--mini" data-accion="ordenarPorHora">Ordenar por día y hora</button>' : '') + '</span></div>';
   let diaAnterior = null, abierto = false;
   LISTA_VISTA.forEach(function(p, k){
@@ -1434,6 +1436,20 @@ function moverPartido(id, paso){
   if (k < 0 || !otro) return;
   const i = d.partidos.indexOf(LISTA_VISTA[k]), j = d.partidos.indexOf(otro);
   const t = d.partidos[i]; d.partidos[i] = d.partidos[j]; d.partidos[j] = t;
+  ultimoMovido = id; cambiado();
+  const y = window.scrollY; pintarVista(); window.scrollTo(0, y);
+  setTimeout(function(){ ultimoMovido = null; }, 1100);
+}
+/* lleva un partido al lugar que escribas (en el grupo, pasa a la jornada de ese lugar) */
+function moverA(id, lugar){
+  const d = T.datos, lista = LISTA_VISTA, desde = lista.findIndex(function(p){ return p.id === id; });
+  lugar = Math.max(1, Math.min(lista.length, Math.round(lugar)));
+  if (desde < 0 || lugar - 1 === desde){ pintarVista(); return; }
+  const p = lista[desde], destino = lista[lugar - 1];
+  d.partidos.splice(d.partidos.indexOf(p), 1);
+  const i = d.partidos.indexOf(destino);
+  d.partidos.splice(lugar - 1 > desde ? i + 1 : i, 0, p);
+  if (grupoPartidos !== TODOS) p.jornada = destino.jornada;
   ultimoMovido = id; cambiado();
   const y = window.scrollY; pintarVista(); window.scrollTo(0, y);
   setTimeout(function(){ ultimoMovido = null; }, 1100);
@@ -1665,6 +1681,11 @@ function enganchar(v){
       p.jornada = Number(sel.value); ultimoMovido = p.id; cambiado();
       const y = window.scrollY; pintarVista(); window.scrollTo(0, y);
     });
+  });
+  v.querySelectorAll('[data-posicion]').forEach(function(i){
+    i.addEventListener('change', function(){ const n = Number(i.value); if (n >= 1) moverA(i.dataset.posicion, n); else pintarVista(); });
+    i.addEventListener('keydown', function(e){ if (e.key === 'Enter') i.blur(); });
+    i.addEventListener('focus', function(){ i.select(); });
   });
   v.querySelectorAll('[data-subirp]').forEach(function(b){ b.addEventListener('click', function(){ moverPartido(b.dataset.subirp, -1); }); });
   v.querySelectorAll('[data-bajarp]').forEach(function(b){ b.addEventListener('click', function(){ moverPartido(b.dataset.bajarp, 1); }); });
