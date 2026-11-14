@@ -247,6 +247,23 @@
   .elegir-eq:hover,.elegir-eq:focus{border-color:var(--linea-fuerte);}
   .elegir-eq.vacio-eq{border-color:var(--ambar);background:var(--ambar-suave);}
   .partido .local .elegir-eq{text-align:right;}
+  /* fase final */
+  .ronda{margin-bottom:20px;}
+  .ronda .tarjeta__cab input{font-family:var(--serif);font-size:19px;font-weight:500;border:1px solid transparent;border-radius:5px;
+    padding:1px 5px;margin-left:-6px;background:transparent;min-width:0;flex:1;color:inherit;}
+  .ronda .tarjeta__cab input:focus{border-color:var(--linea-fuerte);background:#fff;outline:none;}
+  .cruce .gana .elegir-eq{font-weight:700;border-color:var(--cesped);background:var(--cesped-suave);}
+  .penaltis{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px;font-size:12.5px;color:var(--apagado);}
+  .penaltis input{width:40px;height:30px;text-align:center;font:inherit;font-size:14px;font-weight:700;border:1px solid var(--ambar);
+    border-radius:6px;background:var(--ambar-suave);}
+  .origen{font-size:11.5px;color:var(--apagado);}
+  .podio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:18px 20px;}
+  .podio div{border:1px solid var(--linea);border-radius:8px;padding:14px;text-align:center;display:grid;gap:6px;justify-items:center;}
+  .podio b{font-size:15px;}
+  .podio small{font-size:12px;color:var(--apagado);text-transform:uppercase;letter-spacing:.06em;font-weight:700;}
+  .podio .oro{border-color:var(--oro);background:#FBF6EA;}
+  .crear-cuadro{display:grid;gap:14px;max-width:560px;}
+  .barra-acciones{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-bottom:16px;}
   .pie-partidos{padding:12px 16px;border-top:1px solid var(--linea);display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
   .pie-partidos select{font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--linea-fuerte);border-radius:6px;background:#fff;}
   .partido__abajo input.pos{width:54px;text-align:center;font-weight:700;}
@@ -376,6 +393,7 @@
     .rejilla3{grid-template-columns:1fr 1fr 1fr;gap:8px;}
     .rejilla2{grid-template-columns:1fr;}
     .anadir-crit .fila{grid-template-columns:1fr;}
+    .podio{grid-template-columns:1fr;}
     .lista-equipos li{padding:10px 14px;flex-wrap:wrap;}
     .partido{padding:10px 10px;gap:6px;}
     .partido .equipo-celda{gap:6px;font-size:13.5px;}
@@ -444,6 +462,7 @@
   <nav class="pestanas" role="tablist" id="pestanas">
     <button role="tab" data-p="clasificacion">Clasificación</button>
     <button role="tab" data-p="partidos">Partidos y resultados</button>
+    <button role="tab" data-p="final">Fase final</button>
     <button role="tab" data-p="equipos">Equipos<span class="num" id="numEquipos">0</span></button>
     <button role="tab" data-p="grupos">Grupos<span class="num" id="numGrupos">0</span></button>
     <button role="tab" data-p="normas">Cómo se clasifican</button>
@@ -689,6 +708,8 @@ function normalizar(d){
   Object.keys(porDefecto).forEach(function(k){ r[k] = (r[k] === undefined || r[k] === null) ? porDefecto[k] : (Number(r[k]) || 0); });
   if (r.clasifican < 1) r.clasifican = 1;
   r.idaVuelta = !!r.idaVuelta;
+  if (d.eliminatoria && (typeof d.eliminatoria !== 'object' || !Array.isArray(d.eliminatoria.rondas) || !d.eliminatoria.rondas.length)) d.eliminatoria = null;
+  if (d.eliminatoria && !Array.isArray(d.eliminatoria.orden)) d.eliminatoria.orden = [];
   d.partidos.forEach(function(p){
     if (!/^\d{4}-\d{2}-\d{2}$/.test(p.fecha || '')) p.fecha = '';
     if (!/^\d{2}:\d{2}$/.test(p.hora || '')) p.hora = '';
@@ -774,11 +795,14 @@ function pintarVista(){
   else if (pestana === 'normas') v.innerHTML = vistaNormas();
   else if (pestana === 'partidos') v.innerHTML = vistaPartidos();
   else if (pestana === 'reglamento') v.innerHTML = vistaDocumentos('normas');
+  else if (pestana === 'final') v.innerHTML = vistaFinal();
   else if (pestana === 'diseno') v.innerHTML = vistaDiseno();
   else v.innerHTML = vistaClasificacion();
   enganchar(v);
   if (pestana === 'reglamento' || pestana === 'diseno') engancharDocumentos(v, pestana === 'reglamento' ? 'normas' : 'diseno');
   if (pestana === 'diseno') engancharDiseno(v);
+  if (pestana === 'final') engancharFinal(v);
+  v.querySelectorAll('[data-accion="exportarPdf"]').forEach(function(b){ b.addEventListener('click', function(){ exportarPdf(b); }); });
 }
 
 /* ---------- escudos ---------- */
@@ -889,6 +913,10 @@ function quitarEquipo(id){
   d.equipos = d.equipos.filter(function(e){ return e.id !== id; });
   d.grupos.forEach(function(g){ g.equipos = g.equipos.filter(function(x){ return x !== id; }); });
   d.partidos = d.partidos.filter(function(p){ return p.local !== id && p.visitante !== id; });
+  if (d.eliminatoria) todosLosCruces().forEach(function(x){
+    if (x.p.local === id){ x.p.local = ''; x.p.autoL = true; }
+    if (x.p.visitante === id){ x.p.visitante = ''; x.p.autoV = true; }
+  });
 }
 
 /* ---------- GRUPOS ---------- */
@@ -1448,7 +1476,8 @@ function vistaHorario(){
 
   html += '<section class="tarjeta"><div class="tarjeta__cab"><h2>Orden de todos los partidos</h2>' +
     '<span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="cuenta">Escribe el Nº de cada partido o usa las flechas</span>' +
-    (conDia ? '<button class="btn btn--mini" data-accion="ordenarPorHora">Ordenar por día y hora</button>' : '') + '</span></div>';
+    (conDia ? '<button class="btn btn--mini" data-accion="ordenarPorHora">Ordenar por día y hora</button>' : '') +
+    '<button class="btn btn--mini btn--solido" data-accion="exportarPdf">Exportar en PDF</button></span></div>';
   let diaAnterior = null, abierto = false;
   LISTA_VISTA.forEach(function(p, k){
     if (conDia && p.fecha !== diaAnterior){
@@ -1778,6 +1807,349 @@ function enganchar(v){
     i.addEventListener('focus', function(){ i.select(); });
   });
   pintarTablaViva();
+}
+
+/* ==================================================================
+   FASE FINAL: cuadro de cruces hasta la final
+================================================================== */
+const NOMBRES_RONDA = { 2:'Final', 4:'Semifinales', 8:'Cuartos de final', 16:'Octavos de final', 32:'Dieciseisavos de final', 64:'Treintaidosavos de final' };
+function cuadro(){ return T.datos.eliminatoria || null; }
+function totalClasificados(){ const r = T.datos.reglas; return r.clasifican * T.datos.grupos.filter(function(g){ return g.equipos.length; }).length + (r.mejores || 0); }
+
+/* clasificados en orden de cabeza de serie: primeros de grupo, luego segundos..., luego los mejores */
+function clasificadosOrdenados(){
+  const r = T.datos.reglas, c = calcularTodo(), lista = [];
+  for (let pos = 0; pos < r.clasifican; pos++){
+    c.tablas.forEach(function(t){ if (t.filas[pos]) lista.push({ id: t.filas[pos].id, texto: (pos + 1) + 'º ' + t.grupo.nombre }); });
+  }
+  c.mejores.slice(0, r.mejores).forEach(function(m){ lista.push({ id: m.fila.id, texto: (r.clasifican + 1) + 'º ' + m.grupo.nombre }); });
+  return lista;
+}
+function ordenCuadro(m){ let o = [1]; while (o.length < m){ const n = o.length * 2; o = o.reduce(function(a, x){ return a.concat([x, n + 1 - x]); }, []); } return o; }
+
+function crearCuadro(n, tercer, colocar){
+  const rondas = [];
+  for (let tam = n; tam >= 2; tam /= 2){
+    rondas.push({ id: nuevoId('r'), nombre: NOMBRES_RONDA[tam] || ('Ronda de ' + tam), tam: tam,
+      partidos: Array.from({ length: tam / 2 }, function(){ return cruceVacio(); }) });
+  }
+  const e = T.datos.eliminatoria = { rondas: rondas, tercero: tercer ? { id: nuevoId('r'), nombre:'3er y 4º puesto', partido: cruceVacio() } : null, orden: [] };
+  e.orden = todosLosCruces().map(function(x){ return x.p.id; });
+  if (colocar) colocarClasificados();
+  actualizarCuadro();
+}
+function cruceVacio(){ return { id: nuevoId('k'), local:'', visitante:'', gl:null, gv:null, pl:null, pv:null, fecha:'', hora:'', autoL:true, autoV:true }; }
+/* todos los cruces en orden de rondas (el 3er puesto antes de la final) */
+function todosLosCruces(){
+  const e = cuadro(); if (!e) return [];
+  const res = [];
+  e.rondas.forEach(function(rd, i){
+    if (e.tercero && i === e.rondas.length - 1) res.push({ p: e.tercero.partido, ronda: e.tercero, tercero: true });
+    rd.partidos.forEach(function(p, j){ res.push({ p: p, ronda: rd, i: i, j: j }); });
+  });
+  return res;
+}
+function crucesEnOrden(){
+  const e = cuadro(), todos = todosLosCruces(), pos = {};
+  e.orden.forEach(function(id, k){ pos[id] = k; });
+  todos.forEach(function(x, k){ if (pos[x.p.id] === undefined) pos[x.p.id] = 1000 + k; });
+  return todos.slice().sort(function(a, b){ return pos[a.p.id] - pos[b.p.id]; });
+}
+function colocarClasificados(){
+  const e = cuadro(), primera = e.rondas[0], n = primera.tam, sem = clasificadosOrdenados().slice(0, n);
+  const parejas = [];
+  for (let i = 0; i < n / 2; i++) parejas.push([sem[i] ? sem[i].id : '', sem[n - 1 - i] ? sem[n - 1 - i].id : '']);
+  const orden = ordenCuadro(n / 2);
+  orden.forEach(function(semilla, k){
+    const p = primera.partidos[k], par = parejas[semilla - 1];
+    p.local = par[0]; p.visitante = par[1]; p.autoL = false; p.autoV = false;
+  });
+}
+function ganadorCruce(p){
+  if (!p.local || !p.visitante || !jugado(p)) return null;
+  if (Number(p.gl) !== Number(p.gv)) return Number(p.gl) > Number(p.gv) ? 'local' : 'visitante';
+  if (p.pl == null || p.pv == null || Number(p.pl) === Number(p.pv)) return null;
+  return Number(p.pl) > Number(p.pv) ? 'local' : 'visitante';
+}
+/* pasa a los ganadores a la ronda siguiente (y a los que pierden semis al 3er puesto) */
+function actualizarCuadro(){
+  const e = cuadro(); if (!e) return;
+  function poner(p, lado, eq){
+    const auto = lado === 'local' ? 'autoL' : 'autoV';
+    if (p[auto] || !p[lado]){ p[lado] = eq || ''; p[auto] = true; }
+  }
+  e.rondas.forEach(function(rd, i){
+    const sig = e.rondas[i + 1];
+    rd.partidos.forEach(function(p, j){
+      const g = ganadorCruce(p);
+      const gana = g ? p[g] : '', pierde = g ? p[g === 'local' ? 'visitante' : 'local'] : '';
+      if (sig) poner(sig.partidos[Math.floor(j / 2)], j % 2 ? 'visitante' : 'local', gana);
+      if (e.tercero && sig && i === e.rondas.length - 2) poner(e.tercero.partido, j % 2 ? 'visitante' : 'local', pierde);
+    });
+  });
+}
+function origenCruce(i, j, lado){
+  const e = cuadro();
+  if (i === 0) return '';
+  const ant = e.rondas[i - 1], k = j * 2 + (lado === 'local' ? 0 : 1);
+  return 'Ganador del partido ' + (k + 1) + ' de ' + ant.nombre.toLowerCase();
+}
+
+function selectorCruce(p, lado, clasif){
+  const ids = T.datos.equipos.map(function(e){ return e.id; });
+  const enClasif = clasif.map(function(c){ return c.id; });
+  const resto = ids.filter(function(id){ return enClasif.indexOf(id) < 0; });
+  const op = function(id, txt){ return '<option value="' + id + '"' + (id === p[lado] ? ' selected' : '') + '>' + escapar(txt) + '</option>'; };
+  return '<select class="elegir-eq' + (p[lado] ? '' : ' vacio-eq') + '" data-cruceeq="' + p.id + '" data-ladoeq="' + lado + '" aria-label="' + (lado === 'local' ? 'Equipo 1' : 'Equipo 2') + '">' +
+    '<option value="">' + (p[lado] ? '— Quitar —' : 'Elige equipo…') + '</option>' +
+    (clasif.length ? '<optgroup label="Clasificados">' + clasif.map(function(c){ return op(c.id, equipo(c.id).nombre + ' (' + c.texto + ')'); }).join('') + '</optgroup>' : '') +
+    (resto.length ? '<optgroup label="Resto de equipos">' + resto.map(function(id){ return op(id, equipo(id).nombre); }).join('') + '</optgroup>' : '') +
+    '</select>';
+}
+function filaCruce(x, num, clasif){
+  const p = x.p, g = ganadorCruce(p), ll = jugado(p) ? ' lleno' : '';
+  const empate = jugado(p) && Number(p.gl) === Number(p.gv);
+  const lado = function(l){
+    const orig = (!p[l] && x.i !== undefined) ? origenCruce(x.i, x.j, l) : (!p[l] && x.tercero ? 'Perdedor semifinal ' + (l === 'local' ? 1 : 2) : '');
+    return '<span class="equipo-celda' + (l === 'local' ? ' local' : '') + (g === l ? ' gana' : '') + '">' + (p[l] ? escudo(equipo(p[l]), 28) : '') +
+      '<span style="display:grid;gap:2px;min-width:0">' + selectorCruce(p, l, clasif) + (orig ? '<span class="origen">' + escapar(orig) + '</span>' : '') + '</span></span>';
+  };
+  return '<div class="partido cruce' + (p.id === ultimoMovido ? ' movido' : '') + '" data-filacruce="' + p.id + '"><div class="partido__arriba">' + lado('local') +
+    '<span class="marcador"><input type="number" inputmode="numeric" min="0" max="99" class="' + ll + '" data-golcruce="' + p.id + '" data-lado="gl" value="' + (p.gl == null ? '' : p.gl) + '" aria-label="Goles equipo 1">' +
+    '<span>–</span><input type="number" inputmode="numeric" min="0" max="99" class="' + ll + '" data-golcruce="' + p.id + '" data-lado="gv" value="' + (p.gv == null ? '' : p.gv) + '" aria-label="Goles equipo 2"></span>' +
+    lado('visitante') + '</div>' +
+    (empate ? '<div class="penaltis">Penaltis <input type="number" inputmode="numeric" min="0" max="99" data-golcruce="' + p.id + '" data-lado="pl" value="' + (p.pl == null ? '' : p.pl) + '" aria-label="Penaltis equipo 1"> – <input type="number" inputmode="numeric" min="0" max="99" data-golcruce="' + p.id + '" data-lado="pv" value="' + (p.pv == null ? '' : p.pv) + '" aria-label="Penaltis equipo 2"></div>' : '') +
+    '<div class="partido__abajo">' +
+      '<label title="Orden en el horario de la fase final">Nº <input type="number" inputmode="numeric" class="pos" min="1" data-poscruce="' + p.id + '" value="' + num + '" aria-label="Orden del cruce"></label>' +
+      '<label>Día <input type="date" data-fechacruce="' + p.id + '" value="' + (p.fecha || '') + '"></label>' +
+      '<label>Hora <input type="time" data-horacruce="' + p.id + '" value="' + (p.hora || '') + '" step="300"></label>' +
+    '</div></div>';
+}
+
+function vistaFinal(){
+  const d = T.datos, e = cuadro();
+  if (!e){
+    const total = totalClasificados(); let n = 2; while (n < total && n < 64) n *= 2;
+    return '<section class="tarjeta"><div class="tarjeta__cab"><h2>Crear el cuadro de la fase final</h2></div><div class="tarjeta__cuerpo"><div class="crear-cuadro">' +
+      '<p class="nota-peq" style="margin:0">Con tus normas pasan <b>' + total + ' equipos</b>. Elige con cuántos empieza la fase final; las rondas siguientes hasta la final se crean solas.</p>' +
+      '<div class="campo"><label for="cuadroTam">Empieza en</label><select id="cuadroTam">' +
+        [2,4,8,16,32,64].map(function(t){ return '<option value="' + t + '"' + (t === n ? ' selected' : '') + '>' + NOMBRES_RONDA[t] + ' (' + t + ' equipos)</option>'; }).join('') + '</select></div>' +
+      '<label class="interruptor" style="color:var(--tinta);font-size:14.5px"><input type="checkbox" id="cuadroTercero"> Jugar partido por el 3er y 4º puesto</label>' +
+      '<label class="interruptor" style="color:var(--tinta);font-size:14.5px"><input type="checkbox" id="cuadroColocar" checked> Colocar ya a los clasificados (1º contra 2º de otro grupo)</label>' +
+      '<p class="nota-peq" style="margin:0">Después puedes cambiar cualquier cruce con los desplegables y poner el orden, el día y la hora de cada partido.</p>' +
+      '<div><button class="btn btn--cesped" data-accion="crearCuadro">Crear el cuadro</button></div>' +
+    '</div></div></section>';
+  }
+  const clasif = clasificadosOrdenados(), enOrden = crucesEnOrden(), num = {};
+  enOrden.forEach(function(x, k){ num[x.p.id] = k + 1; });
+  const primerDia = (enOrden.filter(function(x){ return x.p.fecha; })[0] || {}).p;
+  let html = '<div class="barra-acciones">' +
+    '<button class="btn btn--mini" data-accion="recolocarCuadro">Volver a colocar a los clasificados</button>' +
+    '<button class="btn btn--mini btn--solido" data-accion="exportarPdf">Exportar horario en PDF</button>' +
+    '<button class="btn btn--mini btn--peligro" data-accion="borrarCuadro">Borrar el cuadro</button></div>';
+  html += '<section class="tarjeta hueco"><div class="tarjeta__cab"><h2>Poner las horas de golpe</h2><span class="cuenta">Sigue el Nº de cada cruce</span></div>' +
+    '<div class="tarjeta__cuerpo"><div class="horario">' +
+      '<div class="campo"><label for="fDia">Día</label><input type="date" id="fDia" value="' + ((primerDia && primerDia.fecha) || ultimoDiaGrupos()) + '"></div>' +
+      '<div class="campo"><label for="fInicio">Primer cruce</label><input type="time" id="fInicio" value="17:00" step="300"></div>' +
+      '<div class="campo"><label for="fCada">Un partido cada</label><select id="fCada">' +
+        [10,15,20,25,30,35,40,45,50,60,75,90,105,120].map(function(m){ return '<option value="' + m + '"' + (m === 45 ? ' selected' : '') + '>' + m + ' minutos</option>'; }).join('') + '</select></div>' +
+      '<div class="campo"><label for="fCampos">Campos a la vez</label><select id="fCampos">' +
+        [1,2,3,4].map(function(n){ return '<option value="' + n + '">' + n + (n === 1 ? ' campo' : ' campos') + '</option>'; }).join('') + '</select></div>' +
+      '<button class="btn btn--cesped" data-accion="horasCruces">Poner horas</button>' +
+    '</div></div></section>';
+  e.rondas.forEach(function(rd, i){
+    if (e.tercero && i === e.rondas.length - 1){
+      html += '<section class="tarjeta ronda"><div class="tarjeta__cab"><input type="text" maxlength="40" value="' + escapar(e.tercero.nombre) + '" data-nombreronda="tercero" aria-label="Nombre de la ronda"></div>' +
+        filaCruce({ p: e.tercero.partido, ronda: e.tercero, tercero: true }, num[e.tercero.partido.id], clasif) + '</section>';
+    }
+    html += '<section class="tarjeta ronda"><div class="tarjeta__cab"><input type="text" maxlength="40" value="' + escapar(rd.nombre) + '" data-nombreronda="' + rd.id + '" aria-label="Nombre de la ronda">' +
+      '<span class="cuenta">' + rd.partidos.length + (rd.partidos.length === 1 ? ' partido' : ' partidos') + '</span></div>' +
+      rd.partidos.map(function(p, j){ return filaCruce({ p: p, ronda: rd, i: i, j: j }, num[p.id], clasif); }).join('') + '</section>';
+  });
+  const fin = e.rondas[e.rondas.length - 1].partidos[0], gf = ganadorCruce(fin);
+  if (gf){
+    const t = e.tercero ? ganadorCruce(e.tercero.partido) : null;
+    const caja = function(id, txt, clase){ return '<div class="' + (clase || '') + '"><small>' + txt + '</small>' + escudo(equipo(id), 44) + '<b>' + escapar(equipo(id).nombre) + '</b></div>'; };
+    html += '<section class="tarjeta"><div class="tarjeta__cab"><h2>Podio</h2></div><div class="podio">' +
+      caja(fin[gf], 'Campeón', 'oro') + caja(fin[gf === 'local' ? 'visitante' : 'local'], 'Subcampeón') +
+      (t ? caja(e.tercero.partido[t], '3er puesto') : '<div><small>3er puesto</small><span class="nota-peq">' + (e.tercero ? 'Falta el resultado' : 'Sin partido') + '</span></div>') +
+      '</div></section>';
+  }
+  return html;
+}
+function ultimoDiaGrupos(){
+  const f = T.datos.partidos.map(function(p){ return p.fecha; }).filter(Boolean).sort();
+  if (f.length) return f[f.length - 1];
+  const h = new Date(); return h.getFullYear() + '-' + String(h.getMonth()+1).padStart(2,'0') + '-' + String(h.getDate()).padStart(2,'0');
+}
+function cruce(id){ const x = todosLosCruces().filter(function(c){ return c.p.id === id; })[0]; return x ? x.p : null; }
+function repintarQuieto(){ const y = window.scrollY; pintarVista(); window.scrollTo(0, y); }
+
+function engancharFinal(v){
+  v.querySelectorAll('[data-accion]').forEach(function(b){
+    const a = b.dataset.accion;
+    if (['crearCuadro','recolocarCuadro','borrarCuadro','horasCruces'].indexOf(a) < 0) return;
+    b.addEventListener('click', function(){
+      const e = cuadro();
+      if (a === 'crearCuadro'){ crearCuadro(Number($('cuadroTam').value), $('cuadroTercero').checked, $('cuadroColocar').checked); cambiado(); pintarVista(); }
+      if (a === 'recolocarCuadro'){
+        if (!confirm('Se vuelven a poner los clasificados en la primera ronda (' + e.rondas[0].nombre + '). Los cruces que hayas cambiado a mano en esa ronda se sustituyen. ¿Seguir?')) return;
+        colocarClasificados(); actualizarCuadro(); cambiado(); repintarQuieto();
+      }
+      if (a === 'borrarCuadro'){
+        if (!confirm('¿Borrar todo el cuadro de la fase final, con sus resultados y horarios?')) return;
+        T.datos.eliminatoria = null; cambiado(); pintarVista();
+      }
+      if (a === 'horasCruces'){
+        const dia = $('fDia').value, ini = $('fInicio').value, cada = Number($('fCada').value), campos = Number($('fCampos').value);
+        if (!dia || !ini){ alert('Pon el día y la hora del primer cruce.'); return; }
+        const lista = crucesEnOrden();
+        if (lista.some(function(x){ return x.p.fecha || x.p.hora; }) && !confirm('Se cambian el día y la hora de todos los cruces siguiendo su Nº. ¿Seguir?')) return;
+        lista.forEach(function(x, k){ const t = sumarMinutos(ini, Math.floor(k / campos) * cada); x.p.hora = t.hora; x.p.fecha = diaMas(dia, t.diaMas); });
+        cambiado(); repintarQuieto();
+      }
+    });
+  });
+  v.querySelectorAll('[data-nombreronda]').forEach(function(i){
+    i.addEventListener('input', function(){
+      const e = cuadro(), rd = i.dataset.nombreronda === 'tercero' ? e.tercero : e.rondas.filter(function(x){ return x.id === i.dataset.nombreronda; })[0];
+      rd.nombre = i.value.replace(/\s+/g, ' ').trim().slice(0, 40) || rd.nombre; cambiado();
+    });
+  });
+  v.querySelectorAll('[data-cruceeq]').forEach(function(sel){
+    sel.addEventListener('change', function(){
+      const p = cruce(sel.dataset.cruceeq), lado = sel.dataset.ladoeq, otro = lado === 'local' ? 'visitante' : 'local';
+      if (sel.value && sel.value === p[otro]){ p[otro] = p[lado]; p[otro === 'local' ? 'autoL' : 'autoV'] = false; }
+      p[lado] = sel.value; p[lado === 'local' ? 'autoL' : 'autoV'] = !sel.value;
+      actualizarCuadro(); cambiado(); repintarQuieto();
+    });
+  });
+  v.querySelectorAll('[data-golcruce]').forEach(function(i){
+    i.addEventListener('change', function(){
+      const p = cruce(i.dataset.golcruce);
+      let n = i.value === '' ? null : Math.max(0, Math.min(99, Math.round(Number(i.value))));
+      if (n !== null && isNaN(n)) n = null;
+      p[i.dataset.lado] = n;
+      if (!(jugado(p) && Number(p.gl) === Number(p.gv))){ p.pl = null; p.pv = null; }
+      actualizarCuadro(); cambiado(); repintarQuieto();
+    });
+    i.addEventListener('focus', function(){ i.select(); });
+  });
+  v.querySelectorAll('[data-fechacruce]').forEach(function(i){
+    i.addEventListener('change', function(){ cruce(i.dataset.fechacruce).fecha = /^\d{4}-\d{2}-\d{2}$/.test(i.value) ? i.value : ''; cambiado(); });
+  });
+  v.querySelectorAll('[data-horacruce]').forEach(function(i){
+    i.addEventListener('change', function(){ cruce(i.dataset.horacruce).hora = /^\d{2}:\d{2}$/.test(i.value) ? i.value : ''; cambiado(); });
+  });
+  v.querySelectorAll('[data-poscruce]').forEach(function(i){
+    i.addEventListener('change', function(){
+      const e = cuadro(), ids = crucesEnOrden().map(function(x){ return x.p.id; });
+      const desde = ids.indexOf(i.dataset.poscruce), a = Math.max(1, Math.min(ids.length, Math.round(Number(i.value) || 1))) - 1;
+      ids.splice(desde, 1); ids.splice(a, 0, i.dataset.poscruce);
+      e.orden = ids; ultimoMovido = i.dataset.poscruce; cambiado(); repintarQuieto();
+      setTimeout(function(){ ultimoMovido = null; }, 1100);
+    });
+    i.addEventListener('keydown', function(ev){ if (ev.key === 'Enter') i.blur(); });
+    i.addEventListener('focus', function(){ i.select(); });
+  });
+}
+
+/* ==================================================================
+   EXPORTAR EL HORARIO EN PDF (fase de grupos y fase final)
+================================================================== */
+async function exportarPdf(boton){
+  const txt = boton.textContent; boton.disabled = true; boton.textContent = 'Preparando PDF…';
+  try{
+    await cargarScript('/torneos/lib/jspdf.umd.min.js');
+    await cargarScript('/torneos/lib/jspdf.plugin.autotable.min.js');
+    const doc = new window.jspdf.jsPDF({ unit:'mm', format:'a4' });
+    const color = hexARgb(T.datos.diseno.color), suave = hexARgb(mezclar(T.datos.diseno.color, '#ffffff', .88));
+    const escudos = await escudosParaPdf();
+    const W = doc.internal.pageSize.getWidth();
+
+    doc.setFillColor(color[0], color[1], color[2]); doc.rect(0, 0, W, 26, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(18);
+    doc.text(limpiarPdf(T.nombre), 14, 13);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.text('Horario de partidos', 14, 20.5);
+    let y = 34;
+
+    const tabla = function(titulo, filas, conGrupo){
+      if (!filas.length) return;
+      if (y > 250){ doc.addPage(); y = 18; }
+      doc.setTextColor(27, 42, 51); doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.text(titulo, 14, y); y += 3;
+      let dia = null; const cuerpo = [];
+      filas.forEach(function(f){
+        if (f.fecha !== dia){ dia = f.fecha; cuerpo.push([{ content: limpiarPdf(diaBonito(f.fecha)), colSpan: 6, styles: { fillColor: suave, fontStyle:'bold', textColor:[27,42,51] } }]); }
+        cuerpo.push([f.num, f.hora || '-', limpiarPdf(f.fase), { content: limpiarPdf(f.local), eq: f.idL, lado:'l' },
+          f.res, { content: limpiarPdf(f.visitante), eq: f.idV, lado:'v' }]);
+      });
+      doc.autoTable({
+        startY: y, head: [['Nº', 'Hora', conGrupo ? 'Grupo' : 'Ronda', 'Local', 'Resultado', 'Visitante']], body: cuerpo,
+        theme: 'grid', margin: { left: 14, right: 14 },
+        headStyles: { fillColor: color, textColor: 255, fontStyle:'bold', fontSize: 9 },
+        styles: { fontSize: 9.5, cellPadding: 2.2, lineColor: [214,222,220], lineWidth: 0.2, textColor: [27,42,51], valign:'middle' },
+        columnStyles: { 0: { cellWidth: 11, halign:'center' }, 1: { cellWidth: 15, halign:'center' }, 2: { cellWidth: conGrupo ? 26 : 34 },
+                        3: { halign:'right', cellPadding: { left: 2, right: 9, top: 2.2, bottom: 2.2 } }, 4: { cellWidth: 24, halign:'center', fontStyle:'bold' },
+                        5: { cellPadding: { left: 9, right: 2, top: 2.2, bottom: 2.2 } } },
+        didDrawCell: function(dd){
+          const raw = dd.cell.raw;
+          if (dd.section !== 'body' || !raw || !raw.eq) return;
+          const tam = 5, cy = dd.cell.y + (dd.cell.height - tam) / 2;
+          const cx = raw.lado === 'l' ? dd.cell.x + dd.cell.width - tam - 2 : dd.cell.x + 2;
+          dibujarEscudoPdf(doc, escudos, raw.eq, cx, cy, tam);
+        }
+      });
+      y = doc.lastAutoTable.finalY + 10;
+    };
+
+    const nombreEq = function(id, porDefecto){ return id ? equipo(id).nombre : (porDefecto || 'Por decidir'); };
+    const resultado = function(p){
+      if (!jugado(p)) return '-';
+      return p.gl + ' - ' + p.gv + (p.pl != null && p.pv != null && Number(p.gl) === Number(p.gv) ? '\n(pen. ' + p.pl + '-' + p.pv + ')' : '');
+    };
+    tabla('Fase de grupos', T.datos.partidos.map(function(p, k){
+      return { num: k + 1, fecha: p.fecha, hora: p.hora, fase: nombreGrupo(p.grupo) + ' · J' + p.jornada,
+               local: nombreEq(p.local), visitante: nombreEq(p.visitante), idL: p.local, idV: p.visitante, res: resultado(p) };
+    }), true);
+    if (cuadro()){
+      tabla('Fase final', crucesEnOrden().map(function(x, k){
+        const p = x.p;
+        const oL = x.tercero ? 'Perdedor semifinal 1' : (x.i ? origenCruce(x.i, x.j, 'local') : '');
+        const oV = x.tercero ? 'Perdedor semifinal 2' : (x.i ? origenCruce(x.i, x.j, 'visitante') : '');
+        return { num: k + 1, fecha: p.fecha, hora: p.hora, fase: x.ronda.nombre,
+                 local: nombreEq(p.local, oL), visitante: nombreEq(p.visitante, oV), idL: p.local, idV: p.visitante, res: resultado(p) };
+      }), false);
+    }
+    const paginas = doc.getNumberOfPages(), hoy = new Date();
+    for (let i = 1; i <= paginas; i++){
+      doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(101, 118, 120);
+      doc.text('Generado el ' + hoy.getDate() + '/' + (hoy.getMonth() + 1) + '/' + hoy.getFullYear() + ' · Apps Mendoza', 14, 290);
+      doc.text('Página ' + i + ' de ' + paginas, W - 14, 290, { align:'right' });
+    }
+    doc.save(('Horario ' + T.nombre).replace(/[\\/:*?"<>|]+/g, ' ').trim() + '.pdf');
+  }catch(e){ alert('No se ha podido crear el PDF: ' + e.message); }
+  boton.disabled = false; boton.textContent = txt;
+}
+function limpiarPdf(t){ return String(t || '').replace(/[–—]/g, '-').replace(/[“”]/g, '"').replace(/[‘’]/g, "'"); }
+/* los escudos pasan a PNG para el PDF */
+async function escudosParaPdf(){
+  const res = {};
+  await Promise.all(T.datos.equipos.filter(function(e){ return e.escudo; }).map(function(e){
+    return new Promise(function(ok){
+      const img = new Image();
+      img.onload = function(){ const c = document.createElement('canvas'); c.width = 96; c.height = 96;
+        c.getContext('2d').drawImage(img, 0, 0, 96, 96); res[e.id] = c.toDataURL('image/png'); ok(); };
+      img.onerror = function(){ ok(); }; img.src = e.escudo;
+    });
+  }));
+  return res;
+}
+function dibujarEscudoPdf(doc, escudos, id, x, y, tam){
+  if (escudos[id]){ doc.addImage(escudos[id], 'PNG', x, y, tam, tam); return; }
+  const eq = equipo(id), c = hexARgb(colorDe(eq.id + eq.nombre));
+  doc.setFillColor(c[0], c[1], c[2]); doc.circle(x + tam / 2, y + tam / 2, tam / 2, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(5.5);
+  doc.text(limpiarPdf(iniciales(eq.nombre)), x + tam / 2, y + tam / 2 + 0.7, { align:'center', baseline:'middle' });
 }
 
 /* ==================================================================
