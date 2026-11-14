@@ -176,6 +176,21 @@
   .flecha{font:inherit;width:30px;height:30px;border:1px solid var(--linea-fuerte);background:#fff;border-radius:6px;cursor:pointer;
     color:var(--tinta);font-size:14px;line-height:1;}
   .flecha:disabled{opacity:.35;cursor:default;}
+  .desempates li.personal .txt b{font-weight:600;}
+  .desempates .etq{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:99px;background:var(--cesped-suave);
+    color:var(--cesped-hondo);margin-left:6px;vertical-align:1px;}
+  .desempates li.valores{display:block;background:#F7F9F8;padding:12px 20px 16px;}
+  .valores-rejilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px 14px;margin-top:8px;}
+  .valores-rejilla label{display:flex;align-items:center;gap:8px;font-size:13.5px;min-width:0;}
+  .valores-rejilla label .equipo-celda{flex:1;}
+  .valores-rejilla input{width:70px;font:inherit;font-size:14px;padding:5px 7px;border:1px solid var(--linea-fuerte);border-radius:6px;background:#fff;text-align:center;}
+  .valores h4{margin:10px 0 0;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--apagado);}
+  .anadir-crit{padding:14px 20px 16px;border-top:1px solid var(--linea);display:grid;gap:10px;}
+  .anadir-crit .fila{display:grid;grid-template-columns:minmax(0,1fr) 210px auto;gap:10px;align-items:end;}
+  .anadir-crit .sugerencias{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--apagado);}
+  .anadir-crit .sugerencias button{font:inherit;font-size:12.5px;border:1px dashed var(--linea-fuerte);background:#fff;border-radius:99px;
+    padding:3px 10px;cursor:pointer;color:var(--tinta);}
+  .anadir-crit .sugerencias button:hover{border-color:var(--cesped);color:var(--cesped-hondo);}
   .interruptor{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--apagado);cursor:pointer;white-space:nowrap;}
   .interruptor input{width:17px;height:17px;accent-color:var(--cesped);}
 
@@ -352,6 +367,7 @@
     .alta{grid-template-columns:1fr;}
     .rejilla3{grid-template-columns:1fr 1fr 1fr;gap:8px;}
     .rejilla2{grid-template-columns:1fr;}
+    .anadir-crit .fila{grid-template-columns:1fr;}
     .lista-equipos li{padding:10px 14px;flex-wrap:wrap;}
     .partido{padding:10px 10px;gap:6px;}
     .partido .equipo-celda{gap:6px;font-size:13.5px;}
@@ -674,7 +690,15 @@ function normalizar(d){
   r.fase = r.fase || 'Siguiente fase';
   const vistos = {};
   r.desempates = (Array.isArray(r.desempates) ? r.desempates : []).filter(function(x){
-    if (!CRITERIOS[x.id] || vistos[x.id]) return false; vistos[x.id] = 1; return true;
+    if (!x || vistos[x.id]) return false;
+    if (x.personal){
+      if (!/^c_[a-z0-9]+$/.test(String(x.id)) || !String(x.nombre || '').trim()) return false;
+      x.nombre = String(x.nombre).replace(/\s+/g, ' ').trim().slice(0, 60);
+      x.sentido = x.sentido === 'menos' ? 'menos' : 'mas';
+      const v = {}; Object.keys(x.valores || {}).forEach(function(k){ const n = Number(x.valores[k]); if (isFinite(n)) v[k] = n; });
+      x.valores = v; x.activo = x.activo !== false;
+    } else if (!CRITERIOS[x.id]) return false;
+    vistos[x.id] = 1; return true;
   });
   ORDEN_INICIAL.forEach(function(id){ if (!vistos[id]) r.desempates.push({ id:id, activo:false }); });
   // un equipo solo puede estar en un grupo, y tiene que existir
@@ -964,7 +988,7 @@ function vistaNormas(){
     '<div class="bloque">' +
       '<div class="rejilla2">' +
         '<div class="campo"><label for="rClasifican">Pasan por cada grupo</label><select id="rClasifican" data-regla="clasifican">' +
-          Array.from({ length:8 }, function(_, i){ return '<option value="' + (i+1) + '"' + (r.clasifican === i+1 ? ' selected' : '') + '>Los ' + (i+1) + ' primeros</option>'; }).join('').replace('Los 1 primeros', 'Solo el primero') +
+          Array.from({ length: maxPasan() }, function(_, i){ return '<option value="' + (i+1) + '"' + (r.clasifican === i+1 ? ' selected' : '') + '>' + (i === 0 ? 'Solo el primero' : 'Los ' + (i+1) + ' primeros') + '</option>'; }).join('') +
         '</select></div>' +
         '<div class="campo"><label for="rMejores">Además, mejores ' + (r.clasifican + 1) + 'º</label><select id="rMejores" data-regla="mejores">' +
           Array.from({ length: Math.max(1, n) }, function(_, i){ return '<option value="' + i + '"' + (r.mejores === i ? ' selected' : '') + '>' + (i === 0 ? 'Ninguno' : i === 1 ? 'El mejor' : 'Los ' + i + ' mejores') + '</option>'; }).join('') +
@@ -991,17 +1015,81 @@ function vistaNormas(){
     '<ol class="desempates">' +
       '<li class="fijo"><span class="orden">1</span><span class="txt">Puntos<small>Siempre lo primero.</small></span></li>' +
       activos.map(function(c, i){
-        const info = CRITERIOS[c.id], numActivos = activos.slice(0, i).filter(function(x){ return x.activo; }).length;
-        return '<li class="' + (c.activo ? '' : 'apagado') + '"><span class="orden">' + (c.activo ? numActivos + 2 : '–') + '</span>' +
-          '<span class="txt">' + info.nombre + '<small>' + info.ayuda + '</small></span>' +
+        const numActivos = activos.slice(0, i).filter(function(x){ return x.activo; }).length;
+        const nombre = c.personal ? '<b>' + escapar(c.nombre) + '</b><span class="etq">Tuyo</span>' : CRITERIOS[c.id].nombre;
+        const ayuda = c.personal
+          ? 'Gana quien tenga ' + (c.sentido === 'menos' ? 'menos' : 'más') + '. Los valores los pones tú: ' + valoresPuestos(c) + ' de ' + T.datos.equipos.length + ' equipos.'
+          : CRITERIOS[c.id].ayuda;
+        let fila = '<li class="' + (c.activo ? '' : 'apagado') + (c.personal ? ' personal' : '') + '"><span class="orden">' + (c.activo ? numActivos + 2 : '–') + '</span>' +
+          '<span class="txt">' + nombre + '<small>' + ayuda +
+          (c.personal ? ' <button class="enlace" data-valores="' + c.id + '">' + (critAbierto === c.id ? 'Cerrar' : 'Poner valores') + '</button>' +
+            '<button class="enlace enlace--rojo" data-quitarcrit="' + c.id + '">Eliminar</button>' : '') + '</small></span>' +
           '<label class="interruptor"><input type="checkbox" data-activar="' + i + '"' + (c.activo ? ' checked' : '') + '> Usar</label>' +
-          '<button class="flecha" data-subir="' + i + '" aria-label="Subir"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
-          '<button class="flecha" data-bajar="' + i + '" aria-label="Bajar"' + (i === activos.length - 1 ? ' disabled' : '') + '>↓</button></li>';
+          '<button class="flecha" data-subircrit="' + i + '" aria-label="Subir"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
+          '<button class="flecha" data-bajarcrit="' + i + '" aria-label="Bajar"' + (i === activos.length - 1 ? ' disabled' : '') + '>↓</button></li>';
+        if (c.personal && critAbierto === c.id) fila += filaValores(c);
+        return fila;
       }).join('') +
     '</ol>' +
+    '<div class="anadir-crit"><h3 style="margin:0;font-size:14px">Añadir un criterio</h3>' +
+      '<div class="fila">' +
+        '<div class="campo"><label for="critNombre">Nombre</label><input id="critNombre" type="text" maxlength="60" placeholder="Menos tarjetas amarillas"></div>' +
+        '<div class="campo"><label for="critSentido">Quién gana</label><select id="critSentido">' +
+          '<option value="mas">El que tenga más</option><option value="menos">El que tenga menos</option></select></div>' +
+        '<button class="btn btn--cesped" data-accion="anadirCrit">Añadir</button>' +
+      '</div>' +
+      '<div class="sugerencias">Ideas: ' + SUGERENCIAS_CRIT.map(function(x, k){ return '<button data-sugerencia="' + k + '">' + escapar(x.nombre) + '</button>'; }).join('') + '</div>' +
+      '<p class="nota-peq">Puedes añadir todos los que quieras. Se aplican en el orden de la lista: muévelos con las flechas. Para los que añades tú, pulsa «Poner valores» y escribe el número de cada equipo.</p>' +
+    '</div>' +
     '<p class="nota-peq" style="padding:12px 20px 16px;border-top:1px solid var(--linea)">Si después de todo siguen empatados, se ordenan por orden alfabético (lo podéis decidir por sorteo y cambiar el nombre si hace falta). Los condicionantes «entre ellos» solo cuentan los partidos jugados entre los equipos que siguen empatados.</p>' +
   '</section></div>' +
   '<div style="margin-top:18px;display:flex;justify-content:flex-end"><button class="btn btn--solido" data-ir="partidos">Siguiente: los partidos →</button></div>';
+}
+
+/* ---------- criterios propios ---------- */
+let critAbierto = null;
+const SUGERENCIAS_CRIT = [
+  { nombre:'Juego limpio (menos tarjetas)', sentido:'menos' },
+  { nombre:'Sorteo', sentido:'mas' },
+  { nombre:'Menos expulsiones', sentido:'menos' },
+  { nombre:'Puntos de deportividad', sentido:'mas' }
+];
+function maxPasan(){
+  return Math.max(8, Math.max.apply(null, T.datos.grupos.map(function(g){ return g.equipos.length; }).concat([0])), T.datos.reglas.clasifican);
+}
+function valoresPuestos(c){ return T.datos.equipos.filter(function(e){ return c.valores[e.id] !== undefined; }).length; }
+function filaValores(c){
+  const d = T.datos;
+  const bloques = d.grupos.filter(function(g){ return g.equipos.length; }).map(function(g){ return { titulo: g.nombre, ids: g.equipos }; });
+  const sueltos = d.equipos.filter(function(e){ return !grupoDe(e.id); }).map(function(e){ return e.id; });
+  if (sueltos.length) bloques.push({ titulo:'Sin grupo', ids: sueltos });
+  return '<li class="valores"><span class="nota-peq">Escribe el valor de cada equipo para «' + escapar(c.nombre) + '». Gana el que tenga ' +
+    (c.sentido === 'menos' ? 'menos' : 'más') + '. Si a un equipo no le pones nada, queda el último en este criterio.</span>' +
+    (d.equipos.length ? bloques.map(function(b){
+      return '<h4>' + escapar(b.titulo) + '</h4><div class="valores-rejilla">' + b.ids.map(function(id){
+        return '<label>' + equipoCelda(id, 22) + '<input type="number" step="any" data-valorcrit="' + c.id + '" data-equipo="' + id + '" value="' +
+          (c.valores[id] === undefined ? '' : c.valores[id]) + '" aria-label="Valor de ' + escapar(equipo(id).nombre) + '"></label>';
+      }).join('') + '</div>';
+    }).join('') : '<p class="nota-peq">Todavía no hay equipos.</p>') +
+    '<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">' +
+      '<label class="interruptor" style="color:var(--tinta)">Gana el que tenga <select data-sentido="' + c.id + '" style="font:inherit;font-size:13px;padding:3px 6px;border:1px solid var(--linea-fuerte);border-radius:6px">' +
+        '<option value="mas"' + (c.sentido !== 'menos' ? ' selected' : '') + '>más</option><option value="menos"' + (c.sentido === 'menos' ? ' selected' : '') + '>menos</option></select></label>' +
+    '</div></li>';
+}
+function anadirCriterio(nombre, sentido){
+  nombre = String(nombre || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+  if (!nombre){ alert('Escribe el nombre del criterio.'); return false; }
+  const c = { id: 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), personal: true, activo: true,
+              nombre: nombre, sentido: sentido === 'menos' ? 'menos' : 'mas', valores: {} };
+  T.datos.reglas.desempates.push(c); critAbierto = c.id; cambiado(); pintarVista();
+  return true;
+}
+function criterioPropio(id){ return T.datos.reglas.desempates.filter(function(c){ return c.id === id && c.personal; })[0]; }
+function valorPropio(id, eq){
+  const c = criterioPropio(id); if (!c) return 0;
+  const v = c.valores[eq];
+  if (v === undefined) return -1e12;                 // sin valor: el último
+  return c.sentido === 'menos' ? -v : v;
 }
 
 /* ---------- CÁLCULO DE LA CLASIFICACIÓN ---------- */
@@ -1022,6 +1110,7 @@ function estadisticas(ids, partidos){
 }
 
 function valorCriterio(id, eq, general, entreEllos){
+  if (id.indexOf('c_') === 0) return valorPropio(id, eq);
   if (id === 'puntos') return general[eq].pts;
   if (id === 'dg') return general[eq].gf - general[eq].gc;
   if (id === 'gf') return general[eq].gf;
@@ -1082,6 +1171,7 @@ function mejoresDeEntreGrupos(tablas){
   return candidatos;
 }
 function valorFila(id, f){
+  if (id.indexOf('c_') === 0) return valorPropio(id, f.id);
   if (id === 'puntos') return f.pts;
   if (id === 'dg') return f.gf - f.gc;
   if (id === 'gf') return f.gf;
@@ -1417,6 +1507,7 @@ function enganchar(v){
         const sg = $('sinGrupo'); if (sg) sg.scrollIntoView({ behavior:'smooth', block:'start' });
       }
       if (a === 'repartirLibres'){ repartir(sinGrupo().map(function(e){ return e.id; })); cambiado(); pintarVista(); }
+      if (a === 'anadirCrit'){ anadirCriterio($('critNombre').value, $('critSentido').value); return; }
       if (a === 'horasDeGolpe'){
         const dia = $('hDia').value, ini = $('hInicio').value, cada = Number($('hCada').value), campos = Number($('hCampos').value);
         if (!dia || !ini){ alert('Pon el día y la hora del primer partido.'); return; }
@@ -1502,23 +1593,52 @@ function enganchar(v){
     i.addEventListener(ev, function(){
       const r = T.datos.reglas, k = i.dataset.regla;
       if (k === 'fase') r.fase = i.value.trim().slice(0, 40) || 'Siguiente fase';
-      else r[k] = Math.max(0, Math.min(k === 'clasifican' ? 8 : 99, Math.round(Number(i.value) || 0)));
+      else r[k] = Math.max(0, Math.min(99, Math.round(Number(i.value) || 0)));
       if (k === 'clasifican' && r.clasifican < 1) r.clasifican = 1;
       cambiado();
       if (k === 'clasifican' || k === 'mejores') pintarVista();
       else { const rn = $('resumenNorma'); if (rn) rn.innerHTML = textoNorma(); }
     });
   });
+  v.querySelectorAll('[data-valores]').forEach(function(b){
+    b.addEventListener('click', function(){ critAbierto = critAbierto === b.dataset.valores ? null : b.dataset.valores; pintarVista(); });
+  });
+  v.querySelectorAll('[data-quitarcrit]').forEach(function(b){
+    b.addEventListener('click', function(){
+      const c = criterioPropio(b.dataset.quitarcrit);
+      if (!confirm('¿Eliminar el criterio «' + c.nombre + '» y sus valores?')) return;
+      T.datos.reglas.desempates = T.datos.reglas.desempates.filter(function(x){ return x !== c; });
+      cambiado(); pintarVista();
+    });
+  });
+  v.querySelectorAll('[data-valorcrit]').forEach(function(i){
+    i.addEventListener('input', function(){
+      const c = criterioPropio(i.dataset.valorcrit), n = i.value.trim() === '' ? NaN : Number(i.value.replace(',', '.'));
+      if (isFinite(n)) c.valores[i.dataset.equipo] = n; else delete c.valores[i.dataset.equipo];
+      cambiado();
+    });
+    i.addEventListener('keydown', function(e){
+      if (e.key === 'Enter'){ const t = Array.from(v.querySelectorAll('[data-valorcrit]')), k = t.indexOf(i); if (t[k+1]) t[k+1].focus(); }
+    });
+  });
+  v.querySelectorAll('[data-sentido]').forEach(function(sel){
+    sel.addEventListener('change', function(){ criterioPropio(sel.dataset.sentido).sentido = sel.value === 'menos' ? 'menos' : 'mas'; cambiado(); pintarVista(); });
+  });
+  v.querySelectorAll('[data-sugerencia]').forEach(function(b){
+    b.addEventListener('click', function(){ const x = SUGERENCIAS_CRIT[Number(b.dataset.sugerencia)]; anadirCriterio(x.nombre, x.sentido); });
+  });
+  const cn = $('critNombre');
+  if (cn) cn.addEventListener('keydown', function(e){ if (e.key === 'Enter') v.querySelector('[data-accion="anadirCrit"]').click(); });
   v.querySelectorAll('input[name="idaVuelta"]').forEach(function(i){
     i.addEventListener('change', function(){ T.datos.reglas.idaVuelta = i.value === 'si'; cambiado(); });
   });
   v.querySelectorAll('[data-activar]').forEach(function(c){
     c.addEventListener('change', function(){ T.datos.reglas.desempates[Number(c.dataset.activar)].activo = c.checked; cambiado(); pintarVista(); });
   });
-  v.querySelectorAll('[data-subir],[data-bajar]').forEach(function(b){
+  v.querySelectorAll('[data-subircrit],[data-bajarcrit]').forEach(function(b){
     b.addEventListener('click', function(){
-      const lista = T.datos.reglas.desempates, i = Number(b.dataset.subir != null ? b.dataset.subir : b.dataset.bajar);
-      const j = b.dataset.subir != null ? i - 1 : i + 1;
+      const lista = T.datos.reglas.desempates, sube = b.dataset.subircrit != null;
+      const i = Number(sube ? b.dataset.subircrit : b.dataset.bajarcrit), j = sube ? i - 1 : i + 1;
       if (j < 0 || j >= lista.length) return;
       const t = lista[i]; lista[i] = lista[j]; lista[j] = t;
       cambiado(); pintarVista();
