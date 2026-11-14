@@ -263,6 +263,20 @@
   .podio small{font-size:12px;color:var(--apagado);text-transform:uppercase;letter-spacing:.06em;font-weight:700;}
   .podio .oro{border-color:var(--oro);background:#FBF6EA;}
   .crear-cuadro{display:grid;gap:14px;max-width:560px;}
+  .formatos{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;}
+  .slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;padding:16px 20px;border-bottom:1px solid var(--linea);}
+  .slots label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--apagado);font-weight:600;}
+  .slots .elegir-eq{flex:1;}
+  .liguilla{margin-bottom:22px;}
+  .liguilla .tarjeta__cab input{font-family:var(--serif);font-size:20px;font-weight:500;border:1px solid transparent;border-radius:5px;
+    padding:1px 5px;margin-left:-6px;background:transparent;min-width:0;flex:1;color:inherit;}
+  .liguilla .tarjeta__cab input:focus{border-color:var(--linea-fuerte);background:#fff;outline:none;}
+  .liguilla .dentro{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,470px);align-items:start;}
+  .liguilla .dentro > div + div{border-left:1px solid var(--linea);}
+  .caja-penaltis{margin:14px 16px;padding:12px 14px;border:1px solid #E8D9B4;background:var(--ambar-suave);border-radius:8px;display:grid;gap:8px;font-size:13.5px;}
+  .caja-penaltis .fila-pen{display:flex;align-items:center;gap:10px;}
+  .caja-penaltis .fila-pen .equipo-celda{flex:1;}
+  .caja-penaltis input{width:52px;height:32px;text-align:center;font:inherit;font-weight:700;border:1px solid var(--ambar);border-radius:6px;background:#fff;}
   .barra-acciones{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-bottom:16px;}
   .pie-partidos{padding:12px 16px;border-top:1px solid var(--linea);display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
   .pie-partidos select{font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--linea-fuerte);border-radius:6px;background:#fff;}
@@ -394,6 +408,9 @@
     .rejilla2{grid-template-columns:1fr;}
     .anadir-crit .fila{grid-template-columns:1fr;}
     .podio{grid-template-columns:1fr;}
+    .formatos{grid-template-columns:1fr;}
+    .liguilla .dentro{grid-template-columns:minmax(0,1fr);}
+    .liguilla .dentro > div + div{border-left:0;border-top:1px solid var(--linea);}
     .lista-equipos li{padding:10px 14px;flex-wrap:wrap;}
     .partido{padding:10px 10px;gap:6px;}
     .partido .equipo-celda{gap:6px;font-size:13.5px;}
@@ -710,6 +727,15 @@ function normalizar(d){
   r.idaVuelta = !!r.idaVuelta;
   if (d.eliminatoria && (typeof d.eliminatoria !== 'object' || !Array.isArray(d.eliminatoria.rondas) || !d.eliminatoria.rondas.length)) d.eliminatoria = null;
   if (d.eliminatoria && !Array.isArray(d.eliminatoria.orden)) d.eliminatoria.orden = [];
+  if (d.faseFinal && (typeof d.faseFinal !== 'object' || !Array.isArray(d.faseFinal.liguillas))) d.faseFinal = null;
+  if (d.faseFinal){
+    const fz = d.faseFinal;
+    if (!Array.isArray(fz.orden)) fz.orden = [];
+    const vistosF = {};
+    fz.desempates = (Array.isArray(fz.desempates) ? fz.desempates : []).filter(function(c){ if (!c || !CRIT_FF[c.id] || vistosF[c.id]) return false; vistosF[c.id] = 1; return true; });
+    ORDEN_FF.forEach(function(id){ if (!vistosF[id]) fz.desempates.push({ id:id, activo:false }); });
+    fz.liguillas.forEach(function(l){ l.equipos = Array.isArray(l.equipos) ? l.equipos : []; l.partidos = Array.isArray(l.partidos) ? l.partidos : []; l.penaltis = l.penaltis || {}; });
+  }
   d.partidos.forEach(function(p){
     if (!/^\d{4}-\d{2}-\d{2}$/.test(p.fecha || '')) p.fecha = '';
     if (!/^\d{2}:\d{2}$/.test(p.hora || '')) p.hora = '';
@@ -913,6 +939,18 @@ function quitarEquipo(id){
   d.equipos = d.equipos.filter(function(e){ return e.id !== id; });
   d.grupos.forEach(function(g){ g.equipos = g.equipos.filter(function(x){ return x !== id; }); });
   d.partidos = d.partidos.filter(function(p){ return p.local !== id && p.visitante !== id; });
+  if (d.faseFinal){
+    d.faseFinal.liguillas.forEach(function(l){
+      l.equipos = l.equipos.map(function(x){ return x === id ? '' : x; });
+      l.partidos = l.partidos.filter(function(p){ return p.local !== id && p.visitante !== id; });
+      delete l.penaltis[id];
+    });
+    [d.faseFinal.final, d.faseFinal.tercero].forEach(function(p){
+      if (!p) return;
+      if (p.local === id){ p.local = ''; p.autoL = true; }
+      if (p.visitante === id){ p.visitante = ''; p.autoV = true; }
+    });
+  }
   if (d.eliminatoria) todosLosCruces().forEach(function(x){
     if (x.p.local === id){ x.p.local = ''; x.p.autoL = true; }
     if (x.p.visitante === id){ x.p.visitante = ''; x.p.autoV = true; }
@@ -1927,10 +1965,12 @@ function filaCruce(x, num, clasif){
 }
 
 function vistaFinal(){
+  if (ff()) return vistaLiguillas();
   const d = T.datos, e = cuadro();
   if (!e){
     const total = totalClasificados(); let n = 2; while (n < total && n < 64) n *= 2;
-    return '<section class="tarjeta"><div class="tarjeta__cab"><h2>Crear el cuadro de la fase final</h2></div><div class="tarjeta__cuerpo"><div class="crear-cuadro">' +
+    return '<p class="nota-peq" style="margin:0 0 14px">Elige cómo se juega la fase final.</p><div class="formatos">' + tarjetaCrearLiguillas() +
+      '<section class="tarjeta"><div class="tarjeta__cab"><h2>Eliminatorias (cuadro)</h2></div><div class="tarjeta__cuerpo"><div class="crear-cuadro">' +
       '<p class="nota-peq" style="margin:0">Con tus normas pasan <b>' + total + ' equipos</b>. Elige con cuántos empieza la fase final; las rondas siguientes hasta la final se crean solas.</p>' +
       '<div class="campo"><label for="cuadroTam">Empieza en</label><select id="cuadroTam">' +
         [2,4,8,16,32,64].map(function(t){ return '<option value="' + t + '"' + (t === n ? ' selected' : '') + '>' + NOMBRES_RONDA[t] + ' (' + t + ' equipos)</option>'; }).join('') + '</select></div>' +
@@ -1938,7 +1978,7 @@ function vistaFinal(){
       '<label class="interruptor" style="color:var(--tinta);font-size:14.5px"><input type="checkbox" id="cuadroColocar" checked> Colocar ya a los clasificados (1º contra 2º de otro grupo)</label>' +
       '<p class="nota-peq" style="margin:0">Después puedes cambiar cualquier cruce con los desplegables y poner el orden, el día y la hora de cada partido.</p>' +
       '<div><button class="btn btn--cesped" data-accion="crearCuadro">Crear el cuadro</button></div>' +
-    '</div></div></section>';
+    '</div></div></section></div>';
   }
   const clasif = clasificadosOrdenados(), enOrden = crucesEnOrden(), num = {};
   enOrden.forEach(function(x, k){ num[x.p.id] = k + 1; });
@@ -1986,6 +2026,7 @@ function cruce(id){ const x = todosLosCruces().filter(function(c){ return c.p.id
 function repintarQuieto(){ const y = window.scrollY; pintarVista(); window.scrollTo(0, y); }
 
 function engancharFinal(v){
+  engancharLiguillas(v);
   v.querySelectorAll('[data-accion]').forEach(function(b){
     const a = b.dataset.accion;
     if (['crearCuadro','recolocarCuadro','borrarCuadro','horasCruces'].indexOf(a) < 0) return;
@@ -2055,6 +2096,359 @@ function engancharFinal(v){
 }
 
 /* ==================================================================
+   FASE FINAL POR CUADRANGULARES (liguillas) Y FINAL
+================================================================== */
+const CRIT_FF = {
+  h2h_puntos: { nombre:'Resultado particular entre los empatados', ayuda:'Puntos de los partidos que jugaron entre ellos.' },
+  dg:         { nombre:'Diferencia de goles', ayuda:'Goles a favor menos goles en contra en el cuadrangular.' },
+  gf:         { nombre:'Goles a favor', ayuda:'Quién ha marcado más goles.' },
+  gc:         { nombre:'Goles en contra', ayuda:'Quién ha encajado menos goles.' },
+  penaltis:   { nombre:'Tanda de penaltis entre los empatados', ayuda:'Si siguen empatados, se tiran penaltis (por ejemplo 3) y apuntas los que marca cada uno.' },
+  h2h_dg:     { nombre:'Diferencia de goles entre los empatados', ayuda:'Solo en los partidos que jugaron entre ellos.' },
+  ganados:    { nombre:'Partidos ganados', ayuda:'Quién ha ganado más partidos.' }
+};
+const ORDEN_FF = ['h2h_puntos','dg','gf','gc','penaltis','h2h_dg','ganados'];
+function ff(){ return T.datos.faseFinal || null; }
+function partidoFF(extra){ return Object.assign({ id: nuevoId('f'), local:'', visitante:'', gl:null, gv:null, pl:null, pv:null, fecha:'', hora:'' }, extra || {}); }
+
+function tarjetaCrearLiguillas(){
+  return '<section class="tarjeta"><div class="tarjeta__cab"><h2>Cuadrangulares y final</h2></div><div class="tarjeta__cuerpo"><div class="crear-cuadro">' +
+    '<p class="nota-peq" style="margin:0">Liguillas en las que juegan todos contra todos. El 1º de cada una juega la final. Los equipos, las fechas y las horas los pones tú.</p>' +
+    '<div class="rejilla2">' +
+      '<div class="campo"><label for="ligNum">Cuántas liguillas</label><select id="ligNum">' + [1,2,3,4].map(function(n){ return '<option value="' + n + '"' + (n === 2 ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></div>' +
+      '<div class="campo"><label for="ligTam">Equipos en cada una</label><select id="ligTam">' + [2,3,4,5,6,7,8].map(function(n){ return '<option value="' + n + '"' + (n === 4 ? ' selected' : '') + '>' + n + (n === 4 ? ' (cuadrangular)' : '') + '</option>'; }).join('') + '</select></div>' +
+    '</div>' +
+    '<label class="interruptor" style="color:var(--tinta);font-size:14.5px"><input type="checkbox" id="ligTercero"> Partido por el 3er puesto entre los segundos</label>' +
+    '<p class="nota-peq" style="margin:0">Desempates ya puestos: resultado particular, diferencia de goles, goles a favor, goles en contra y tanda de penaltis. Se pueden cambiar.</p>' +
+    '<div><button class="btn btn--cesped" data-accion="crearLiguillas">Crear los cuadrangulares</button></div>' +
+  '</div></div></section>';
+}
+function crearLiguillas(n, tam, tercero){
+  T.datos.faseFinal = {
+    liguillas: Array.from({ length: n }, function(_, i){
+      return { id: nuevoId('l'), nombre: (tam === 4 ? 'Cuadrangular ' : 'Liguilla ') + LETRAS[i], equipos: Array.from({ length: tam }, function(){ return ''; }), partidos: [], penaltis: {} };
+    }),
+    desempates: ORDEN_FF.map(function(id, i){ return { id: id, activo: i < 5 }; }),
+    final: n === 2 ? partidoFF({ nombre:'Final', autoL:true, autoV:true }) : null,
+    tercero: n === 2 && tercero ? partidoFF({ nombre:'3er y 4º puesto', autoL:true, autoV:true }) : null,
+    orden: []
+  };
+}
+function ligPorId(id){ return ff().liguillas.filter(function(l){ return l.id === id; })[0]; }
+function todosFF(){
+  const f = ff(); if (!f) return [];
+  const res = [];
+  f.liguillas.forEach(function(l, i){
+    l.partidos.forEach(function(p){ res.push({ p: p, fase: l.nombre + (p.jornada ? ' · J' + p.jornada : ''), lig: l }); });
+  });
+  if (f.tercero) res.push({ p: f.tercero, fase: f.tercero.nombre, oL: '2º ' + f.liguillas[0].nombre, oV: '2º ' + f.liguillas[1].nombre, cruce: true });
+  if (f.final) res.push({ p: f.final, fase: f.final.nombre, oL: '1º ' + f.liguillas[0].nombre, oV: '1º ' + f.liguillas[1].nombre, cruce: true });
+  return res;
+}
+function ffEnOrden(){
+  const f = ff(), todos = todosFF(), pos = {};
+  f.orden.forEach(function(id, k){ pos[id] = k; });
+  todos.forEach(function(x, k){ if (pos[x.p.id] === undefined) pos[x.p.id] = 1000 + k; });
+  return todos.slice().sort(function(a, b){ return pos[a.p.id] - pos[b.p.id]; });
+}
+function partidoFFPorId(id){ const x = todosFF().filter(function(c){ return c.p.id === id; })[0]; return x ? x.p : null; }
+function equiposLig(l){ const vistos = {}; return l.equipos.filter(function(id){ if (!id || vistos[id]) return false; vistos[id] = 1; return true; }); }
+
+/* clasificación de un cuadrangular con sus desempates, en el orden elegido */
+function clasificacionLiguilla(l){
+  const f = ff(), ids = equiposLig(l);
+  const partidos = l.partidos.filter(function(p){ return ids.indexOf(p.local) >= 0 && ids.indexOf(p.visitante) >= 0; });
+  const general = estadisticas(ids, partidos);
+  const crit = ['puntos'].concat(f.desempates.filter(function(c){ return c.activo; }).map(function(c){ return c.id; }));
+  const aPenaltis = [], sinDecidir = [];
+  function partir(lista, k){
+    if (lista.length <= 1) return lista;
+    if (k >= crit.length){ sinDecidir.push(lista.slice()); return lista.slice().sort(function(a, b){ return porNombre(equipo(a).nombre, equipo(b).nombre); }); }
+    if (crit[k] === 'penaltis') aPenaltis.push(lista.slice());
+    let cache = null;
+    const entreEllos = function(){
+      if (!cache) cache = estadisticas(lista, partidos.filter(function(p){ return lista.indexOf(p.local) >= 0 && lista.indexOf(p.visitante) >= 0; }));
+      return cache;
+    };
+    const valores = {};
+    lista.forEach(function(id){
+      valores[id] = crit[k] === 'penaltis' ? (l.penaltis[id] === undefined ? -1 : Number(l.penaltis[id])) : valorCriterio(crit[k], id, general, entreEllos);
+    });
+    const distintos = Array.from(new Set(lista.map(function(id){ return valores[id]; }))).sort(function(a, b){ return b - a; });
+    let res = [];
+    distintos.forEach(function(v){ res = res.concat(partir(lista.filter(function(id){ return valores[id] === v; }), k + 1)); });
+    return res;
+  }
+  const orden = partir(ids.slice(), 0);
+  const total = partidos.length, jugados = partidos.filter(jugado).length;
+  return { filas: orden.map(function(id){ return Object.assign({ id: id }, general[id]); }), total: total, jugados: jugados,
+           completo: total > 0 && jugados === total, aPenaltis: aPenaltis, sinDecidir: sinDecidir };
+}
+/* puesto decidido (sin empate pendiente) de un cuadrangular terminado */
+function puestoFF(l, pos){
+  const c = clasificacionLiguilla(l);
+  if (!c.completo || !c.filas[pos]) return '';
+  const id = c.filas[pos].id;
+  return c.sinDecidir.some(function(g){ return g.indexOf(id) >= 0; }) ? '' : id;
+}
+function actualizarFF(){
+  const f = ff(); if (!f || f.liguillas.length < 2) return;
+  const poner = function(p, lado, eq){
+    const auto = lado === 'local' ? 'autoL' : 'autoV';
+    if (p[auto] || !p[lado]){ p[lado] = eq || ''; p[auto] = true; }
+  };
+  if (f.final){ poner(f.final, 'local', puestoFF(f.liguillas[0], 0)); poner(f.final, 'visitante', puestoFF(f.liguillas[1], 0)); }
+  if (f.tercero){ poner(f.tercero, 'local', puestoFF(f.liguillas[0], 1)); poner(f.tercero, 'visitante', puestoFF(f.liguillas[1], 1)); }
+}
+function generarPartidosLig(l){
+  const ids = equiposLig(l), viejos = {};
+  l.partidos.forEach(function(p){ viejos[p.local + '|' + p.visitante] = p; });
+  l.partidos = calendarioGrupo(ids, false).map(function(c){
+    const v = viejos[c.local + '|' + c.visitante] || viejos[c.visitante + '|' + c.local];
+    const p = partidoFF({ jornada: c.jornada, local: c.local, visitante: c.visitante });
+    if (v){ p.local = v.local; p.visitante = v.visitante; p.gl = v.gl; p.gv = v.gv; p.fecha = v.fecha; p.hora = v.hora; p.id = v.id; }
+    return p;
+  });
+}
+
+function opcionesEquipos(sel, soloIds){
+  const op = function(id, txt){ return '<option value="' + id + '"' + (id === sel ? ' selected' : '') + '>' + escapar(txt) + '</option>'; };
+  if (soloIds) return soloIds.map(function(id){ return op(id, equipo(id).nombre); }).join('');
+  const clasif = clasificadosOrdenados(), en = clasif.map(function(c){ return c.id; });
+  const resto = T.datos.equipos.map(function(e){ return e.id; }).filter(function(id){ return en.indexOf(id) < 0; });
+  return (clasif.length ? '<optgroup label="Clasificados">' + clasif.map(function(c){ return op(c.id, equipo(c.id).nombre + ' (' + c.texto + ')'); }).join('') + '</optgroup>' : '') +
+    (resto.length ? '<optgroup label="Resto de equipos">' + resto.map(function(id){ return op(id, equipo(id).nombre); }).join('') + '</optgroup>' : '');
+}
+function filaFF(x, num){
+  const p = x.p, ll = jugado(p) ? ' lleno' : '';
+  let ids = x.lig ? equiposLig(x.lig) : null;
+  if (!ids){                      // final y 3er puesto: los equipos de los cuadrangulares (y el que ya esté puesto)
+    ids = []; ff().liguillas.forEach(function(l){ equiposLig(l).forEach(function(id){ if (ids.indexOf(id) < 0) ids.push(id); }); });
+    ['local','visitante'].forEach(function(l){ if (p[l] && ids.indexOf(p[l]) < 0) ids.push(p[l]); });
+    if (!ids.length) ids = null;
+  }
+  const empate = x.cruce && jugado(p) && Number(p.gl) === Number(p.gv);
+  const g = x.cruce ? ganadorCruce(p) : null;
+  const lado = function(l){
+    const orig = !p[l] && x.cruce ? (l === 'local' ? x.oL : x.oV) : '';
+    return '<span class="equipo-celda' + (l === 'local' ? ' local' : '') + (g === l ? ' gana' : '') + '">' + (p[l] ? escudo(equipo(p[l]), 28) : '') +
+      '<span style="display:grid;gap:2px;min-width:0"><select class="elegir-eq' + (p[l] ? '' : ' vacio-eq') + '" data-ffeq="' + p.id + '" data-ladoeq="' + l + '" aria-label="Equipo">' +
+      '<option value="">' + (p[l] ? '— Quitar —' : 'Elige equipo…') + '</option>' + opcionesEquipos(p[l], ids) + '</select>' +
+      (orig ? '<span class="origen">' + escapar(orig) + '</span>' : '') + '</span></span>';
+  };
+  return '<div class="partido' + (x.cruce ? ' cruce' : '') + (p.id === ultimoMovido ? ' movido' : '') + '" data-filaff="' + p.id + '"><div class="partido__arriba">' + lado('local') +
+    '<span class="marcador"><input type="number" inputmode="numeric" min="0" max="99" class="' + ll + '" data-ffgol="' + p.id + '" data-lado="gl" value="' + (p.gl == null ? '' : p.gl) + '" aria-label="Goles equipo 1">' +
+    '<span>–</span><input type="number" inputmode="numeric" min="0" max="99" class="' + ll + '" data-ffgol="' + p.id + '" data-lado="gv" value="' + (p.gv == null ? '' : p.gv) + '" aria-label="Goles equipo 2"></span>' +
+    lado('visitante') + '</div>' +
+    (empate ? '<div class="penaltis">Penaltis <input type="number" inputmode="numeric" min="0" max="99" data-ffgol="' + p.id + '" data-lado="pl" value="' + (p.pl == null ? '' : p.pl) + '"> – <input type="number" inputmode="numeric" min="0" max="99" data-ffgol="' + p.id + '" data-lado="pv" value="' + (p.pv == null ? '' : p.pv) + '"></div>' : '') +
+    '<div class="partido__abajo">' +
+      '<label title="Orden en el horario de la fase final">Nº <input type="number" inputmode="numeric" class="pos" min="1" data-ffpos="' + p.id + '" value="' + num + '" aria-label="Orden"></label>' +
+      '<label>Día <input type="date" data-fffecha="' + p.id + '" value="' + (p.fecha || '') + '"></label>' +
+      '<label>Hora <input type="time" data-ffhora="' + p.id + '" value="' + (p.hora || '') + '" step="300"></label>' +
+      (x.lig ? '<button class="enlace enlace--rojo" data-ffborrar="' + p.id + '">Eliminar</button>' : '') +
+    '</div></div>';
+}
+function tablaLiguilla(l, c, hayFinal, hayTercero){
+  if (!c.filas.length) return '<p class="vacio">Elige arriba los equipos de ' + escapar(l.nombre) + '.</p>';
+  return '<div class="tabla-envoltorio"><table class="clasif"><thead><tr><th>#</th><th class="eq">Equipo</th><th class="pts">Pts</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th></tr></thead><tbody>' +
+    c.filas.map(function(f, i){
+      const dg = f.gf - f.gc, clase = hayFinal && i === 0 ? 'pasa' : (hayTercero && i === 1 ? 'mejor' : '');
+      return '<tr class="' + clase + '"><td class="pos">' + (i + 1) + '</td><td class="eq">' + equipoCelda(f.id, 22) + '</td><td class="pts">' + f.pts + '</td>' +
+        '<td>' + f.pj + '</td><td>' + f.g + '</td><td>' + f.e + '</td><td>' + f.p + '</td><td>' + f.gf + '</td><td>' + f.gc + '</td>' +
+        '<td class="' + (dg > 0 ? 'dg-mas' : dg < 0 ? 'dg-menos' : '') + '">' + (dg > 0 ? '+' : '') + dg + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
+}
+
+function vistaLiguillas(){
+  const f = ff(), enOrden = ffEnOrden(), num = {};
+  enOrden.forEach(function(x, k){ num[x.p.id] = k + 1; });
+  const primer = (enOrden.filter(function(x){ return x.p.fecha; })[0] || {}).p;
+  let html = '<div class="barra-acciones">' +
+    '<button class="btn btn--mini btn--solido" data-accion="exportarPdf">Exportar horario en PDF</button>' +
+    '<button class="btn btn--mini btn--peligro" data-accion="borrarFF">Borrar la fase final</button></div>';
+
+  html += '<section class="tarjeta hueco"><div class="tarjeta__cab"><h2>Si hay empate a puntos en un cuadrangular</h2><span class="cuenta">Se mira en este orden</span></div>' +
+    '<ol class="desempates"><li class="fijo"><span class="orden">1</span><span class="txt">Puntos<small>Siempre lo primero.</small></span></li>' +
+    f.desempates.map(function(c, i){
+      const n = f.desempates.slice(0, i).filter(function(x){ return x.activo; }).length, info = CRIT_FF[c.id];
+      return '<li class="' + (c.activo ? '' : 'apagado') + '"><span class="orden">' + (c.activo ? n + 2 : '–') + '</span>' +
+        '<span class="txt">' + info.nombre + '<small>' + info.ayuda + '</small></span>' +
+        '<label class="interruptor"><input type="checkbox" data-ffactivar="' + i + '"' + (c.activo ? ' checked' : '') + '> Usar</label>' +
+        '<button class="flecha" data-ffsubir="' + i + '" aria-label="Subir"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
+        '<button class="flecha" data-ffbajar="' + i + '" aria-label="Bajar"' + (i === f.desempates.length - 1 ? ' disabled' : '') + '>↓</button></li>';
+    }).join('') + '</ol></section>';
+
+  html += '<section class="tarjeta hueco"><div class="tarjeta__cab"><h2>Poner las horas de golpe</h2><span class="cuenta">Sigue el Nº de cada partido · luego puedes cambiarlas a mano</span></div>' +
+    '<div class="tarjeta__cuerpo"><div class="horario">' +
+      '<div class="campo"><label for="ffDia">Día</label><input type="date" id="ffDia" value="' + ((primer && primer.fecha) || ultimoDiaGrupos()) + '"></div>' +
+      '<div class="campo"><label for="ffInicio">Primer partido</label><input type="time" id="ffInicio" value="10:00" step="300"></div>' +
+      '<div class="campo"><label for="ffCada">Un partido cada</label><select id="ffCada">' +
+        [10,15,20,25,30,35,40,45,50,60,75,90,105,120].map(function(m){ return '<option value="' + m + '"' + (m === 45 ? ' selected' : '') + '>' + m + ' minutos</option>'; }).join('') + '</select></div>' +
+      '<div class="campo"><label for="ffCampos">Campos a la vez</label><select id="ffCampos">' +
+        [1,2,3,4].map(function(n){ return '<option value="' + n + '"' + (n === f.liguillas.length && n <= 4 ? ' selected' : '') + '>' + n + (n === 1 ? ' campo' : ' campos') + '</option>'; }).join('') + '</select></div>' +
+      '<button class="btn btn--cesped" data-accion="horasFF">Poner horas</button>' +
+    '</div></div></section>';
+
+  f.liguillas.forEach(function(l){
+    const c = clasificacionLiguilla(l), lista = enOrden.filter(function(x){ return x.lig === l; });
+    html += '<section class="tarjeta liguilla"><div class="tarjeta__cab"><input type="text" maxlength="40" value="' + escapar(l.nombre) + '" data-ffnombre="' + l.id + '" aria-label="Nombre">' +
+      (c.total ? chapaGrupo(c) : '') + '</div>' +
+      '<div class="slots">' + l.equipos.map(function(id, k){
+        return '<label>' + (k + 1) + '. <select class="elegir-eq' + (id ? '' : ' vacio-eq') + '" data-ffslot="' + l.id + '" data-idx="' + k + '" aria-label="Equipo ' + (k + 1) + '">' +
+          '<option value="">' + (id ? '— Quitar —' : 'Elige equipo…') + '</option>' + opcionesEquipos(id) + '</select></label>';
+      }).join('') + '</div>' +
+      '<div class="dentro"><div>' +
+        (lista.length ? lista.map(function(x){ return filaFF(x, num[x.p.id]); }).join('')
+          : '<p class="vacio">' + (equiposLig(l).length >= 2 ? 'Pulsa «Crear los partidos» o añádelos uno a uno.' : 'Elige los equipos y se crean los partidos de todos contra todos.') + '</p>') +
+        '<div class="pie-partidos">' +
+          (equiposLig(l).length >= 2 ? '<button class="btn btn--mini" data-ffgenerar="' + l.id + '">' + (l.partidos.length ? 'Volver a crear los partidos (todos contra todos)' : 'Crear los partidos (todos contra todos)') + '</button>' : '') +
+          '<button class="btn btn--mini btn--cesped" data-ffanadir="' + l.id + '">+ Añadir partido</button></div>' +
+      '</div><div>' + tablaLiguilla(l, c, !!f.final, !!f.tercero) +
+        (c.completo ? c.aPenaltis.filter(function(g){ return g.length > 1; }).map(function(g){
+          return '<div class="caja-penaltis"><b>Empate: tanda de penaltis</b><span>Siguen empatados ' + g.map(function(id){ return escapar(equipo(id).nombre); }).join(', ') + '. Apunta los penaltis que marca cada uno:</span>' +
+            g.map(function(id){ return '<span class="fila-pen">' + equipoCelda(id, 22) + '<input type="number" inputmode="numeric" min="0" max="99" data-ffpen="' + l.id + '" data-equipo="' + id + '" value="' + (l.penaltis[id] === undefined ? '' : l.penaltis[id]) + '" aria-label="Penaltis"></span>'; }).join('') +
+            '</div>';
+        }).join('') : '') +
+      '</div></div></section>';
+  });
+
+  [f.tercero, f.final].forEach(function(p){
+    if (!p) return;
+    const x = enOrden.filter(function(y){ return y.p === p; })[0];
+    html += '<section class="tarjeta ronda"><div class="tarjeta__cab"><input type="text" maxlength="40" value="' + escapar(p.nombre) + '" data-ffnombre="' + (p === f.final ? 'final' : 'tercero') + '" aria-label="Nombre">' +
+      '<span class="cuenta">' + (p === f.final ? 'Juegan los primeros de cada cuadrangular' : 'Juegan los segundos') + '</span></div>' + filaFF(x, num[p.id]) + '</section>';
+  });
+  if (f.final){
+    const gf = ganadorCruce(f.final);
+    if (gf){
+      const t = f.tercero ? ganadorCruce(f.tercero) : null;
+      const caja = function(id, txt, clase){ return '<div class="' + (clase || '') + '"><small>' + txt + '</small>' + escudo(equipo(id), 44) + '<b>' + escapar(equipo(id).nombre) + '</b></div>'; };
+      html += '<section class="tarjeta"><div class="tarjeta__cab"><h2>Podio</h2></div><div class="podio">' +
+        caja(f.final[gf], 'Campeón', 'oro') + caja(f.final[gf === 'local' ? 'visitante' : 'local'], 'Subcampeón') +
+        (t ? caja(f.tercero[t], '3er puesto') : '<div><small>3er puesto</small><span class="nota-peq">' + (f.tercero ? 'Falta el resultado' : 'Sin partido') + '</span></div>') +
+        '</div></section>';
+    }
+  }
+  return html;
+}
+
+function engancharLiguillas(v){
+  const tras = function(){ actualizarFF(); cambiado(); repintarQuieto(); };
+  v.querySelectorAll('[data-accion]').forEach(function(b){
+    const a = b.dataset.accion;
+    if (['crearLiguillas','borrarFF','horasFF'].indexOf(a) < 0) return;
+    b.addEventListener('click', function(){
+      if (a === 'crearLiguillas'){ crearLiguillas(Number($('ligNum').value), Number($('ligTam').value), $('ligTercero').checked); cambiado(); pintarVista(); }
+      if (a === 'borrarFF'){
+        if (!confirm('¿Borrar toda la fase final, con sus equipos, resultados y horarios?')) return;
+        T.datos.faseFinal = null; cambiado(); pintarVista();
+      }
+      if (a === 'horasFF'){
+        const dia = $('ffDia').value, ini = $('ffInicio').value, cada = Number($('ffCada').value), campos = Number($('ffCampos').value);
+        if (!dia || !ini){ alert('Pon el día y la hora del primer partido.'); return; }
+        const lista = ffEnOrden();
+        if (lista.some(function(x){ return x.p.fecha || x.p.hora; }) && !confirm('Se cambian el día y la hora de todos los partidos de la fase final siguiendo su Nº. ¿Seguir?')) return;
+        lista.forEach(function(x, k){ const t = sumarMinutos(ini, Math.floor(k / campos) * cada); x.p.hora = t.hora; x.p.fecha = diaMas(dia, t.diaMas); });
+        cambiado(); repintarQuieto();
+      }
+    });
+  });
+  v.querySelectorAll('[data-ffactivar]').forEach(function(c){
+    c.addEventListener('change', function(){ ff().desempates[Number(c.dataset.ffactivar)].activo = c.checked; tras(); });
+  });
+  v.querySelectorAll('[data-ffsubir],[data-ffbajar]').forEach(function(b){
+    b.addEventListener('click', function(){
+      const l = ff().desempates, sube = b.dataset.ffsubir != null, i = Number(sube ? b.dataset.ffsubir : b.dataset.ffbajar), j = sube ? i - 1 : i + 1;
+      if (j < 0 || j >= l.length) return;
+      const t = l[i]; l[i] = l[j]; l[j] = t; tras();
+    });
+  });
+  v.querySelectorAll('[data-ffnombre]').forEach(function(i){
+    i.addEventListener('input', function(){
+      const f = ff(), k = i.dataset.ffnombre, o = k === 'final' ? f.final : k === 'tercero' ? f.tercero : ligPorId(k);
+      o.nombre = i.value.replace(/\s+/g, ' ').trim().slice(0, 40) || o.nombre; cambiado();
+    });
+  });
+  v.querySelectorAll('[data-ffslot]').forEach(function(sel){
+    sel.addEventListener('change', function(){
+      const l = ligPorId(sel.dataset.ffslot), k = Number(sel.dataset.idx);
+      const otra = sel.value ? ff().liguillas.filter(function(x){ return x !== l && x.equipos.indexOf(sel.value) >= 0; })[0] : null;
+      if (otra && !confirm(equipo(sel.value).nombre + ' ya está en ' + otra.nombre + '. ¿Ponerlo también aquí?')){ repintarQuieto(); return; }
+      const antes = l.equipos[k];
+      l.equipos[k] = sel.value;
+      if (antes) l.partidos = l.partidos.filter(function(p){ return p.local !== antes && p.visitante !== antes; });
+      if (equiposLig(l).length === l.equipos.length && (!l.partidos.length || antes)) generarPartidosLig(l);
+      tras();
+    });
+  });
+  v.querySelectorAll('[data-ffgenerar]').forEach(function(b){
+    b.addEventListener('click', function(){
+      const l = ligPorId(b.dataset.ffgenerar);
+      if (l.partidos.length && !confirm('Se crean otra vez los partidos de todos contra todos con los equipos elegidos. Los resultados, días y horas de los partidos que sigan existiendo se conservan. ¿Seguir?')) return;
+      generarPartidosLig(l); tras();
+    });
+  });
+  v.querySelectorAll('[data-ffanadir]').forEach(function(b){
+    b.addEventListener('click', function(){
+      const l = ligPorId(b.dataset.ffanadir);
+      const p = partidoFF({ jornada: 0 }); l.partidos.push(p); ultimoMovido = p.id; tras();
+      setTimeout(function(){ ultimoMovido = null; }, 1100);
+    });
+  });
+  v.querySelectorAll('[data-ffborrar]').forEach(function(b){
+    b.addEventListener('click', function(){
+      if (!confirm('¿Eliminar este partido?')) return;
+      ff().liguillas.forEach(function(l){ l.partidos = l.partidos.filter(function(p){ return p.id !== b.dataset.ffborrar; }); });
+      tras();
+    });
+  });
+  v.querySelectorAll('[data-ffeq]').forEach(function(sel){
+    sel.addEventListener('change', function(){
+      const p = partidoFFPorId(sel.dataset.ffeq), lado = sel.dataset.ladoeq, otro = lado === 'local' ? 'visitante' : 'local';
+      if (sel.value && sel.value === p[otro]){ p[otro] = p[lado]; if ('autoL' in p) p[otro === 'local' ? 'autoL' : 'autoV'] = false; }
+      p[lado] = sel.value;
+      if ('autoL' in p) p[lado === 'local' ? 'autoL' : 'autoV'] = !sel.value;
+      tras();
+    });
+  });
+  v.querySelectorAll('[data-ffgol]').forEach(function(i){
+    i.addEventListener('change', function(){
+      const p = partidoFFPorId(i.dataset.ffgol);
+      let n = i.value === '' ? null : Math.max(0, Math.min(99, Math.round(Number(i.value))));
+      if (n !== null && isNaN(n)) n = null;
+      p[i.dataset.lado] = n;
+      if (!(jugado(p) && Number(p.gl) === Number(p.gv))){ p.pl = null; p.pv = null; }
+      tras();
+    });
+    i.addEventListener('focus', function(){ i.select(); });
+  });
+  v.querySelectorAll('[data-ffpen]').forEach(function(i){
+    i.addEventListener('change', function(){
+      const l = ligPorId(i.dataset.ffpen), n = i.value === '' ? NaN : Number(i.value);
+      if (isFinite(n)) l.penaltis[i.dataset.equipo] = Math.max(0, Math.round(n)); else delete l.penaltis[i.dataset.equipo];
+      tras();
+    });
+  });
+  v.querySelectorAll('[data-fffecha]').forEach(function(i){
+    i.addEventListener('change', function(){ partidoFFPorId(i.dataset.fffecha).fecha = /^\d{4}-\d{2}-\d{2}$/.test(i.value) ? i.value : ''; cambiado(); });
+  });
+  v.querySelectorAll('[data-ffhora]').forEach(function(i){
+    i.addEventListener('change', function(){ partidoFFPorId(i.dataset.ffhora).hora = /^\d{2}:\d{2}$/.test(i.value) ? i.value : ''; cambiado(); });
+  });
+  v.querySelectorAll('[data-ffpos]').forEach(function(i){
+    i.addEventListener('change', function(){
+      const ids = ffEnOrden().map(function(x){ return x.p.id; });
+      const desde = ids.indexOf(i.dataset.ffpos), a = Math.max(1, Math.min(ids.length, Math.round(Number(i.value) || 1))) - 1;
+      ids.splice(desde, 1); ids.splice(a, 0, i.dataset.ffpos);
+      ff().orden = ids; ultimoMovido = i.dataset.ffpos; cambiado(); repintarQuieto();
+      setTimeout(function(){ ultimoMovido = null; }, 1100);
+    });
+    i.addEventListener('keydown', function(e){ if (e.key === 'Enter') i.blur(); });
+    i.addEventListener('focus', function(){ i.select(); });
+  });
+}
+
+/* ==================================================================
    EXPORTAR EL HORARIO EN PDF (fase de grupos y fase final)
 ================================================================== */
 async function exportarPdf(boton){
@@ -2111,7 +2505,13 @@ async function exportarPdf(boton){
       return { num: k + 1, fecha: p.fecha, hora: p.hora, fase: nombreGrupo(p.grupo) + ' · J' + p.jornada,
                local: nombreEq(p.local), visitante: nombreEq(p.visitante), idL: p.local, idV: p.visitante, res: resultado(p) };
     }), true);
-    if (cuadro()){
+    if (ff()){
+      tabla('Fase final', ffEnOrden().map(function(x, k){
+        const p = x.p;
+        return { num: k + 1, fecha: p.fecha, hora: p.hora, fase: x.fase,
+                 local: nombreEq(p.local, x.oL), visitante: nombreEq(p.visitante, x.oV), idL: p.local, idV: p.visitante, res: resultado(p) };
+      }), false);
+    } else if (cuadro()){
       tabla('Fase final', crucesEnOrden().map(function(x, k){
         const p = x.p;
         const oL = x.tercero ? 'Perdedor semifinal 1' : (x.i ? origenCruce(x.i, x.j, 'local') : '');
