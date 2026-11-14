@@ -682,7 +682,7 @@ $('crearTorneo').addEventListener('click', async function(){
 function datosIniciales(numGrupos, pasan){
   return {
     equipos: [],
-    grupos: Array.from({ length: numGrupos }, function(_, i){ return { id: nuevoId('g'), nombre: 'Grupo ' + LETRAS[i], equipos: [] }; }),
+    grupos: Array.from({ length: numGrupos }, function(_, i){ return { id: nuevoId('g'), nombre: 'Grupo ' + (i + 1), equipos: [] }; }),
     reglas: { victoria:3, empate:1, derrota:0, idaVuelta:false, clasifican: pasan, mejores:0, fase:'Siguiente fase',
               desempates: ORDEN_INICIAL.map(function(id, i){ return { id:id, activo: i < 5 }; }) },
     partidos: []
@@ -725,6 +725,12 @@ function normalizar(d){
   Object.keys(porDefecto).forEach(function(k){ r[k] = (r[k] === undefined || r[k] === null) ? porDefecto[k] : (Number(r[k]) || 0); });
   if (r.clasifican < 1) r.clasifican = 1;
   r.idaVuelta = !!r.idaVuelta;
+  const aNumero = function(n){
+    const m = /^(Grupo|Cuadrangular|Liguilla) ([A-P])$/.exec(String(n || ''));
+    return m ? m[1] + ' ' + (LETRAS.indexOf(m[2]) + 1) : n;
+  };
+  d.grupos.forEach(function(g){ g.nombre = aNumero(g.nombre); });
+  if (d.faseFinal && Array.isArray(d.faseFinal.liguillas)) d.faseFinal.liguillas.forEach(function(l){ l.nombre = aNumero(l.nombre); });
   if (d.eliminatoria && (typeof d.eliminatoria !== 'object' || !Array.isArray(d.eliminatoria.rondas) || !d.eliminatoria.rondas.length)) d.eliminatoria = null;
   if (d.eliminatoria && !Array.isArray(d.eliminatoria.orden)) d.eliminatoria.orden = [];
   if (d.faseFinal && (typeof d.faseFinal !== 'object' || !Array.isArray(d.faseFinal.liguillas))) d.faseFinal = null;
@@ -1015,7 +1021,7 @@ function vistaGrupos(){
 }
 function cambiarNumGrupos(n){
   const d = T.datos;
-  while (d.grupos.length < n) d.grupos.push({ id: nuevoId('g'), nombre: 'Grupo ' + LETRAS[d.grupos.length], equipos: [] });
+  while (d.grupos.length < n) d.grupos.push({ id: nuevoId('g'), nombre: 'Grupo ' + (d.grupos.length + 1), equipos: [] });
   if (d.grupos.length > n){
     const quitados = d.grupos.slice(n);
     const conEquipos = quitados.some(function(g){ return g.equipos.length; });
@@ -2126,7 +2132,7 @@ function tarjetaCrearLiguillas(){
 function crearLiguillas(n, tam, tercero){
   T.datos.faseFinal = {
     liguillas: Array.from({ length: n }, function(_, i){
-      return { id: nuevoId('l'), nombre: (tam === 4 ? 'Cuadrangular ' : 'Liguilla ') + LETRAS[i], equipos: Array.from({ length: tam }, function(){ return ''; }), partidos: [], penaltis: {} };
+      return { id: nuevoId('l'), nombre: (tam === 4 ? 'Cuadrangular ' : 'Liguilla ') + (i + 1), equipos: Array.from({ length: tam }, function(){ return ''; }), partidos: [], penaltis: {} };
     }),
     desempates: ORDEN_FF.map(function(id, i){ return { id: id, activo: i < 5 }; }),
     final: n === 2 ? partidoFF({ nombre:'Final', autoL:true, autoV:true }) : null,
