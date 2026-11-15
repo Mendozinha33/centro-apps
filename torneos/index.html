@@ -320,6 +320,34 @@
   .velo{position:fixed;inset:0;background:rgba(18,32,41,.45);z-index:80;
     display:flex;align-items:flex-start;justify-content:center;padding:8vh 18px;overflow:auto;}
   .ventana{background:var(--superficie);border-radius:10px;width:100%;max-width:450px;overflow:hidden;}
+  .ventana--ancha{max-width:680px;}
+  .invitados{list-style:none;margin:0;padding:0;}
+  .invitados li{display:flex;gap:14px;align-items:flex-start;padding:14px 20px;border-top:1px solid var(--linea);flex-wrap:wrap;}
+  .invitados li:first-child{border-top:0;}
+  .invitados .inicial{flex:none;width:38px;height:38px;border-radius:50%;background:var(--cesped-suave);color:var(--cesped-hondo);
+    display:grid;place-items:center;font-family:var(--serif);font-size:18px;}
+  .invitados .persona{flex:1;min-width:220px;display:grid;gap:3px;}
+  .invitados .persona b{font-size:15px;}
+  .invitados .persona span{font-size:13px;color:var(--apagado);}
+  .invitados .acc{display:flex;gap:8px;flex-wrap:wrap;}
+  .chip-perm{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:99px;margin:2px 4px 0 0;
+    background:#EDF1F0;color:var(--tinta);}
+  .chip-perm--editar{background:var(--cesped-suave);color:var(--cesped-hondo);}
+  .permisos{width:100%;border-collapse:collapse;font-size:14px;}
+  .permisos td{padding:7px 0;border-top:1px solid var(--linea);vertical-align:middle;}
+  .permisos tr:first-child td{border-top:0;}
+  .segmento{display:inline-flex;border:1px solid var(--linea-fuerte);border-radius:8px;overflow:hidden;float:right;}
+  .segmento label{font-size:12.5px;padding:6px 10px;cursor:pointer;border-left:1px solid var(--linea-fuerte);background:#fff;white-space:nowrap;}
+  .segmento label:first-child{border-left:0;}
+  .segmento input{position:absolute;opacity:0;pointer-events:none;}
+  .segmento label:has(input:checked){background:var(--tinta);color:#fff;font-weight:600;}
+  .segmento label:has(input:disabled){color:#B9C5C2;cursor:default;}
+  .lista-check{display:grid;gap:6px;max-height:180px;overflow:auto;padding:8px 10px;border:1px solid var(--linea);border-radius:8px;}
+  .lista-check label{display:flex;gap:8px;align-items:center;font-size:14px;}
+  .atajos{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--apagado);}
+  .atajos button{font:inherit;font-size:12.5px;border:1px dashed var(--linea-fuerte);background:#fff;border-radius:99px;padding:3px 10px;cursor:pointer;color:var(--tinta);}
+  .mensaje{white-space:pre-wrap;background:#F7F9F8;border:1px solid var(--linea);border-radius:8px;padding:12px 14px;font-size:14px;margin:0;}
+  .solo-ver{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;background:#EDF1F0;border-radius:99px;padding:3px 10px;color:var(--apagado);}
   .ventana__cab{padding:18px 22px;border-bottom:1px solid var(--linea);display:flex;justify-content:space-between;align-items:center;}
   .ventana__cab h2{font-family:var(--serif);font-size:21px;font-weight:500;margin:0;}
   .cerrar{background:none;border:0;font-size:22px;line-height:1;cursor:pointer;color:var(--apagado);padding:2px 6px;}
@@ -408,6 +436,9 @@
     .rejilla2{grid-template-columns:1fr;}
     .anadir-crit .fila{grid-template-columns:1fr;}
     .podio{grid-template-columns:1fr;}
+    .segmento{float:none;margin-top:4px;}
+    .permisos td{display:block;border-top:0;padding:3px 0;}
+    .permisos tr{display:block;border-top:1px solid var(--linea);padding:6px 0;}
     .formatos{grid-template-columns:1fr;}
     .liguilla .dentro{grid-template-columns:minmax(0,1fr);}
     .liguilla .dentro > div + div{border-left:0;border-top:1px solid var(--linea);}
@@ -444,7 +475,7 @@
 <section class="entrada" id="pantallaEntrada" hidden>
   <div class="tarjeta">
     <h1>Mis torneos</h1>
-    <p class="intro">Entra con el mismo correo y la misma contraseña que usas en el calendario.</p>
+    <p class="intro">Entra con tu correo y tu contraseña.</p>
     <div class="error" id="entradaError" hidden></div>
     <div class="campo"><label for="eCorreo">Correo</label><input id="eCorreo" type="email" autocomplete="username"></div>
     <div class="campo"><label for="eClave">Contraseña</label><input id="eClave" type="password" autocomplete="current-password"></div>
@@ -461,9 +492,34 @@
       <h1 class="titulo">Mis torneos</h1>
       <p class="sub">Equipos, grupos, normas para clasificarse y resultados, con la clasificación al momento.</p>
     </div>
-    <button class="btn btn--cesped" id="btnNuevo">+ Nuevo torneo</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="btnInvitados" hidden>Usuarios de torneos</button>
+      <button class="btn btn--cesped" id="btnNuevo">+ Nuevo torneo</button>
+    </div>
   </div>
   <div class="torneos" id="listaTorneos"></div>
+</div>
+
+<!-- Usuarios de torneos (solo el administrador) -->
+<div class="contenedor pagina" id="pantallaInvitados" hidden>
+  <div class="barra">
+    <div>
+      <button class="volver" id="btnVolverInv">← Todos los torneos</button>
+      <h1 class="titulo">Usuarios de torneos</h1>
+      <p class="sub">Personas que solo entran en Mis torneos y ven los apartados que tú elijas.</p>
+    </div>
+    <button class="btn btn--cesped" id="btnAltaInv">+ Dar de alta</button>
+  </div>
+  <div class="ok" id="avisoInv" hidden></div>
+  <section class="tarjeta"><ul class="invitados" id="listaInv"></ul></section>
+  <p class="nota-peq" style="margin-top:14px">Entran en <b>centro-apps.vercel.app/torneos</b> con el correo y la contraseña que les pongas. No pueden entrar en tus otras aplicaciones, ni crear o borrar torneos, ni ver esta pantalla. Si das de baja a alguien, deja de poder entrar al momento.</p>
+</div>
+
+<div class="velo" id="veloInv" hidden>
+  <div class="ventana ventana--ancha" role="dialog" aria-modal="true" aria-labelledby="tituloInv">
+    <div class="ventana__cab"><h2 id="tituloInv"></h2><button class="cerrar" id="cerrarInv" aria-label="Cerrar">&times;</button></div>
+    <div class="ventana__cuerpo" id="cuerpoInv"></div>
+  </div>
 </div>
 
 <!-- Un torneo -->
@@ -581,8 +637,8 @@ async function api(ruta, metodo, cuerpo){
 
 /* ---------- entrada ---------- */
 function cerrarSesion(){
-  guardarPase(''); quitarDiseno();
-  ['pantallaLista','pantallaTorneo','cargando','btnSalir'].forEach(function(id){ ver(id, false); });
+  guardarPase(''); quitarDiseno(); YO = null; T = null;
+  ['pantallaLista','pantallaTorneo','pantallaInvitados','cargando','btnSalir'].forEach(function(id){ ver(id, false); });
   ver('pantallaEntrada', true); $('quien').textContent = '';
 }
 async function arrancar(){
@@ -601,7 +657,12 @@ $('btnEntrar').addEventListener('click', async function(){
   if (!correo || !clave){ mostrarError('entradaError', 'Pon tu correo y tu contraseña.'); return; }
   b.disabled = true;
   try{
-    const d = await api('/api/acceso', 'POST', { accion:'entrar', correo: correo, clave: clave });
+    let d;
+    try{ d = await api('/api/acceso', 'POST', { accion:'entrar', correo: correo, clave: clave }); }
+    catch(e1){
+      try{ d = await api('/api/torneos', 'POST', { accion:'entrar', correo: correo, clave: clave }); }
+      catch(e2){ throw e1; }
+    }
     guardarPase(d.pase); $('quien').textContent = d.usuario.nombre;
     ver('pantallaEntrada', false); ver('btnSalir', true);
     await cargarLista(); await segunDireccion();
@@ -614,9 +675,14 @@ $('btnEntrar').addEventListener('click', async function(){
 $('btnSalir').addEventListener('click', cerrarSesion);
 
 /* ---------- lista de torneos ---------- */
+let YO = null;          // { rol: 'titular' | 'usuario' | 'invitado', permisos }
+function esInvitado(){ return !!(YO && YO.rol === 'invitado'); }
+function nivel(p){ return esInvitado() ? ((YO.permisos || {})[p] || 'no') : 'editar'; }
+function puedeEditarAlgo(){ return !esInvitado() || ['partidos','final','equipos','grupos','normas','reglamento','diseno'].some(function(p){ return nivel(p) === 'editar'; }); }
 async function cargarLista(){
   const d = await api('/api/torneos');
-  TORNEOS = d.torneos;
+  TORNEOS = d.torneos; YO = d.yo || { rol:'titular' };
+  ver('btnNuevo', !esInvitado()); ver('btnInvitados', YO.rol === 'titular');
   ver('cargando', false); ver('pantallaEntrada', false);
   pintarLista();
 }
@@ -628,7 +694,7 @@ function mostrarLista(){
 function pintarLista(){
   const caja = $('listaTorneos');
   if (!TORNEOS.length){
-    caja.innerHTML = '<div class="tarjeta" style="grid-column:1/-1"><p class="vacio">Todavía no tienes ningún torneo. Pulsa «+ Nuevo torneo» para empezar.</p></div>';
+    caja.innerHTML = '<div class="tarjeta" style="grid-column:1/-1"><p class="vacio">' + (esInvitado() ? 'Todavía no tienes ningún torneo para ver. Pídeselo al administrador.' : 'Todavía no tienes ningún torneo. Pulsa «+ Nuevo torneo» para empezar.') + '</p></div>';
     return;
   }
   caja.innerHTML = TORNEOS.map(function(t){
@@ -639,7 +705,7 @@ function pintarLista(){
       ' · ' + t.partidos + (t.partidos === 1 ? ' partido' : ' partidos') + '</p>' +
       '<p>Último cambio: ' + fechaCorta(t.actualizado) + '</p></div>' +
       '<div class="torneo__pie"><button class="btn btn--solido btn--mini" data-abrir="' + t.id + '">Abrir</button>' +
-      '<button class="btn btn--mini btn--peligro" data-borrar="' + t.id + '">Eliminar</button></div></article>';
+      (esInvitado() ? '' : '<button class="btn btn--mini btn--peligro" data-borrar="' + t.id + '">Eliminar</button>') + '</div></article>';
   }).join('');
   caja.querySelectorAll('[data-abrir]').forEach(function(b){
     b.addEventListener('click', function(){ location.hash = 't=' + b.dataset.abrir; });
@@ -652,6 +718,176 @@ function pintarLista(){
       try{ TORNEOS = (await api('/api/torneos?id=' + t.id, 'DELETE')).torneos; pintarLista(); }
       catch(e){ alert(e.message); b.disabled = false; }
     });
+  });
+}
+
+/* ==================================================================
+   USUARIOS DE TORNEOS (solo el administrador)
+================================================================== */
+const APARTADOS = [
+  { id:'clasificacion', nombre:'Clasificación', sinCambiar:true },
+  { id:'partidos', nombre:'Partidos y resultados' },
+  { id:'final', nombre:'Fase final' },
+  { id:'equipos', nombre:'Equipos' },
+  { id:'grupos', nombre:'Grupos' },
+  { id:'normas', nombre:'Cómo se clasifican' },
+  { id:'reglamento', nombre:'Reglamento', ayuda:'Cambiar = subir y borrar documentos' },
+  { id:'diseno', nombre:'Diseño' }
+];
+const ATAJOS = [
+  { nombre:'Solo ver resultados', p:{ clasificacion:'ver', partidos:'ver', final:'ver', reglamento:'ver' } },
+  { nombre:'Meter resultados', p:{ clasificacion:'ver', partidos:'editar', final:'editar', reglamento:'ver' } },
+  { nombre:'Ver todo', p:{ clasificacion:'ver', partidos:'ver', final:'ver', equipos:'ver', grupos:'ver', normas:'ver', reglamento:'ver', diseno:'ver' } },
+  { nombre:'Cambiar todo', p:{ clasificacion:'ver', partidos:'editar', final:'editar', equipos:'editar', grupos:'editar', normas:'editar', reglamento:'editar', diseno:'editar' } }
+];
+let INVITADOS = [];
+async function mostrarInvitados(){
+  quitarDiseno();
+  ['pantallaLista','pantallaTorneo','cargando'].forEach(function(id){ ver(id, false); });
+  ver('pantallaInvitados', true); window.scrollTo(0, 0);
+  $('listaInv').innerHTML = '<li><p class="nota-peq">Cargando…</p></li>';
+  try{ INVITADOS = (await api('/api/torneos?invitados=1')).invitados; pintarInvitados(); }
+  catch(e){ $('listaInv').innerHTML = '<li><p class="error" style="margin:0">' + escapar(e.message) + '</p></li>'; }
+}
+function resumenPermisos(i){
+  const chips = APARTADOS.filter(function(a){ return i.permisos[a.id] !== 'no'; }).map(function(a){
+    return '<span class="chip-perm' + (i.permisos[a.id] === 'editar' ? ' chip-perm--editar' : '') + '">' + escapar(a.nombre) + (i.permisos[a.id] === 'editar' ? ' · cambia' : ' · ve') + '</span>';
+  });
+  return chips.length ? chips.join('') : '<span class="chip-perm">No ve ningún apartado</span>';
+}
+function resumenTorneos(i){
+  if (i.torneos === 'todos') return 'Todos los torneos';
+  const n = TORNEOS.filter(function(t){ return i.torneos.indexOf(t.id) >= 0; }).map(function(t){ return t.nombre; });
+  return n.length ? n.join(', ') : 'Ningún torneo';
+}
+function pintarInvitados(){
+  if (!INVITADOS.length){
+    $('listaInv').innerHTML = '<li><p class="vacio" style="width:100%">Todavía no has dado de alta a nadie. Pulsa «+ Dar de alta».</p></li>';
+    return;
+  }
+  $('listaInv').innerHTML = INVITADOS.map(function(i){
+    return '<li><span class="inicial">' + escapar((i.nombre || '?').charAt(0).toUpperCase()) + '</span>' +
+      '<div class="persona"><b>' + escapar(i.nombre) + '</b><span>' + escapar(i.correo) + ' · alta el ' + escapar(i.alta) + '</span>' +
+      '<span><b style="font-size:13px;color:var(--tinta)">Torneos:</b> ' + escapar(resumenTorneos(i)) + '</span><div>' + resumenPermisos(i) + '</div></div>' +
+      '<div class="acc"><button class="btn btn--mini" data-invperm="' + i.id + '">Permisos</button>' +
+      '<button class="btn btn--mini" data-invclave="' + i.id + '">Nueva contraseña</button>' +
+      '<button class="btn btn--mini btn--peligro" data-invbaja="' + i.id + '">Dar de baja</button></div></li>';
+  }).join('');
+  $('listaInv').querySelectorAll('[data-invperm]').forEach(function(b){ b.addEventListener('click', function(){ formInvitado(invitado(b.dataset.invperm)); }); });
+  $('listaInv').querySelectorAll('[data-invclave]').forEach(function(b){ b.addEventListener('click', function(){ claveInvitado(invitado(b.dataset.invclave)); }); });
+  $('listaInv').querySelectorAll('[data-invbaja]').forEach(function(b){
+    b.addEventListener('click', async function(){
+      const i = invitado(b.dataset.invbaja);
+      if (!confirm('¿Dar de baja a ' + i.nombre + '? Dejará de poder entrar en Mis torneos al momento.')) return;
+      try{ INVITADOS = (await api('/api/torneos', 'POST', { accion:'bajaInvitado', id: i.id })).invitados; pintarInvitados(); avisarInv(i.nombre + ' ya no tiene acceso.'); }
+      catch(e){ alert(e.message); }
+    });
+  });
+}
+function invitado(id){ return INVITADOS.filter(function(x){ return String(x.id) === String(id); })[0]; }
+let tAvisoInv = null;
+function avisarInv(t){ const c = $('avisoInv'); c.textContent = t; c.hidden = false; clearTimeout(tAvisoInv); tAvisoInv = setTimeout(function(){ c.hidden = true; }, 5000); }
+function abrirInv(titulo, html){ $('tituloInv').textContent = titulo; $('cuerpoInv').innerHTML = html; ver('veloInv', true); }
+function cerrarVentanaInv(){ ver('veloInv', false); $('cuerpoInv').innerHTML = ''; }
+$('cerrarInv').addEventListener('click', cerrarVentanaInv);
+$('veloInv').addEventListener('click', function(e){ if (e.target.id === 'veloInv') cerrarVentanaInv(); });
+$('btnInvitados').addEventListener('click', function(){ location.hash = 'usuarios'; });
+$('btnVolverInv').addEventListener('click', function(){ location.hash = ''; });
+$('btnAltaInv').addEventListener('click', function(){ formInvitado(null); });
+
+function claveAlAzar(){
+  const letras = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  const n = new Uint32Array(10); crypto.getRandomValues(n);
+  return Array.prototype.map.call(n, function(x){ return letras[x % letras.length]; }).join('');
+}
+function formInvitado(i){
+  const nuevo = !i;
+  const p = i ? i.permisos : { clasificacion:'ver', partidos:'ver', final:'ver', equipos:'no', grupos:'no', normas:'no', reglamento:'ver', diseno:'no' };
+  const tor = i ? i.torneos : 'todos';
+  abrirInv(nuevo ? 'Dar de alta a un usuario de torneos' : 'Permisos de ' + i.nombre,
+    '<div class="error" id="invError" hidden></div>' +
+    '<div class="rejilla2"><div class="campo"><label for="iNombre">Nombre</label><input id="iNombre" type="text" maxlength="80" value="' + escapar(i ? i.nombre : '') + '"></div>' +
+    (nuevo ? '<div class="campo"><label for="iCorreo">Correo</label><input id="iCorreo" type="email" maxlength="160" autocomplete="off"></div>'
+           : '<div class="campo"><span class="lbl">Correo</span><span style="padding:8px 0">' + escapar(i.correo) + '</span></div>') + '</div>' +
+    (nuevo ? '<div class="campo"><label for="iClave">Contraseña para entrar</label><div style="display:flex;gap:8px"><input id="iClave" type="text" autocomplete="off" value="' + claveAlAzar() + '"><button class="btn" type="button" id="iOtra">Otra</button></div></div>' : '') +
+    '<div class="campo"><span class="lbl">Qué torneos ve</span>' +
+      '<label class="interruptor" style="color:var(--tinta);font-size:14px"><input type="radio" name="iTor" value="todos"' + (tor === 'todos' ? ' checked' : '') + '> Todos (también los que crees después)</label>' +
+      '<label class="interruptor" style="color:var(--tinta);font-size:14px"><input type="radio" name="iTor" value="algunos"' + (tor !== 'todos' ? ' checked' : '') + '> Solo estos:</label>' +
+      '<div class="lista-check" id="iTorneos"' + (tor === 'todos' ? ' hidden' : '') + '>' + (TORNEOS.length ? TORNEOS.map(function(t){
+        return '<label><input type="checkbox" value="' + t.id + '"' + (tor !== 'todos' && tor.indexOf(t.id) >= 0 ? ' checked' : '') + '> ' + escapar(t.nombre) + '</label>';
+      }).join('') : '<span class="nota-peq">No hay torneos todavía.</span>') + '</div></div>' +
+    '<div class="campo"><span class="lbl">Qué apartados ve y si puede cambiarlos</span>' +
+      '<div class="atajos">Rápido: ' + ATAJOS.map(function(a, k){ return '<button type="button" data-atajo="' + k + '">' + escapar(a.nombre) + '</button>'; }).join('') + '</div>' +
+      '<table class="permisos"><tbody>' + APARTADOS.map(function(a){
+        const v = p[a.id] || 'no';
+        const op = function(val, txt, off){ return '<label><input type="radio" name="perm_' + a.id + '" value="' + val + '"' + (v === val ? ' checked' : '') + (off ? ' disabled' : '') + '>' + txt + '</label>'; };
+        return '<tr><td><b style="font-weight:600">' + escapar(a.nombre) + '</b>' + (a.ayuda ? '<br><span class="nota-peq">' + a.ayuda + '</span>' : '') + '</td>' +
+          '<td><span class="segmento">' + op('no', 'Oculto') + op('ver', 'Solo ver') + op('editar', 'Ver y cambiar', a.sinCambiar) + '</span></td></tr>';
+      }).join('') + '</tbody></table></div>' +
+    '<div class="ventana__pie"><button class="btn" id="iCancelar">Cancelar</button><button class="btn btn--cesped" id="iGuardar">' + (nuevo ? 'Dar de alta' : 'Guardar permisos') + '</button></div>');
+  const caja = $('cuerpoInv');
+  if (nuevo) $('iOtra').addEventListener('click', function(){ $('iClave').value = claveAlAzar(); });
+  caja.querySelectorAll('input[name="iTor"]').forEach(function(r1){ r1.addEventListener('change', function(){ $('iTorneos').hidden = r1.value === 'todos' && r1.checked; }); });
+  caja.querySelectorAll('[data-atajo]').forEach(function(b){
+    b.addEventListener('click', function(){
+      const a = ATAJOS[Number(b.dataset.atajo)];
+      APARTADOS.forEach(function(ap){ const x = caja.querySelector('input[name="perm_' + ap.id + '"][value="' + (a.p[ap.id] || 'no') + '"]'); if (x) x.checked = true; });
+    });
+  });
+  $('iCancelar').addEventListener('click', cerrarVentanaInv);
+  $('iGuardar').addEventListener('click', async function(){
+    const permisos = {};
+    APARTADOS.forEach(function(ap){ const x = caja.querySelector('input[name="perm_' + ap.id + '"]:checked'); permisos[ap.id] = x ? x.value : 'no'; });
+    const todos = caja.querySelector('input[name="iTor"][value="todos"]').checked;
+    const torneos = todos ? 'todos' : Array.from(caja.querySelectorAll('#iTorneos input:checked')).map(function(x){ return Number(x.value); });
+    const nombre = $('iNombre').value.trim();
+    mostrarError('invError', '');
+    if (!nombre){ mostrarError('invError', 'Pon el nombre de la persona.'); return; }
+    if (!APARTADOS.some(function(ap){ return permisos[ap.id] !== 'no'; })){ mostrarError('invError', 'Elige al menos un apartado que pueda ver.'); return; }
+    if (!todos && !torneos.length){ mostrarError('invError', 'Elige al menos un torneo, o «Todos».'); return; }
+    this.disabled = true;
+    try{
+      if (nuevo){
+        const correo = $('iCorreo').value.trim().toLowerCase(), clave = $('iClave').value;
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)){ mostrarError('invError', 'El correo no parece correcto.'); this.disabled = false; return; }
+        if (clave.length < 8){ mostrarError('invError', 'La contraseña debe tener 8 caracteres o más.'); this.disabled = false; return; }
+        INVITADOS = (await api('/api/torneos', 'POST', { accion:'altaInvitado', nombre: nombre, correo: correo, clave: clave, permisos: permisos, torneos: torneos })).invitados;
+        pintarInvitados(); mensajeAccesoInv(nombre, correo, clave, false);
+      } else {
+        INVITADOS = (await api('/api/torneos', 'POST', { accion:'editarInvitado', id: i.id, nombre: nombre, permisos: permisos, torneos: torneos })).invitados;
+        pintarInvitados(); cerrarVentanaInv(); avisarInv('Permisos de ' + nombre + ' guardados. Los verá la próxima vez que abra un torneo.');
+      }
+    }catch(e){ mostrarError('invError', e.message); this.disabled = false; }
+  });
+}
+function claveInvitado(i){
+  abrirInv('Nueva contraseña para ' + i.nombre,
+    '<div class="error" id="invError" hidden></div>' +
+    '<div class="campo"><label for="iClave">Contraseña nueva</label><div style="display:flex;gap:8px"><input id="iClave" type="text" autocomplete="off" value="' + claveAlAzar() + '"><button class="btn" type="button" id="iOtra">Otra</button></div></div>' +
+    '<p class="nota-peq" style="margin:0">La anterior dejará de valer.</p>' +
+    '<div class="ventana__pie"><button class="btn" id="iCancelar">Cancelar</button><button class="btn btn--cesped" id="iGuardar">Poner esta contraseña</button></div>');
+  $('iOtra').addEventListener('click', function(){ $('iClave').value = claveAlAzar(); });
+  $('iCancelar').addEventListener('click', cerrarVentanaInv);
+  $('iGuardar').addEventListener('click', async function(){
+    const clave = $('iClave').value;
+    if (clave.length < 8){ mostrarError('invError', 'La contraseña debe tener 8 caracteres o más.'); return; }
+    this.disabled = true;
+    try{ INVITADOS = (await api('/api/torneos', 'POST', { accion:'claveInvitado', id: i.id, clave: clave })).invitados; pintarInvitados(); mensajeAccesoInv(i.nombre, i.correo, clave, true); }
+    catch(e){ mostrarError('invError', e.message); this.disabled = false; }
+  });
+}
+function mensajeAccesoInv(nombre, correo, clave, nueva){
+  const texto = 'Hola ' + nombre + (nueva ? ', te he puesto una contraseña nueva para ver los torneos.' : ', ya puedes ver los torneos.') + '\n\n' +
+    'Entra en: https://centro-apps.vercel.app/torneos\nCorreo: ' + correo + '\nContraseña: ' + clave;
+  abrirInv(nueva ? 'Contraseña cambiada' : nombre + ' ya tiene acceso',
+    '<p class="ok" style="margin:0">Hecho. Envíale estos datos para que pueda entrar:</p><p class="mensaje" id="textoInv">' + escapar(texto) + '</p>' +
+    '<div class="ventana__pie"><button class="btn" id="iCopiar">Copiar</button>' +
+    '<a class="btn btn--cesped" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(texto) + '">Enviar por WhatsApp</a>' +
+    '<button class="btn btn--solido" id="iListo">Listo</button></div>');
+  $('iListo').addEventListener('click', cerrarVentanaInv);
+  $('iCopiar').addEventListener('click', async function(){
+    try{ await navigator.clipboard.writeText(texto); this.textContent = '¡Copiado!'; }
+    catch(e){ const r1 = document.createRange(); r1.selectNodeContents($('textoInv')); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r1); this.textContent = 'Selecciona y copia'; }
   });
 }
 
@@ -691,6 +927,8 @@ function datosIniciales(numGrupos, pasan){
 
 /* ---------- abrir un torneo ---------- */
 async function segunDireccion(){
+  if (location.hash === '#usuarios' && YO && YO.rol === 'titular'){ await guardarYa(); T = null; return mostrarInvitados(); }
+  ver('pantallaInvitados', false);
   const m = location.hash.match(/t=(\d+)/);
   if (!m){ T = null; mostrarLista(); return; }
   if (T && String(T.id) === m[1]) return;
@@ -705,8 +943,9 @@ async function segunDireccion(){
     grupoPartidos = null;
     ver('cargando', false); ver('pantallaTorneo', true);
     $('nombreTorneo').value = T.nombre;
-    $('estadoGuardado').textContent = 'Guardado';
-    if (!T.datos.equipos.length) pestana = 'equipos';
+    $('nombreTorneo').readOnly = esInvitado();
+    $('estadoGuardado').innerHTML = puedeEditarAlgo() ? 'Guardado' : '<span class="solo-ver">Solo ver</span>';
+    if (!T.datos.equipos.length && !esInvitado()) pestana = 'equipos';
     pintarPestanas(); pintarVista();
     window.scrollTo(0, 0);
   }catch(e){
@@ -812,7 +1051,12 @@ $('nombreTorneo').addEventListener('input', function(){ T.nombre = this.value.tr
 
 /* ---------- pestañas ---------- */
 function pintarPestanas(){
-  document.querySelectorAll('#pestanas button').forEach(function(b){ b.setAttribute('aria-selected', String(b.dataset.p === pestana)); });
+  const visibles = Array.from(document.querySelectorAll('#pestanas button')).filter(function(b){ return nivel(b.dataset.p) !== 'no'; });
+  if (visibles.length && nivel(pestana) === 'no') pestana = visibles[0].dataset.p;
+  document.querySelectorAll('#pestanas button').forEach(function(b){
+    b.hidden = nivel(b.dataset.p) === 'no';
+    b.setAttribute('aria-selected', String(b.dataset.p === pestana));
+  });
   $('numEquipos').textContent = T.datos.equipos.length;
   $('numGrupos').textContent = T.datos.grupos.length;
   $('numDocs').textContent = ARCHIVOS.filter(function(a){ return a.tipo === 'normas'; }).length;
@@ -837,6 +1081,21 @@ function pintarVista(){
   if (pestana === 'diseno') engancharDiseno(v);
   if (pestana === 'final') engancharFinal(v);
   v.querySelectorAll('[data-accion="exportarPdf"]').forEach(function(b){ b.addEventListener('click', function(){ exportarPdf(b); }); });
+  if (esInvitado()){
+    v.querySelectorAll('[data-ir]').forEach(function(b){ b.hidden = true; });
+    if (nivel(pestana) === 'no'){ v.innerHTML = '<div class="tarjeta"><p class="vacio">No tienes acceso a este apartado.</p></div>'; return; }
+    if (nivel(pestana) === 'ver') soloVer(v);
+  }
+}
+/* apartado en «solo ver»: se pueden mirar y descargar cosas, pero no cambiar nada */
+const LIBRES_SOLO_VER = '[data-vergrupo],[data-verdoc],[data-bajardoc],[data-accion="exportarPdf"],[data-valores]';
+function soloVer(v){
+  v.querySelectorAll('.horario, .anadir-crit, .colocar').forEach(function(x){ const s = x.closest('section') || x; s.hidden = true; });
+  v.querySelectorAll('.pie-partidos, .barra-acciones .btn--peligro').forEach(function(x){ x.hidden = true; });
+  v.querySelectorAll('input, select, textarea').forEach(function(el){ el.disabled = true; });
+  v.querySelectorAll('button').forEach(function(b){ if (!b.matches(LIBRES_SOLO_VER)) b.hidden = true; });
+  v.querySelectorAll('.enlace').forEach(function(b){ if (!b.matches(LIBRES_SOLO_VER)) b.hidden = true; });
+  v.querySelectorAll('.interruptor').forEach(function(x){ x.hidden = true; });
 }
 
 /* ---------- escudos ---------- */
@@ -1588,6 +1847,7 @@ function pintarTablaViva(){
 
 /* ---------- pasos para empezar (solo mientras falta algo) ---------- */
 function pasos(){
+  if (esInvitado()) return '';
   const d = T.datos;
   const hechoEq = d.equipos.length >= 2, hechoGr = hechoEq && !sinGrupo().length && d.grupos.some(function(g){ return g.equipos.length > 1; });
   const hechoPa = d.partidos.length > 0;
