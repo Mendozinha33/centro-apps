@@ -321,6 +321,9 @@
     display:flex;align-items:flex-start;justify-content:center;padding:8vh 18px;overflow:auto;}
   .ventana{background:var(--superficie);border-radius:10px;width:100%;max-width:450px;overflow:hidden;}
   .ventana--ancha{max-width:680px;}
+  #veloSeguro{z-index:400;}
+  .btn--rojo{background:var(--rojo);border-color:var(--rojo);color:#fff;font-weight:600;}
+  .btn--rojo:hover{background:#8A2F29;border-color:#8A2F29;}
   .invitados{list-style:none;margin:0;padding:0;}
   .invitados li{display:flex;gap:14px;align-items:flex-start;padding:14px 20px;border-top:1px solid var(--linea);flex-wrap:wrap;}
   .invitados li:first-child{border-top:0;}
@@ -680,6 +683,16 @@
   <div class="pr-pie"><span id="prNum"></span><span class="pr-barra"><span id="prBarra"></span></span><span id="prQueda"></span></div>
 </div>
 
+<div class="velo" id="veloSeguro" hidden>
+  <div class="ventana" role="alertdialog" aria-modal="true" aria-labelledby="tituloSeguro" aria-describedby="textoSeguro">
+    <div class="ventana__cab"><h2 id="tituloSeguro">¿Estás seguro?</h2></div>
+    <div class="ventana__cuerpo">
+      <p id="textoSeguro" style="margin:0;font-size:15.5px"></p>
+      <div class="ventana__pie"><button class="btn" id="seguroNo">Cancelar</button><button class="btn" id="seguroSi"></button></div>
+    </div>
+  </div>
+</div>
+
 <input type="file" id="archivoEscudo" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
 <input type="file" id="archivoNormas" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
 <input type="file" id="archivoDiseno" accept=".pdf,application/pdf" hidden>
@@ -821,7 +834,7 @@ function pintarLista(){
   caja.querySelectorAll('[data-borrar]').forEach(function(b){
     b.addEventListener('click', async function(){
       const t = TORNEOS.filter(function(x){ return String(x.id) === b.dataset.borrar; })[0];
-      if (!confirm('¿Eliminar el torneo «' + t.nombre + '» con sus equipos, grupos y resultados? No se puede deshacer.')) return;
+      if (!(await seguro('¿Eliminar el torneo «' + t.nombre + '» con sus equipos, grupos y resultados? No se puede deshacer.'))) return;
       b.disabled = true;
       try{ TORNEOS = (await api('/api/torneos?id=' + t.id, 'DELETE')).torneos; pintarLista(); }
       catch(e){ alert(e.message); b.disabled = false; }
@@ -886,7 +899,7 @@ function pintarInvitados(){
   $('listaInv').querySelectorAll('[data-invbaja]').forEach(function(b){
     b.addEventListener('click', async function(){
       const i = invitado(b.dataset.invbaja);
-      if (!confirm('¿Dar de baja a ' + i.nombre + '? Dejará de poder entrar en Mis torneos al momento.')) return;
+      if (!(await seguro('¿Dar de baja a ' + i.nombre + '? Dejará de poder entrar en Mis torneos al momento.'))) return;
       try{ INVITADOS = (await api('/api/torneos', 'POST', { accion:'bajaInvitado', id: i.id })).invitados; pintarInvitados(); avisarInv(i.nombre + ' ya no tiene acceso.'); }
       catch(e){ alert(e.message); }
     });
@@ -1390,13 +1403,13 @@ function vistaGrupos(){
   }
   return html;
 }
-function cambiarNumGrupos(n){
+async function cambiarNumGrupos(n){
   const d = T.datos;
   while (d.grupos.length < n) d.grupos.push({ id: nuevoId('g'), nombre: 'Grupo ' + (d.grupos.length + 1), equipos: [] });
   if (d.grupos.length > n){
     const quitados = d.grupos.slice(n);
     const conEquipos = quitados.some(function(g){ return g.equipos.length; });
-    if (conEquipos && !confirm('Al quitar grupos, sus equipos se quedan sin grupo y sus partidos se borran. ¿Seguir?')) return false;
+    if (conEquipos && !(await seguro('Al quitar grupos, sus equipos se quedan sin grupo y sus partidos se borran. ¿Seguir?'))) return false;
     const ids = quitados.map(function(g){ return g.id; });
     d.grupos = d.grupos.slice(0, n);
     d.partidos = d.partidos.filter(function(p){ return ids.indexOf(p.grupo) < 0; });
@@ -1826,7 +1839,7 @@ function diaBonito(k){
   if (!k) return 'Sin día puesto';
   const p = k.split('-').map(Number), f = new Date(p[0], p[1]-1, p[2]);
   const ds = DIAS_SEMANA[f.getDay()];
-  return ds.charAt(0).toUpperCase() + ds.slice(1) + ', ' + p[2] + ' de ' + MESES[p[1]-1] + (p[0] !== new Date().getFullYear() ? ' de ' + p[0] : '');
+  return ds.charAt(0).toUpperCase() + ds.slice(1) + ', ' + p[2] + ' de ' + MESES[p[1]-1] + ' de ' + p[0];
 }
 /* los de un grupo: por jornada y, dentro de cada jornada, en el orden que hayas puesto */
 function ordenGrupo(gid){
@@ -1975,7 +1988,7 @@ function enganchar(v){
   v.querySelectorAll('[data-ir]').forEach(function(b){ b.addEventListener('click', function(){ irA(b.dataset.ir); }); });
 
   v.querySelectorAll('[data-accion]').forEach(function(b){
-    b.addEventListener('click', function(){
+    b.addEventListener('click', async function(){
       const a = b.dataset.accion, d = T.datos;
       if (a === 'escudoNuevo') elegirEscudo('__nuevo');
       if (a === 'anadir'){
@@ -1992,14 +2005,14 @@ function enganchar(v){
       }
       if (a === 'sorteo'){
         const alguno = d.grupos.some(function(g){ return g.equipos.length; });
-        if (alguno && !confirm('Se van a repartir otra vez todos los equipos al azar entre los grupos. ¿Seguir?')) return;
+        if (alguno && !(await seguro('Se van a repartir otra vez todos los equipos al azar entre los grupos. ¿Seguir?'))) return;
         d.grupos.forEach(function(g){ g.equipos = []; });
         repartir(d.equipos.map(function(e){ return e.id; }));
         cambiado(); pintarVista();
       }
       if (a === 'aMano'){
         const alguno = d.grupos.some(function(g){ return g.equipos.length; });
-        if (alguno && !confirm('Se van a vaciar los grupos para que coloques tú cada equipo. ¿Seguir?')) return;
+        if (alguno && !(await seguro('Se van a vaciar los grupos para que coloques tú cada equipo. ¿Seguir?'))) return;
         d.grupos.forEach(function(g){ g.equipos = []; });
         cambiado(); pintarVista();
         const sg = $('sinGrupo'); if (sg) sg.scrollIntoView({ behavior:'smooth', block:'start' });
@@ -2021,7 +2034,7 @@ function enganchar(v){
         const dia = $('hDia').value, ini = $('hInicio').value, cada = Number($('hCada').value), campos = Number($('hCampos').value);
         if (!dia || !ini){ alert('Pon el día y la hora del primer partido.'); return; }
         const conHora = d.partidos.some(function(p){ return p.fecha || p.hora; });
-        if (conHora && !confirm('Se van a cambiar el día y la hora de todos los partidos siguiendo el orden de la lista. ¿Seguir?')) return;
+        if (conHora && !(await seguro('Se van a cambiar el día y la hora de todos los partidos siguiendo el orden de la lista. ¿Seguir?'))) return;
         d.partidos.forEach(function(p, k){
           const t = sumarMinutos(ini, Math.floor(k / campos) * cada);
           p.hora = t.hora; p.fecha = diaMas(dia, t.diaMas);
@@ -2039,9 +2052,9 @@ function enganchar(v){
       if (a === 'prepararPartidos'){ prepararPartidos(); d.manual = false; cambiado(); pintarVista(); }
       if (a === 'rehacerPartidos'){
         const hay = d.partidos.some(jugado);
-        if (!confirm('La app va a crear otra vez todos los partidos (todos contra todos) con los equipos y normas de ahora.' +
+        if (!(await seguro('La app va a crear otra vez todos los partidos (todos contra todos) con los equipos y normas de ahora.' +
           (d.manual ? ' Los partidos que hayas puesto a mano se sustituyen.' : '') +
-          (hay ? ' Los resultados ya puestos se conservan si ese partido sigue existiendo.' : '') + ' ¿Seguir?')) return;
+          (hay ? ' Los resultados ya puestos se conservan si ese partido sigue existiendo.' : '') + ' ¿Seguir?'))) return;
         prepararPartidos(); d.manual = false; cambiado(); pintarVista();
       }
     });
@@ -2056,21 +2069,25 @@ function enganchar(v){
   });
   v.querySelectorAll('[data-escudo]').forEach(function(b){ b.addEventListener('click', function(){ elegirEscudo(b.dataset.escudo); }); });
   v.querySelectorAll('[data-quitarescudo]').forEach(function(b){
-    b.addEventListener('click', function(){ delete equipo(b.dataset.quitarescudo).escudo; cambiado(); pintarVista(); });
+    b.addEventListener('click', async function(){
+      const eq = equipo(b.dataset.quitarescudo);
+      if (!(await seguro('¿Quitar el escudo de «' + eq.nombre + '»?'))) return;
+      delete eq.escudo; cambiado(); pintarVista();
+    });
   });
   v.querySelectorAll('[data-quitarequipo]').forEach(function(b){
-    b.addEventListener('click', function(){
+    b.addEventListener('click', async function(){
       const eq = equipo(b.dataset.quitarequipo);
       const n = T.datos.partidos.filter(function(p){ return p.local === eq.id || p.visitante === eq.id; }).length;
-      if (!confirm('¿Eliminar «' + eq.nombre + '» del torneo?' + (n ? ' También se borran sus ' + n + ' partidos y resultados.' : ''))) return;
+      if (!(await seguro('¿Eliminar «' + eq.nombre + '» del torneo?' + (n ? ' También se borran sus ' + n + ' partidos y resultados.' : '')))) return;
       quitarEquipo(eq.id); cambiado(); pintarPestanas(); pintarVista();
     });
   });
 
   /* grupos */
   const sel = $('numGruposSel');
-  if (sel) sel.addEventListener('change', function(){
-    if (cambiarNumGrupos(Number(sel.value))){ cambiado(); pintarPestanas(); }
+  if (sel) sel.addEventListener('change', async function(){
+    if (await cambiarNumGrupos(Number(sel.value))){ cambiado(); pintarPestanas(); }
     pintarVista();
   });
   v.querySelectorAll('[data-nombregrupo]').forEach(function(i){
@@ -2080,8 +2097,9 @@ function enganchar(v){
     });
   });
   v.querySelectorAll('[data-mover]').forEach(function(s){
-    s.addEventListener('change', function(){
+    s.addEventListener('change', async function(){
       if (!s.value) return;
+      if (s.value === '__fuera' && !(await seguro('¿Sacar a «' + equipo(s.dataset.mover).nombre + '» de su grupo?'))){ pintarVista(); return; }
       if (s.value === '__fuera') T.datos.grupos.forEach(function(g){ g.equipos = g.equipos.filter(function(x){ return x !== s.dataset.mover; }); });
       else meterEnGrupo(s.dataset.mover, s.value);
       cambiado(); pintarVista();
@@ -2114,9 +2132,9 @@ function enganchar(v){
     b.addEventListener('click', function(){ critAbierto = critAbierto === b.dataset.valores ? null : b.dataset.valores; pintarVista(); });
   });
   v.querySelectorAll('[data-quitarcrit]').forEach(function(b){
-    b.addEventListener('click', function(){
+    b.addEventListener('click', async function(){
       const c = criterioPropio(b.dataset.quitarcrit);
-      if (!confirm('¿Eliminar el criterio «' + c.nombre + '» y sus valores?')) return;
+      if (!(await seguro('¿Eliminar el criterio «' + c.nombre + '» y sus valores?'))) return;
       T.datos.reglas.desempates = T.datos.reglas.desempates.filter(function(x){ return x !== c; });
       cambiado(); pintarVista();
     });
@@ -2177,8 +2195,9 @@ function enganchar(v){
     });
   });
   v.querySelectorAll('[data-cambiaeq]').forEach(function(sel){
-    sel.addEventListener('change', function(){
+    sel.addEventListener('change', async function(){
       const p = T.datos.partidos.filter(function(x){ return x.id === sel.dataset.cambiaeq; })[0];
+      if (!sel.value && p[sel.dataset.ladoeq] && !(await seguro('¿Quitar a «' + equipo(p[sel.dataset.ladoeq]).nombre + '» de este partido?'))){ pintarVista(); return; }
       const lado = sel.dataset.ladoeq, otro = lado === 'local' ? 'visitante' : 'local';
       if (sel.value && sel.value === p[otro]) p[otro] = p[lado];   // si eliges el mismo equipo, se cambian de lado
       p[lado] = sel.value; T.datos.manual = true; cambiado();
@@ -2186,10 +2205,10 @@ function enganchar(v){
     });
   });
   v.querySelectorAll('[data-borrarp]').forEach(function(b){
-    b.addEventListener('click', function(){
+    b.addEventListener('click', async function(){
       const p = T.datos.partidos.filter(function(x){ return x.id === b.dataset.borrarp; })[0];
       const txt = (p.local ? equipo(p.local).nombre : '¿?') + ' – ' + (p.visitante ? equipo(p.visitante).nombre : '¿?');
-      if (!confirm('¿Eliminar el partido ' + txt + (jugado(p) ? ' y su resultado' : '') + '?')) return;
+      if (!(await seguro('¿Eliminar el partido ' + txt + (jugado(p) ? ' y su resultado' : '') + '?'))) return;
       T.datos.partidos = T.datos.partidos.filter(function(x){ return x !== p; }); T.datos.manual = true; cambiado();
       const y = window.scrollY; pintarVista(); window.scrollTo(0, y);
     });
@@ -2408,22 +2427,22 @@ function engancharFinal(v){
   v.querySelectorAll('[data-accion]').forEach(function(b){
     const a = b.dataset.accion;
     if (['crearCuadro','recolocarCuadro','borrarCuadro','horasCruces'].indexOf(a) < 0) return;
-    b.addEventListener('click', function(){
+    b.addEventListener('click', async function(){
       const e = cuadro();
       if (a === 'crearCuadro'){ crearCuadro(Number($('cuadroTam').value), $('cuadroTercero').checked, $('cuadroColocar').checked); cambiado(); pintarVista(); }
       if (a === 'recolocarCuadro'){
-        if (!confirm('Se vuelven a poner los clasificados en la primera ronda (' + e.rondas[0].nombre + '). Los cruces que hayas cambiado a mano en esa ronda se sustituyen. ¿Seguir?')) return;
+        if (!(await seguro('Se vuelven a poner los clasificados en la primera ronda (' + e.rondas[0].nombre + '). Los cruces que hayas cambiado a mano en esa ronda se sustituyen. ¿Seguir?'))) return;
         colocarClasificados(); actualizarCuadro(); cambiado(); repintarQuieto();
       }
       if (a === 'borrarCuadro'){
-        if (!confirm('¿Borrar todo el cuadro de la fase final, con sus resultados y horarios?')) return;
+        if (!(await seguro('¿Borrar todo el cuadro de la fase final, con sus resultados y horarios?'))) return;
         T.datos.eliminatoria = null; cambiado(); pintarVista();
       }
       if (a === 'horasCruces'){
         const dia = $('fDia').value, ini = $('fInicio').value, cada = Number($('fCada').value), campos = Number($('fCampos').value);
         if (!dia || !ini){ alert('Pon el día y la hora del primer cruce.'); return; }
         const lista = crucesEnOrden();
-        if (lista.some(function(x){ return x.p.fecha || x.p.hora; }) && !confirm('Se cambian el día y la hora de todos los cruces siguiendo su Nº. ¿Seguir?')) return;
+        if (lista.some(function(x){ return x.p.fecha || x.p.hora; }) && !(await seguro('Se cambian el día y la hora de todos los cruces siguiendo su Nº. ¿Seguir?'))) return;
         lista.forEach(function(x, k){ const t = sumarMinutos(ini, Math.floor(k / campos) * cada); x.p.hora = t.hora; x.p.fecha = diaMas(dia, t.diaMas); });
         cambiado(); repintarQuieto();
       }
@@ -2436,8 +2455,9 @@ function engancharFinal(v){
     });
   });
   v.querySelectorAll('[data-cruceeq]').forEach(function(sel){
-    sel.addEventListener('change', function(){
+    sel.addEventListener('change', async function(){
       const p = cruce(sel.dataset.cruceeq), lado = sel.dataset.ladoeq, otro = lado === 'local' ? 'visitante' : 'local';
+      if (!sel.value && p[lado] && !(await seguro('¿Quitar a «' + equipo(p[lado]).nombre + '» de este cruce?'))){ repintarQuieto(); return; }
       if (sel.value && sel.value === p[otro]){ p[otro] = p[lado]; p[otro === 'local' ? 'autoL' : 'autoV'] = false; }
       p[lado] = sel.value; p[lado === 'local' ? 'autoL' : 'autoV'] = !sel.value;
       actualizarCuadro(); cambiado(); repintarQuieto();
@@ -2715,17 +2735,17 @@ function engancharLiguillas(v){
   v.querySelectorAll('[data-accion]').forEach(function(b){
     const a = b.dataset.accion;
     if (['crearLiguillas','borrarFF','horasFF'].indexOf(a) < 0) return;
-    b.addEventListener('click', function(){
+    b.addEventListener('click', async function(){
       if (a === 'crearLiguillas'){ crearLiguillas(Number($('ligNum').value), Number($('ligTam').value), $('ligTercero').checked); cambiado(); pintarVista(); }
       if (a === 'borrarFF'){
-        if (!confirm('¿Borrar toda la fase final, con sus equipos, resultados y horarios?')) return;
+        if (!(await seguro('¿Borrar toda la fase final, con sus equipos, resultados y horarios?'))) return;
         T.datos.faseFinal = null; cambiado(); pintarVista();
       }
       if (a === 'horasFF'){
         const dia = $('ffDia').value, ini = $('ffInicio').value, cada = Number($('ffCada').value), campos = Number($('ffCampos').value);
         if (!dia || !ini){ alert('Pon el día y la hora del primer partido.'); return; }
         const lista = ffEnOrden();
-        if (lista.some(function(x){ return x.p.fecha || x.p.hora; }) && !confirm('Se cambian el día y la hora de todos los partidos de la fase final siguiendo su Nº. ¿Seguir?')) return;
+        if (lista.some(function(x){ return x.p.fecha || x.p.hora; }) && !(await seguro('Se cambian el día y la hora de todos los partidos de la fase final siguiendo su Nº. ¿Seguir?'))) return;
         lista.forEach(function(x, k){ const t = sumarMinutos(ini, Math.floor(k / campos) * cada); x.p.hora = t.hora; x.p.fecha = diaMas(dia, t.diaMas); });
         cambiado(); repintarQuieto();
       }
@@ -2748,11 +2768,14 @@ function engancharLiguillas(v){
     });
   });
   v.querySelectorAll('[data-ffslot]').forEach(function(sel){
-    sel.addEventListener('change', function(){
+    sel.addEventListener('change', async function(){
       const l = ligPorId(sel.dataset.ffslot), k = Number(sel.dataset.idx);
       const otra = sel.value ? ff().liguillas.filter(function(x){ return x !== l && x.equipos.indexOf(sel.value) >= 0; })[0] : null;
-      if (otra && !confirm(equipo(sel.value).nombre + ' ya está en ' + otra.nombre + '. ¿Ponerlo también aquí?')){ repintarQuieto(); return; }
+      if (otra && !(await seguro(equipo(sel.value).nombre + ' ya está en ' + otra.nombre + '. ¿Ponerlo también aquí?'))){ repintarQuieto(); return; }
       const antes = l.equipos[k];
+      const conResultados = antes && l.partidos.some(function(p){ return (p.local === antes || p.visitante === antes) && jugado(p); });
+      if (antes && !(await seguro((sel.value ? '¿Cambiar a «' + equipo(antes).nombre + '» por «' + equipo(sel.value).nombre + '»' : '¿Quitar a «' + equipo(antes).nombre + '»') + ' de ' + l.nombre + '?' +
+          (conResultados ? ' Se borran sus partidos y resultados en este cuadrangular.' : '')))){ repintarQuieto(); return; }
       l.equipos[k] = sel.value;
       if (antes) l.partidos = l.partidos.filter(function(p){ return p.local !== antes && p.visitante !== antes; });
       if (equiposLig(l).length === l.equipos.length && (!l.partidos.length || antes)) generarPartidosLig(l);
@@ -2760,9 +2783,9 @@ function engancharLiguillas(v){
     });
   });
   v.querySelectorAll('[data-ffgenerar]').forEach(function(b){
-    b.addEventListener('click', function(){
+    b.addEventListener('click', async function(){
       const l = ligPorId(b.dataset.ffgenerar);
-      if (l.partidos.length && !confirm('Se crean otra vez los partidos de todos contra todos con los equipos elegidos. Los resultados, días y horas de los partidos que sigan existiendo se conservan. ¿Seguir?')) return;
+      if (l.partidos.length && !(await seguro('Se crean otra vez los partidos de todos contra todos con los equipos elegidos. Los resultados, días y horas de los partidos que sigan existiendo se conservan. ¿Seguir?'))) return;
       generarPartidosLig(l); tras();
     });
   });
@@ -2774,15 +2797,16 @@ function engancharLiguillas(v){
     });
   });
   v.querySelectorAll('[data-ffborrar]').forEach(function(b){
-    b.addEventListener('click', function(){
-      if (!confirm('¿Eliminar este partido?')) return;
+    b.addEventListener('click', async function(){
+      if (!(await seguro('¿Eliminar este partido?'))) return;
       ff().liguillas.forEach(function(l){ l.partidos = l.partidos.filter(function(p){ return p.id !== b.dataset.ffborrar; }); });
       tras();
     });
   });
   v.querySelectorAll('[data-ffeq]').forEach(function(sel){
-    sel.addEventListener('change', function(){
+    sel.addEventListener('change', async function(){
       const p = partidoFFPorId(sel.dataset.ffeq), lado = sel.dataset.ladoeq, otro = lado === 'local' ? 'visitante' : 'local';
+      if (!sel.value && p[lado] && !(await seguro('¿Quitar a «' + equipo(p[lado]).nombre + '» de este partido?'))){ repintarQuieto(); return; }
       if (sel.value && sel.value === p[otro]){ p[otro] = p[lado]; if ('autoL' in p) p[otro === 'local' ? 'autoL' : 'autoV'] = false; }
       p[lado] = sel.value;
       if ('autoL' in p) p[lado === 'local' ? 'autoL' : 'autoV'] = !sel.value;
@@ -3033,7 +3057,7 @@ function engancharDocumentos(v, tipo){
   v.querySelectorAll('[data-borrardoc]').forEach(function(b){
     b.addEventListener('click', async function(){
       const a = archivoPorId(b.dataset.borrardoc);
-      if (!confirm('¿Eliminar «' + a.nombre + '»? No se puede deshacer.')) return;
+      if (!(await seguro('¿Eliminar «' + a.nombre + '»? No se puede deshacer.'))) return;
       b.disabled = true;
       try{ ARCHIVOS = (await api('/api/torneos?archivo=' + a.id, 'DELETE')).archivos; delete cacheDocs[a.id]; pintarPestanas(); pintarVista(); }
       catch(e){ alert(e.message); b.disabled = false; }
@@ -3216,12 +3240,15 @@ function engancharDiseno(v){
     cambiado(); aplicarDiseno();
   });
   v.querySelectorAll('[data-accion2]').forEach(function(b){
-    b.addEventListener('click', function(){
+    b.addEventListener('click', async function(){
       const a = b.dataset.accion2, dz = T.datos.diseno;
       if (a === 'subirFondo') $('archivoFondo').click();
-      if (a === 'quitarFondo'){ dz.fondo = null; cambiado(); aplicarDiseno(); pintarVista(); }
+      if (a === 'quitarFondo'){
+        if (!(await seguro('¿Quitar el fondo del torneo?'))) return;
+        dz.fondo = null; cambiado(); aplicarDiseno(); pintarVista();
+      }
       if (a === 'colorInicial'){
-        if (!confirm('¿Quitar el fondo y volver al color verde de siempre?')) return;
+        if (!(await seguro('¿Quitar el fondo y volver al color verde de siempre?'))) return;
         dz.fondo = null; dz.color = COLOR_INICIAL; dz.intensidad = 30; cambiado(); aplicarDiseno(); pintarVista();
       }
     });
@@ -3243,6 +3270,26 @@ $('archivoFondo').addEventListener('change', function(){
   img.src = url;
 });
 
+/* ---------- «¿Estás seguro?» antes de borrar o cambiar algo importante ---------- */
+let respuestaSeguro = null;
+function seguro(texto){
+  return new Promise(function(ok){
+    if (respuestaSeguro) respuestaSeguro(false);
+    const borra = /eliminar|borrar|quitar|dar de baja|sacar|se borran|se sustituyen|vaciar/i.test(texto);
+    $('textoSeguro').textContent = texto;
+    $('tituloSeguro').textContent = borra ? '¿Estás seguro?' : '¿Seguro que quieres seguir?';
+    const si = $('seguroSi');
+    si.textContent = borra ? (/dar de baja/i.test(texto) ? 'Sí, dar de baja' : /^¿(quitar|sacar|cambiar)/i.test(texto) ? 'Sí, quitar' : 'Sí, eliminar') : 'Sí, seguir';
+    si.className = 'btn ' + (borra ? 'btn--rojo' : 'btn--solido');
+    respuestaSeguro = function(v){ respuestaSeguro = null; ver('veloSeguro', false); ok(v); };
+    ver('veloSeguro', true); $('seguroNo').focus();
+  });
+}
+$('seguroSi').addEventListener('click', function(){ if (respuestaSeguro) respuestaSeguro(true); });
+$('seguroNo').addEventListener('click', function(){ if (respuestaSeguro) respuestaSeguro(false); });
+$('veloSeguro').addEventListener('click', function(e){ if (e.target.id === 'veloSeguro' && respuestaSeguro) respuestaSeguro(false); });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && respuestaSeguro) respuestaSeguro(false); });
+
 /* ---------- ventanas ---------- */
 document.querySelectorAll('[data-cerrar]').forEach(function(b){ b.addEventListener('click', function(){ ver(b.dataset.cerrar, false); }); });
 $('veloNuevo').addEventListener('click', function(e){ if (e.target.id === 'veloNuevo') ver('veloNuevo', false); });
@@ -3262,7 +3309,7 @@ function eqPr(id, tam, txt){
 function cuandoPr(p){
   if (!p.fecha && !p.hora) return '';
   let t = '';
-  if (p.fecha){ const q = p.fecha.split('-').map(Number), f = new Date(q[0], q[1]-1, q[2]); t = DIAS_SEMANA[f.getDay()].slice(0, 3) + ' ' + q[2] + '/' + q[1]; }
+  if (p.fecha){ const q = p.fecha.split('-').map(Number), f = new Date(q[0], q[1]-1, q[2]); t = DIAS_SEMANA[f.getDay()].slice(0, 3) + ' ' + q[2] + '/' + q[1] + '/' + q[0]; }
   return t + (p.hora ? (t ? ' · ' : '') + p.hora : '');
 }
 function tablaPr(filas, clase, tam){
