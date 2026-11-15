@@ -10,7 +10,7 @@ import { bd, faltanAjustes, quienEs, quienEsVivo, cifrarClave, claveCorrecta, cr
    'no' (no lo ven), 'ver' (solo mirar) o 'editar' (ver y cambiar), y los torneos que pueden ver. */
 const PESTANAS = ['clasificacion','partidos','final','equipos','grupos','normas','reglamento','diseno']
 const DATOS_DE = { partidos: ['partidos','manual'], final: ['faseFinal','eliminatoria'], equipos: ['equipos'],
-                   grupos: ['grupos'], normas: ['reglas'], diseno: ['diseno'] }
+                   grupos: ['grupos'], normas: ['reglas'], diseno: ['diseno','proyeccion'] }
 const PESTANA_DOC = { normas: 'reglamento', diseno: 'diseno' }
 const NIVEL = { no: 0, ver: 1, editar: 2 }
 

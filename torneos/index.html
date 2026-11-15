@@ -359,7 +359,29 @@
   /* proyección a pantalla completa */
   #proyector{position:fixed;inset:0;z-index:300;background:#0F1A21 center/cover no-repeat;color:#fff;display:flex;flex-direction:column;
     font-family:var(--sans);overflow:hidden;}
-  #proyector .capa-fondo{position:absolute;inset:0;background:linear-gradient(160deg, rgba(15,26,33,.92), rgba(15,26,33,.80));pointer-events:none;}
+  #proyector .capa-fondo{position:absolute;inset:0;background:linear-gradient(160deg, rgba(10,18,24,.95), rgba(10,18,24,.80));pointer-events:none;
+    opacity:var(--pr-velo,.7);transition:opacity .6s;}
+  #proyector{transition:background .6s;}
+  .pr-panel{position:absolute;top:7.5vh;left:50%;transform:translateX(-50%);z-index:3;width:min(760px,94vw);max-height:80vh;overflow:auto;
+    background:rgba(12,22,29,.97);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:16px 18px 18px;color:#fff;
+    box-shadow:0 20px 50px rgba(0,0,0,.5);}
+  .pr-panel h3{margin:0 0 4px;font-size:16px;font-weight:700;}
+  .pr-panel p{margin:0 0 12px;font-size:13px;opacity:.75;}
+  .pr-panel .pie{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;margin-top:14px;}
+  .pr-panel .pie button{font:inherit;font-size:14px;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;}
+  .pr-panel .pie .listo{background:#fff;color:#0F1A21;font-weight:700;border-color:#fff;}
+  .fondos-pr{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;}
+  .fondo-pr{font:inherit;border:2px solid transparent;border-radius:10px;padding:0;background:none;cursor:pointer;text-align:left;color:inherit;}
+  .fondo-pr .mini{display:block;aspect-ratio:16/9;border-radius:8px;position:relative;overflow:hidden;background-color:#0F1A21;}
+  .fondo-pr .mini::after{content:"";position:absolute;inset:0;background:rgba(10,18,24,var(--velo,.5));}
+  .fondo-pr .mini b{position:absolute;left:8px;top:8px;z-index:1;font-size:11px;color:#fff;font-family:var(--serif);font-weight:500;}
+  .fondo-pr .mini i{position:absolute;left:8px;right:8px;bottom:8px;z-index:1;height:16%;border-radius:3px;background:rgba(255,255,255,.18);}
+  .fondo-pr .nom{display:block;font-size:12.5px;font-weight:600;padding:5px 2px 2px;}
+  .fondo-pr[aria-pressed="true"]{border-color:var(--cesped);}
+  .fondo-pr[aria-pressed="true"] .nom::before{content:"✓ ";}
+  .tarjeta .fondo-pr .nom{color:var(--tinta);}
+  .fondo-pr .quitar{float:right;font-size:11.5px;color:var(--rojo);text-decoration:underline;}
+  .pr-panel .fondo-pr .quitar{color:#FF9C8F;}
   .pr-cab{position:relative;display:flex;align-items:center;gap:2vw;padding:2.2vh 3vw 1.6vh;}
   .pr-cab .pr-torneo{font-family:var(--serif);font-size:clamp(16px,2.2vw,34px);opacity:.85;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .pr-cab .pr-reloj{font-size:clamp(16px,2.2vw,34px);font-variant-numeric:tabular-nums;font-weight:600;opacity:.9;}
@@ -675,8 +697,10 @@
     <select id="prTiempo" aria-label="Tiempo por pantalla">
       <option value="15">15 s</option><option value="30">30 s</option><option value="60" selected>1 min</option><option value="120">2 min</option><option value="300">5 min</option>
     </select>
+    <button id="prFondo" title="Elegir el fondo">🖼 Fondo</button>
     <button class="pr-stop" id="prStop">■ Stop</button>
   </div>
+  <div class="pr-panel" id="prPanel" hidden></div>
   <div class="pr-cab"><span class="pr-torneo" id="prTorneo"></span><span class="pr-reloj" id="prReloj"></span></div>
   <div class="pr-titulo"><h2 id="prTitulo"></h2><span class="pr-sub" id="prSub"></span></div>
   <div class="pr-cuerpo" id="prCuerpo"></div>
@@ -1219,6 +1243,7 @@ function soloVer(v){
   v.querySelectorAll('button').forEach(function(b){ if (!b.matches(LIBRES_SOLO_VER)) b.hidden = true; });
   v.querySelectorAll('.enlace').forEach(function(b){ if (!b.matches(LIBRES_SOLO_VER)) b.hidden = true; });
   v.querySelectorAll('.interruptor').forEach(function(x){ x.hidden = true; });
+  v.querySelectorAll('.fondo-pr').forEach(function(b){ b.hidden = false; b.disabled = true; b.querySelectorAll('.quitar').forEach(function(q){ q.hidden = true; }); });
 }
 
 /* ---------- escudos ---------- */
@@ -3222,9 +3247,23 @@ function vistaDiseno(){
     (dz.fondo ? '<div class="campo"><label for="intensidad">Cuánto se ve el fondo <span class="valor" id="valorIntensidad">' + dz.intensidad + '%</span></label>' +
       '<input type="range" id="intensidad" min="5" max="90" step="5" value="' + dz.intensidad + '"><span class="nota-peq">Más bajo = más suave, para que se lean bien las tablas.</span></div>' : '') +
     '<div><button class="btn btn--mini" data-accion2="colorInicial">Volver al diseño de siempre</button></div>' +
-  '</div></section>' + vistaDocumentos('diseno', true) + '</div>';
+  '</div></section>' + vistaDocumentos('diseno', true) +
+  '<section class="tarjeta" style="grid-column:1/-1"><div class="tarjeta__cab"><h2>Fondo de las pantallas (botones de play)</h2>' +
+    '<span class="cuenta">' + (Object.keys(datosPr().porPantalla).length ? Object.keys(datosPr().porPantalla).length + ' pantallas con fondo propio' : 'Todas usan el mismo fondo') + '</span></div>' +
+  '<div class="tarjeta__cuerpo" style="display:grid;gap:14px">' +
+    '<p class="nota-peq" style="margin:0">Elige el fondo general de las pantallas de «Clasificaciones grupos» y «Fase final». Para poner uno distinto en una pantalla, pulsa «🖼 Fondo» mientras se ve esa pantalla.</p>' +
+    '<div class="fondos-pr">' + catalogoFondos().map(function(fo){ return miniFondo(fo, fo.id === datosPr().fondo, true); }).join('') + '</div>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn--mini" data-accion2="subirFotoPr">＋ Subir una foto de fondo</button>' +
+    (Object.keys(datosPr().porPantalla).length ? '<button class="btn btn--mini" data-accion2="quitarPorPantalla">Quitar los fondos propios de cada pantalla</button>' : '') + '</div>' +
+  '</div></section></div>';
 }
 function engancharDiseno(v){
+  v.querySelectorAll('[data-fondopr]').forEach(function(b){
+    b.addEventListener('click', async function(e){
+      if (e.target.dataset.quitarfoto){ e.stopPropagation(); if (await quitarFotoPr(e.target.dataset.quitarfoto)) pintarVista(); return; }
+      datosPr().fondo = b.dataset.fondopr; cambiado(); pintarVista();
+    });
+  });
   v.querySelectorAll('[data-color]').forEach(function(b){
     b.addEventListener('click', function(){ T.datos.diseno.color = b.dataset.color; cambiado(); aplicarDiseno(); pintarVista(); });
   });
@@ -3243,6 +3282,11 @@ function engancharDiseno(v){
     b.addEventListener('click', async function(){
       const a = b.dataset.accion2, dz = T.datos.diseno;
       if (a === 'subirFondo') $('archivoFondo').click();
+      if (a === 'subirFotoPr') subirFotoPr(function(foto){ datosPr().fondo = 'foto:' + foto.id; pintarVista(); });
+      if (a === 'quitarPorPantalla'){
+        if (!(await seguro('¿Quitar los fondos propios de cada pantalla? Todas pasarán a usar el fondo general.'))) return;
+        datosPr().porPantalla = {}; cambiado(); pintarVista();
+      }
       if (a === 'quitarFondo'){
         if (!(await seguro('¿Quitar el fondo del torneo?'))) return;
         dz.fondo = null; cambiado(); aplicarDiseno(); pintarVista();
@@ -3332,10 +3376,10 @@ function pantallasGrupos(){
     const leyenda = '<div class="pr-leyenda"><span><i style="background:var(--pr-color)"></i>Pasa a «' + escapar(r.fase) + '»</span>' +
       (r.mejores > 0 ? '<span><i style="background:#B7791F"></i>Puede pasar como mejor ' + (r.clasifican + 1) + 'º</span>' : '') + '</div>';
     const clase = function(f, i){ return i < r.clasifican ? 'pasa' : (c.pasanMejor[f.id] ? 'mejor' : ''); };
-    pantallasPartidosYTabla(lista, t.grupo.nombre, estadoTxt(t), ps.map(function(p){ return { p: p }; }), t.filas, clase, leyenda, tam, tamP);
+    pantallasPartidosYTabla(lista, t.grupo.nombre, estadoTxt(t), ps.map(function(p){ return { p: p }; }), t.filas, clase, leyenda, tam, tamP, 'g:' + t.grupo.id);
   });
   const fin = c.tablas.every(function(t){ return t.total && t.jugados === t.total; });
-  lista.push({ titulo: 'Clasificados para «' + r.fase + '»', sub: fin ? 'Definitivo' : 'Provisional: faltan partidos', html: function(){
+  lista.push({ llave: 'clasificados', titulo: 'Clasificados para «' + r.fase + '»', sub: fin ? 'Definitivo' : 'Provisional: faltan partidos', html: function(){
     const items = [];
     c.tablas.forEach(function(t){ t.filas.slice(0, r.clasifican).forEach(function(f, i){ items.push({ id: f.id, marca: (i + 1) + 'º', de: (i + 1) + 'º del ' + t.grupo.nombre }); }); });
     c.mejores.slice(0, r.mejores).forEach(function(m, i){ items.push({ id: m.fila.id, marca: (r.clasifican + 1) + 'º', de: (r.clasifican + 1) + 'º del ' + m.grupo.nombre + ' · ' + (i + 1) + 'º mejor', mejor: true }); });
@@ -3348,7 +3392,7 @@ function pantallasGrupos(){
   if (c.tablas.filter(function(t){ return t.filas.length > 1; }).length > 1){
     const segundos = compararPuesto(c.tablas, 1);
     const pasanSeg = r.clasifican === 1 ? r.mejores : 0;
-    lista.push({ titulo: 'Comparación de los 2º de cada grupo', sub: pasanSeg ? (pasanSeg === 1 ? 'Pasa el mejor' : 'Pasan los ' + pasanSeg + ' mejores') : 'Ordenados por puntos y desempates', html: function(){
+    lista.push({ llave: 'segundos', titulo: 'Comparación de los 2º de cada grupo', sub: pasanSeg ? (pasanSeg === 1 ? 'Pasa el mejor' : 'Pasan los ' + pasanSeg + ' mejores') : 'Ordenados por puntos y desempates', html: function(){
       return '<table class="pr-tabla"><thead><tr><th>#</th><th class="eq">Equipo</th><th>Grupo</th><th>Pts</th><th>PJ</th><th>GF</th><th>GC</th><th>DG</th></tr></thead><tbody>' +
         segundos.map(function(m, i){
           const f = m.fila, dg = f.gf - f.gc;
@@ -3373,12 +3417,12 @@ function compararPuesto(tablas, pos){
 }
 /* una pantalla con los partidos (día, hora y resultado) a un lado y la clasificación al otro;
    con más de 6 partidos, los partidos siguen en otra pantalla para que se lean bien */
-function pantallasPartidosYTabla(lista, titulo, sub, partidos, filas, clase, leyenda, tamTabla, tamPartido){
+function pantallasPartidosYTabla(lista, titulo, sub, partidos, filas, clase, leyenda, tamTabla, tamPartido, llave){
   const POR_PANTALLA = 6, trozos = [];
   for (let i = 0; i < partidos.length; i += POR_PANTALLA) trozos.push(partidos.slice(i, i + POR_PANTALLA));
   if (!trozos.length) trozos.push([]);
   trozos.forEach(function(trozo, k){
-    lista.push({ titulo: titulo, sub: sub + (trozos.length > 1 ? ' · partidos ' + (k * POR_PANTALLA + 1) + '-' + (k * POR_PANTALLA + trozo.length) + ' de ' + partidos.length : ''), html: function(){
+    lista.push({ llave: llave, titulo: titulo, sub: sub + (trozos.length > 1 ? ' · partidos ' + (k * POR_PANTALLA + 1) + '-' + (k * POR_PANTALLA + trozo.length) + ' de ' + partidos.length : ''), html: function(){
       const izq = trozo.length ? '<div class="pr-partidos"><div class="pr-cabecera-partidos">Partidos</div>' + trozo.map(function(x){ return partidoPr(x.p, '', '', tamPartido); }).join('') + '</div>'
                                : '<p class="pr-vacio">Sin partidos todavía.</p>';
       const der = '<div><div class="pr-cabecera-partidos">Clasificación</div>' + (filas.length ? tablaPr(filas, clase, tamPartido) : '<p class="pr-vacio">Sin equipos todavía.</p>') + leyenda + '</div>';
@@ -3409,10 +3453,10 @@ function pantallasFinal(){
       const c = clasificacionLiguilla(l), ps = orden.filter(function(x){ return x.lig === l; });
       const leyenda = f.final ? '<div class="pr-leyenda"><span><i style="background:var(--pr-color)"></i>Juega la final</span>' + (f.tercero ? '<span><i style="background:#B7791F"></i>Juega por el 3er puesto</span>' : '') + '</div>' : '';
       pantallasPartidosYTabla(lista, l.nombre, c.total ? estadoTxt(c) : 'Partidos y clasificación', ps, c.filas,
-        function(fl, i){ return f.final && i === 0 ? 'pasa' : (f.tercero && i === 1 ? 'mejor' : ''); }, leyenda, Math.max(22, Math.round(tamEscudoPr())), tam);
+        function(fl, i){ return f.final && i === 0 ? 'pasa' : (f.tercero && i === 1 ? 'mejor' : ''); }, leyenda, Math.max(22, Math.round(tamEscudoPr())), tam, 'l:' + l.id);
     });
     if (f.final){
-      lista.push({ titulo: f.final.nombre, sub: '1º ' + f.liguillas[0].nombre + ' contra 1º ' + f.liguillas[1].nombre, html: function(){
+      lista.push({ llave: 'final', titulo: f.final.nombre, sub: '1º ' + f.liguillas[0].nombre + ' contra 1º ' + f.liguillas[1].nombre, html: function(){
         const g = ganadorCruce(f.final);
         let h = '<div class="pr-final">' + cruceGrande(f.final, '1º ' + f.liguillas[0].nombre, '1º ' + f.liguillas[1].nombre);
         if (g) h += '<div class="pr-campeon">🏆 Campeón: ' + escapar(equipo(f.final[g]).nombre) + '</div>';
@@ -3429,14 +3473,14 @@ function pantallasFinal(){
     const orden = crucesEnOrden();
     e.rondas.forEach(function(rd, i){
       if (rd.partidos.length === 1) return;
-      lista.push({ titulo: rd.nombre, sub: rd.partidos.length + ' partidos', html: function(){
+      lista.push({ llave: 'r:' + rd.id, titulo: rd.nombre, sub: rd.partidos.length + ' partidos', html: function(){
         return '<div class="pr-partidos" style="max-width:1400px;margin:0 auto;width:100%">' + orden.filter(function(x){ return x.ronda === rd; }).map(function(x){
           return partidoPr(x.p, origenCruce(x.i, x.j, 'local') || 'Por decidir', origenCruce(x.i, x.j, 'visitante') || 'Por decidir', tam);
         }).join('') + '</div>';
       }});
     });
     const fin = e.rondas[e.rondas.length - 1];
-    lista.push({ titulo: fin.nombre, sub: '', html: function(){
+    lista.push({ llave: 'final', titulo: fin.nombre, sub: '', html: function(){
       const p = fin.partidos[0], g = ganadorCruce(p);
       let h = '<div class="pr-final">' + cruceGrande(p, 'Por decidir', 'Por decidir');
       if (g) h += '<div class="pr-campeon">🏆 Campeón: ' + escapar(equipo(p[g]).nombre) + '</div>';
@@ -3444,8 +3488,127 @@ function pantallasFinal(){
       return h + '</div>';
     }});
   }
-  if (!lista.length) lista.push({ titulo: 'Fase final', sub: '', html: function(){ return '<p class="pr-vacio">La fase final todavía no está preparada.</p>'; } });
+  if (!lista.length) lista.push({ llave: 'final', titulo: 'Fase final', sub: '', html: function(){ return '<p class="pr-vacio">La fase final todavía no está preparada.</p>'; } });
   return lista;
+}
+
+/* ---------- fondos de la proyección: de fútbol, el del torneo o fotos propias; uno general y, si quieres, uno por pantalla ---------- */
+function svgUrl(svg){ return 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")'; }
+const SVG_CAMPO = svgUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice"><g fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="6">' +
+  '<rect x="60" y="60" width="1480" height="780"/><line x1="800" y1="60" x2="800" y2="840"/><circle cx="800" cy="450" r="130"/>' +
+  '<rect x="60" y="250" width="230" height="400"/><rect x="60" y="355" width="80" height="190"/><rect x="1310" y="250" width="230" height="400"/><rect x="1460" y="355" width="80" height="190"/>' +
+  '<path d="M290 370 A110 110 0 0 1 290 530"/><path d="M1310 370 A110 110 0 0 0 1310 530"/></g><g fill="#fff" fill-opacity=".6"><circle cx="800" cy="450" r="9"/><circle cx="215" cy="450" r="7"/><circle cx="1385" cy="450" r="7"/></g></svg>');
+const SVG_PIZARRA = svgUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice"><g fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="5" stroke-linecap="round">' +
+  '<rect x="80" y="80" width="1440" height="740"/><line x1="800" y1="80" x2="800" y2="820"/><circle cx="800" cy="450" r="120"/><rect x="80" y="270" width="210" height="360"/><rect x="1310" y="270" width="210" height="360"/>' +
+  '<path d="M420 300 C520 240 600 260 660 330" stroke-dasharray="14 14"/><path d="M640 316 l24 16 l-8 -28"/><path d="M420 640 C560 700 700 640 760 560" stroke-dasharray="14 14"/><path d="M742 572 l20 -14 l-26 -4"/>' +
+  '<path d="M1000 260 l40 40 M1040 260 l-40 40 M1120 520 l40 40 M1160 520 l-40 40 M980 640 l40 40 M1020 640 l-40 40"/></g>' +
+  '<g fill="none" stroke="#fff" stroke-opacity=".32" stroke-width="5"><circle cx="400" cy="300" r="22"/><circle cx="400" cy="640" r="22"/><circle cx="560" cy="460" r="22"/><circle cx="250" cy="450" r="22"/></g></svg>');
+const SVG_BALON = svgUrl('<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220"><g fill="none" stroke="#fff" stroke-opacity=".11" stroke-width="3">' +
+  '<circle cx="60" cy="60" r="38"/><path d="M60 42 l17 12 -6 20 h-22 l-6 -20 z" fill="#fff" fill-opacity=".09"/><path d="M60 42 v-20 M77 54 l19 -6 M71 74 l12 16 M49 74 l-12 16 M43 54 l-19 -6"/>' +
+  '<circle cx="170" cy="170" r="30"/><path d="M170 156 l13 10 -5 16 h-16 l-5 -16 z" fill="#fff" fill-opacity=".09"/></g></svg>');
+const SVG_RED = svgUrl('<svg xmlns="http://www.w3.org/2000/svg" width="60" height="52" viewBox="0 0 60 52"><path d="M15 0 L45 0 L60 26 L45 52 L15 52 L0 26 Z" fill="none" stroke="#fff" stroke-opacity=".13" stroke-width="2"/></svg>');
+const FONDOS_PR = [
+  { id:'cesped',  nombre:'Césped',          velo:.55, css: function(){ return SVG_CAMPO + ' center/cover no-repeat, repeating-linear-gradient(90deg,#2d7a38 0 6.25%,#36904a 6.25% 12.5%)'; } },
+  { id:'estadio', nombre:'Estadio de noche', velo:.25, css: function(){ return 'radial-gradient(ellipse 45% 55% at 12% -5%, rgba(255,250,220,.42), transparent 70%), radial-gradient(ellipse 45% 55% at 88% -5%, rgba(255,250,220,.42), transparent 70%), linear-gradient(180deg,#0b1830 0%,#0c2340 45%,#0f3d24 78%,#1a6b32 100%)'; } },
+  { id:'pizarra', nombre:'Pizarra táctica',  velo:.2,  css: function(){ return SVG_PIZARRA + ' center/cover no-repeat, radial-gradient(ellipse at center,#285a3c,#173826)'; } },
+  { id:'balones', nombre:'Balones',          velo:.15, css: function(c){ return SVG_BALON + ' 0 0/220px 220px repeat, radial-gradient(circle at 30% 20%,' + mezclar(c, '#000000', .25) + ',' + mezclar(c, '#000000', .8) + ')'; } },
+  { id:'red',     nombre:'Red de portería',  velo:.15, css: function(){ return SVG_RED + ' 0 0/60px 52px repeat, linear-gradient(160deg,#13293d,#07111b)'; } },
+  { id:'color',   nombre:'Color del torneo', velo:0,   css: function(c){ return 'linear-gradient(135deg,' + mezclar(c, '#000000', .3) + ',' + mezclar(c, '#000000', .82) + ')'; } },
+  { id:'oscuro',  nombre:'Oscuro',           velo:0,   css: function(){ return 'linear-gradient(160deg,#16252e,#0b141a)'; } }
+];
+const MAX_FOTOS_PR = 8;
+function datosPr(){
+  const p = T.datos.proyeccion = (T.datos.proyeccion && typeof T.datos.proyeccion === 'object') ? T.datos.proyeccion : {};
+  if (!p.fondo) p.fondo = 'cesped';
+  if (!p.porPantalla || typeof p.porPantalla !== 'object') p.porPantalla = {};
+  if (!Array.isArray(p.fotos)) p.fotos = [];
+  p.fotos = p.fotos.filter(function(x){ return x && x.id && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(x.dato || ''); });
+  return p;
+}
+/* todos los fondos que se pueden elegir: los de fútbol, el del apartado Diseño (si hay) y las fotos subidas */
+function catalogoFondos(){
+  const lista = FONDOS_PR.map(function(x){ return { id: x.id, nombre: x.nombre, velo: x.velo, css: x.css(T.datos.diseno.color) }; });
+  if (T.datos.diseno.fondo) lista.splice(5, 0, { id:'torneo', nombre:'Fondo del torneo', velo:.7, css: 'url("' + T.datos.diseno.fondo + '") center/cover no-repeat' });
+  datosPr().fotos.forEach(function(x, k){ lista.push({ id: 'foto:' + x.id, nombre: x.nombre || ('Foto ' + (k + 1)), velo:.7, css: 'url("' + x.dato + '") center/cover no-repeat', foto: x.id }); });
+  return lista;
+}
+function fondoPorId(id){ const c = catalogoFondos(); return c.filter(function(x){ return x.id === id; })[0] || c[0]; }
+function fondoDe(llave){ const p = datosPr(); return fondoPorId((llave && p.porPantalla[llave]) || p.fondo); }
+function ponerFondoPr(el, fo){ el.style.background = fo.css; el.style.backgroundColor = '#0F1A21'; el.style.setProperty('--pr-velo', fo.velo); }
+function miniFondo(fo, elegido, conQuitar){
+  return '<button type="button" class="fondo-pr" data-fondopr="' + fo.id + '" aria-pressed="' + elegido + '">' +
+    '<span class="mini" style="background:' + escapar(fo.css).replace(/&quot;/g, "'") + ';--velo:' + fo.velo + '"><b>Grupo 1</b><i></i></span>' +
+    '<span class="nom">' + escapar(fo.nombre) + (conQuitar && fo.foto ? '<span class="quitar" data-quitarfoto="' + fo.foto + '">Quitar</span>' : '') + '</span></button>';
+}
+/* subir una foto propia: se reduce para que el torneo no pese */
+function subirFotoPr(alTerminar){
+  const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/png,image/jpeg,image/webp';
+  input.addEventListener('change', function(){
+    const archivo = input.files[0]; if (!archivo) return;
+    if (!/^image\//.test(archivo.type)){ alert('Elige una imagen (JPG, PNG o WEBP).'); return; }
+    if (datosPr().fotos.length >= MAX_FOTOS_PR){ alert('Puedes tener hasta ' + MAX_FOTOS_PR + ' fotos de fondo. Quita alguna para subir otra.'); return; }
+    const url = URL.createObjectURL(archivo), img = new Image();
+    img.onload = function(){
+      const esc = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * esc); c.height = Math.round(img.height * esc);
+      const ctx = c.getContext('2d'); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      let q = 0.75, dato = c.toDataURL('image/jpeg', q);
+      while (dato.length > 450000 && q > 0.35){ q -= 0.1; dato = c.toDataURL('image/jpeg', q); }
+      const foto = { id: nuevoId('fp'), nombre: archivo.name.replace(/\.[a-z0-9]+$/i, '').slice(0, 30), dato: dato };
+      datosPr().fotos.push(foto); cambiado(); alTerminar(foto);
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); alert('No se ha podido leer esa imagen.'); };
+    img.src = url;
+  });
+  input.click();
+}
+async function quitarFotoPr(id){
+  const p = datosPr(), foto = p.fotos.filter(function(x){ return x.id === id; })[0];
+  if (!foto || !(await seguro('¿Quitar la foto de fondo «' + (foto.nombre || 'foto') + '»? Las pantallas que la usaban vuelven al fondo general.'))) return false;
+  p.fotos = p.fotos.filter(function(x){ return x.id !== id; });
+  if (p.fondo === 'foto:' + id) p.fondo = 'cesped';
+  Object.keys(p.porPantalla).forEach(function(k){ if (p.porPantalla[k] === 'foto:' + id) delete p.porPantalla[k]; });
+  cambiado(); return true;
+}
+
+/* panel «Fondo» dentro de la proyección: se elige el de la pantalla que se está viendo */
+function abrirPanelFondo(){
+  clearTimeout(PR.temporizador); PR.pausa = true;
+  pintarPanelFondo(); $('prPanel').hidden = false;
+}
+function cerrarPanelFondo(){ $('prPanel').hidden = true; PR.pausa = false; programarSiguiente(); }
+function pintarPanelFondo(){
+  const p = datosPr(), pant = PR.lista[PR.k], propio = pant && pant.llave ? p.porPantalla[pant.llave] : null;
+  const actual = fondoDe(pant && pant.llave).id;
+  $('prPanel').innerHTML = '<h3>Fondo de «' + escapar(pant ? pant.titulo : '') + '»</h3>' +
+    '<p>' + (propio ? 'Esta pantalla tiene su propio fondo.' : 'Esta pantalla usa el fondo general.') + ' Pulsa uno para ponérselo a esta pantalla.</p>' +
+    '<div class="fondos-pr">' + catalogoFondos().map(function(fo){ return miniFondo(fo, fo.id === actual, true); }).join('') + '</div>' +
+    '<div class="pie"><span style="display:flex;gap:8px;flex-wrap:wrap">' +
+      '<button type="button" id="prSubirFoto">＋ Subir una foto</button>' +
+      '<button type="button" id="prParaTodas">Usar este fondo en todas las pantallas</button>' +
+      (propio ? '<button type="button" id="prGeneral">Volver al fondo general</button>' : '') +
+    '</span><button type="button" class="listo" id="prListo">Listo</button></div>';
+  const elegir = function(id){
+    const pt = PR.lista[PR.k];
+    if (pt && pt.llave){ if (id === p.fondo) delete p.porPantalla[pt.llave]; else p.porPantalla[pt.llave] = id; }
+    else p.fondo = id;
+    cambiado(); ponerFondoPr($('proyector'), fondoDe(pt && pt.llave)); pintarPanelFondo();
+  };
+  $('prPanel').querySelectorAll('[data-fondopr]').forEach(function(b){
+    b.addEventListener('click', async function(e){
+      if (e.target.dataset.quitarfoto){ e.stopPropagation(); if (await quitarFotoPr(e.target.dataset.quitarfoto)){ ponerFondoPr($('proyector'), fondoDe(pant && pant.llave)); pintarPanelFondo(); } return; }
+      elegir(b.dataset.fondopr);
+    });
+  });
+  $('prSubirFoto').addEventListener('click', function(){ subirFotoPr(function(foto){ elegir('foto:' + foto.id); }); });
+  $('prParaTodas').addEventListener('click', async function(){
+    const id = fondoDe(pant && pant.llave).id, hay = Object.keys(p.porPantalla).length;
+    if (hay && !(await seguro('Todas las pantallas pasarán a usar «' + fondoPorId(id).nombre + '». Se quitan los fondos distintos que tenías puestos en algunas pantallas. ¿Seguir?'))) return;
+    p.fondo = id; p.porPantalla = {}; cambiado(); ponerFondoPr($('proyector'), fondoDe(pant && pant.llave)); pintarPanelFondo();
+  });
+  if ($('prGeneral')) $('prGeneral').addEventListener('click', function(){ delete p.porPantalla[pant.llave]; cambiado(); ponerFondoPr($('proyector'), fondoDe(pant.llave)); pintarPanelFondo(); });
+  $('prListo').addEventListener('click', cerrarPanelFondo);
 }
 
 function pintarPantalla(){
@@ -3459,6 +3622,7 @@ function pintarPantalla(){
   $('prSub').textContent = p.sub || '';
   $('prCuerpo').innerHTML = p.html();
   $('prNum').textContent = (PR.k + 1) + ' / ' + PR.lista.length;
+  ponerFondoPr($('proyector'), fondoDe(p.llave));
 }
 async function refrescarDatosPr(){
   if (!T || pendiente || guardando) return;
@@ -3470,6 +3634,7 @@ async function refrescarDatosPr(){
 }
 function programarSiguiente(){
   clearTimeout(PR.temporizador);
+  if (PR.pausa) return;
   PR.inicio = Date.now();
   PR.temporizador = setTimeout(async function(){
     await refrescarDatosPr();
@@ -3478,6 +3643,8 @@ function programarSiguiente(){
 }
 function animarBarra(){
   if (!PR.modo) return;
+  if (PR.pausa){ PR.inicio = Date.now() - (PR.parado || 0); PR.anima = requestAnimationFrame(animarBarra); return; }
+  PR.parado = Date.now() - PR.inicio;
   const hecho = Math.min(1, (Date.now() - PR.inicio) / PR.dura);
   $('prBarra').style.width = (hecho * 100).toFixed(2) + '%';
   $('prQueda').textContent = Math.max(0, Math.ceil((PR.dura - (Date.now() - PR.inicio)) / 1000)) + ' s';
@@ -3486,10 +3653,11 @@ function animarBarra(){
 function pintarReloj(){ const h = new Date(); $('prReloj').textContent = String(h.getHours()).padStart(2, '0') + ':' + String(h.getMinutes()).padStart(2, '0'); }
 async function empezarProyeccion(modo){
   await guardarYa();
-  PR.modo = modo; PR.k = 0;
+  PR.modo = modo; PR.k = 0; PR.pausa = false;
   const pr = $('proyector'), dz = T.datos.diseno;
   pr.style.setProperty('--pr-color', dz.color);
-  pr.style.backgroundImage = dz.fondo ? 'url("' + dz.fondo + '")' : '';
+  $('prFondo').hidden = !(nivel('diseno') === 'editar');
+  $('prPanel').hidden = true;
   try{ const t = localStorage.getItem('torneos_pr_tiempo'); if (t) $('prTiempo').value = t; }catch(e){}
   PR.dura = Number($('prTiempo').value) * 1000;
   pr.hidden = false; document.body.style.overflow = 'hidden';
@@ -3500,6 +3668,7 @@ async function empezarProyeccion(modo){
 }
 function pararProyeccion(){
   if (!PR.modo) return;
+  $('prPanel').hidden = true;
   PR.modo = null;
   clearTimeout(PR.temporizador); clearInterval(PR.reloj); cancelAnimationFrame(PR.anima); clearTimeout(PR.quieto);
   $('proyector').hidden = true; document.body.style.overflow = '';
@@ -3515,6 +3684,7 @@ function moverRaton(){
 $('playGrupos').addEventListener('click', function(){ empezarProyeccion('grupos'); });
 $('playFinal').addEventListener('click', function(){ empezarProyeccion('final'); });
 $('prStop').addEventListener('click', pararProyeccion);
+$('prFondo').addEventListener('click', function(){ if ($('prPanel').hidden) abrirPanelFondo(); else cerrarPanelFondo(); });
 $('prSiguiente').addEventListener('click', async function(){ await refrescarDatosPr(); PR.k++; pintarPantalla(); programarSiguiente(); });
 $('prAnterior').addEventListener('click', async function(){ await refrescarDatosPr(); PR.k--; pintarPantalla(); programarSiguiente(); });
 $('prTiempo').addEventListener('change', function(){
@@ -3525,7 +3695,8 @@ $('proyector').addEventListener('mousemove', moverRaton);
 $('proyector').addEventListener('touchstart', moverRaton, { passive: true });
 document.addEventListener('keydown', function(e){
   if (!PR.modo) return;
-  if (e.key === 'Escape') pararProyeccion();
+  if (e.key === 'Escape'){ if (!$('prPanel').hidden){ cerrarPanelFondo(); return; } if (respuestaSeguro) return; pararProyeccion(); }
+  if (!$('prPanel').hidden) return;
   if (e.key === 'ArrowRight' || e.key === ' ') $('prSiguiente').click();
   if (e.key === 'ArrowLeft') $('prAnterior').click();
 });
