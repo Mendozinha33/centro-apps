@@ -404,11 +404,13 @@
   .pr-dos .pr-tabla{font-size:clamp(12px,1.55vw,30px);}
   .pr-dos .pr-tabla td,.pr-dos .pr-tabla th{padding-left:.45em;padding-right:.45em;}
   .pr-partidos{display:grid;gap:.9vh;font-size:clamp(13px,1.55vw,28px);}
-  .pr-partido{display:grid;grid-template-columns:5.2em minmax(0,1fr) 3.6em minmax(0,1fr);gap:.6em;align-items:center;background:rgba(255,255,255,.07);
+  .pr-partido{display:grid;grid-template-columns:5.2em minmax(0,1fr) 4em minmax(0,1fr);gap:.6em;align-items:center;background:rgba(255,255,255,.07);
     border-radius:10px;padding:.5em .7em;}
   .pr-partido .cuando{font-size:.72em;opacity:.8;line-height:1.2;font-variant-numeric:tabular-nums;}
-  .pr-partido .res{text-align:center;font-weight:800;font-variant-numeric:tabular-nums;background:rgba(255,255,255,.12);border-radius:6px;padding:.15em 0;}
-  .pr-partido .res.pend{font-weight:500;opacity:.6;}
+  .pr-partido .res{text-align:center;font-weight:800;font-variant-numeric:tabular-nums;background:#fff;color:#0F1A21;border-radius:6px;padding:.15em 0;font-size:1.1em;}
+  .pr-partido .res.pend{font-weight:600;background:rgba(255,255,255,.12);color:#fff;opacity:.7;font-size:.85em;padding:.3em 0;}
+  .pr-partido.hecho{background:rgba(255,255,255,.1);}
+  .pr-cabecera-partidos{font-size:clamp(11px,1.05vw,18px);letter-spacing:.14em;text-transform:uppercase;font-weight:700;opacity:.65;margin-bottom:.8vh;}
   .pr-partido .local{justify-content:flex-end;text-align:right;}
   .pr-partido .local .n{order:-1;}
   .pr-final{display:grid;justify-items:center;gap:3vh;text-align:center;}
@@ -3277,12 +3279,13 @@ function estadoTxt(t){ return !t.total ? 'Sin partidos' : t.jugados === t.total 
 /* las pantallas de cada modo (se vuelven a montar en cada vuelta, con los datos al día) */
 function pantallasGrupos(){
   const d = T.datos, r = d.reglas, c = calcularTodo(), tam = tamEscudoPr(), lista = [];
+  const tamP = Math.max(18, Math.round(tam * .75));
   c.tablas.filter(function(t){ return t.filas.length; }).forEach(function(t){
-    lista.push({ titulo: t.grupo.nombre, sub: estadoTxt(t), html: function(){
-      return tablaPr(t.filas, function(f, i){ return i < r.clasifican ? 'pasa' : (c.pasanMejor[f.id] ? 'mejor' : ''); }, tam) +
-        '<div class="pr-leyenda"><span><i style="background:var(--pr-color)"></i>Pasa a «' + escapar(r.fase) + '»</span>' +
-        (r.mejores > 0 ? '<span><i style="background:#B7791F"></i>Puede pasar como mejor ' + (r.clasifican + 1) + 'º</span>' : '') + '</div>';
-    }});
+    const ps = d.partidos.filter(function(p){ return p.grupo === t.grupo.id; });
+    const leyenda = '<div class="pr-leyenda"><span><i style="background:var(--pr-color)"></i>Pasa a «' + escapar(r.fase) + '»</span>' +
+      (r.mejores > 0 ? '<span><i style="background:#B7791F"></i>Puede pasar como mejor ' + (r.clasifican + 1) + 'º</span>' : '') + '</div>';
+    const clase = function(f, i){ return i < r.clasifican ? 'pasa' : (c.pasanMejor[f.id] ? 'mejor' : ''); };
+    pantallasPartidosYTabla(lista, t.grupo.nombre, estadoTxt(t), ps.map(function(p){ return { p: p }; }), t.filas, clase, leyenda, tam, tamP);
   });
   const fin = c.tablas.every(function(t){ return t.total && t.jugados === t.total; });
   lista.push({ titulo: 'Clasificados para «' + r.fase + '»', sub: fin ? 'Definitivo' : 'Provisional: faltan partidos', html: function(){
@@ -3321,11 +3324,26 @@ function compararPuesto(tablas, pos){
     return porNombre(equipo(a.fila.id).nombre, equipo(b.fila.id).nombre);
   });
 }
+/* una pantalla con los partidos (día, hora y resultado) a un lado y la clasificación al otro;
+   con más de 6 partidos, los partidos siguen en otra pantalla para que se lean bien */
+function pantallasPartidosYTabla(lista, titulo, sub, partidos, filas, clase, leyenda, tamTabla, tamPartido){
+  const POR_PANTALLA = 6, trozos = [];
+  for (let i = 0; i < partidos.length; i += POR_PANTALLA) trozos.push(partidos.slice(i, i + POR_PANTALLA));
+  if (!trozos.length) trozos.push([]);
+  trozos.forEach(function(trozo, k){
+    lista.push({ titulo: titulo, sub: sub + (trozos.length > 1 ? ' · partidos ' + (k * POR_PANTALLA + 1) + '-' + (k * POR_PANTALLA + trozo.length) + ' de ' + partidos.length : ''), html: function(){
+      const izq = trozo.length ? '<div class="pr-partidos"><div class="pr-cabecera-partidos">Partidos</div>' + trozo.map(function(x){ return partidoPr(x.p, '', '', tamPartido); }).join('') + '</div>'
+                               : '<p class="pr-vacio">Sin partidos todavía.</p>';
+      const der = '<div><div class="pr-cabecera-partidos">Clasificación</div>' + (filas.length ? tablaPr(filas, clase, tamPartido) : '<p class="pr-vacio">Sin equipos todavía.</p>') + leyenda + '</div>';
+      return '<div class="pr-dos">' + izq + der + '</div>';
+    }});
+  });
+}
 function partidoPr(p, txtL, txtV, tam){
   const j = jugado(p), pen = j && p.pl != null && p.pv != null && Number(p.gl) === Number(p.gv) ? ' <small style="font-weight:600;opacity:.8">(' + p.pl + '-' + p.pv + ' p.)</small>' : '';
-  return '<div class="pr-partido"><span class="cuando">' + (escapar(cuandoPr(p)) || '—') + '</span>' +
+  return '<div class="pr-partido' + (j ? ' hecho' : '') + '"><span class="cuando">' + (escapar(cuandoPr(p)) || '—') + '</span>' +
     '<span class="pr-eq local">' + (p.local ? escudo(equipo(p.local), tam) : '') + '<span class="n">' + escapar(p.local ? equipo(p.local).nombre : (txtL || 'Por decidir')) + '</span></span>' +
-    '<span class="res' + (j ? '' : ' pend') + '">' + (j ? p.gl + '-' + p.gv : 'vs') + '</span>' +
+    '<span class="res' + (j ? '' : ' pend') + '">' + (j ? p.gl + ' - ' + p.gv : 'vs') + '</span>' +
     '<span class="pr-eq">' + (p.visitante ? escudo(equipo(p.visitante), tam) : '') + '<span class="n">' + escapar(p.visitante ? equipo(p.visitante).nombre : (txtV || 'Por decidir')) + '</span></span></div>' + (pen ? '<div style="text-align:center;margin-top:-.6vh;font-size:.8em">' + pen + '</div>' : '');
 }
 function cruceGrande(p, txtL, txtV){
@@ -3342,12 +3360,9 @@ function pantallasFinal(){
     const orden = ffEnOrden();
     f.liguillas.forEach(function(l){
       const c = clasificacionLiguilla(l), ps = orden.filter(function(x){ return x.lig === l; });
-      lista.push({ titulo: l.nombre, sub: c.total ? estadoTxt(c) : 'Partidos y clasificación', html: function(){
-        return '<div class="pr-dos"><div class="pr-partidos">' + (ps.length ? ps.map(function(x){ return partidoPr(x.p, '', '', tam); }).join('') : '<p class="pr-vacio">Sin partidos todavía.</p>') + '</div>' +
-          '<div>' + (c.filas.length ? tablaPr(c.filas, function(fl, i){ return f.final && i === 0 ? 'pasa' : (f.tercero && i === 1 ? 'mejor' : ''); }, tam) : '<p class="pr-vacio">Sin equipos todavía.</p>') +
-          (f.final ? '<div class="pr-leyenda"><span><i style="background:var(--pr-color)"></i>Juega la final</span>' + (f.tercero ? '<span><i style="background:#B7791F"></i>Juega por el 3er puesto</span>' : '') + '</div>' : '') +
-          '</div></div>';
-      }});
+      const leyenda = f.final ? '<div class="pr-leyenda"><span><i style="background:var(--pr-color)"></i>Juega la final</span>' + (f.tercero ? '<span><i style="background:#B7791F"></i>Juega por el 3er puesto</span>' : '') + '</div>' : '';
+      pantallasPartidosYTabla(lista, l.nombre, c.total ? estadoTxt(c) : 'Partidos y clasificación', ps, c.filas,
+        function(fl, i){ return f.final && i === 0 ? 'pasa' : (f.tercero && i === 1 ? 'mejor' : ''); }, leyenda, Math.max(22, Math.round(tamEscudoPr())), tam);
     });
     if (f.final){
       lista.push({ titulo: f.final.nombre, sub: '1º ' + f.liguillas[0].nombre + ' contra 1º ' + f.liguillas[1].nombre, html: function(){
